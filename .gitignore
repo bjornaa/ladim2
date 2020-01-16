@@ -1,0 +1,23 @@
+# Python stuff
+*.pyc
+build/
+
+# Hidden directories
+.*/
+
+# Data files
+examples/data/*
+!examples/data/README.rst
+!examples/data/download.py
+*.nc
+*.npy
+*.wkb
+
+# Release files
+*.rls
+
+# Documentation stuff
+doc/build
+
+# Emacs noise
+*~

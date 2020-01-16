@@ -27,25 +27,44 @@ class State(Sized):
 
         # Start with empty state, with correct variables of correct type
         self.npid = 0  # Number of particles involved
-        variables: Dict[str, DType] = dict(
+        vars: Dict[str, DType] = dict(
             pid=int, alive=bool, X=float, Y=float, Z=float
         )
-        variables.update(args)
-        for var, dtype in variables.items():
+        vars.update(args)
+        for var, dtype in vars.items():
             setattr(self, var, np.array([], dtype=dtype))
 
-        # Trenger self.variables?
-        # Sjekke at append har alle variable som trengs
-        # Evt, ha en default (alder=0) f.eks.
-        # Hvordan angi denne default
-        # age = (float, 0.0) f.eks. mens weigth =
+        self.variables = list(vars.keys())
+        self.dtypes = vars
+        self.default_values = {'alive': np.array(True, dtype=bool)}
+        # Kan sette alle andre default = 0
 
-    def append(self, X: Arraylike, Y: Arraylike, Z: Arraylike, **args: Arraylike):
+    def set_default_value(self, variable, value) -> None:
+        """Set default values for a variable"""
+        if variable not in self.variables:
+            raise ValueError(f"No such variable: ", variable)
+        if variable == 'pid':
+            raise ValueError("Can not set default for pid")
+        self.default_values[variable] = np.array(value, dtype=self.dtypes[variable])
+
+
+    def append(self, **args: Arraylike):
         """Append particles to the State object"""
 
+        # Accept only state variables (except pid)
+        names = set(args.keys())
+        state_vars = set(self.variables)
+        state_vars.remove('pid')
+        assert(names.issubset(state_vars))
+
+        # All state variables (except pid) should be included
+        # or have a default value
+        # (evt. få default = null)
+        vars_with_value = names.union(self.default_values)
+        assert(state_vars.issubset(vars_with_value))
+
         # All input should be scalars or broadcastable 1D arrays
-        names = ["X", "Y", "Z"] + list(args.keys())
-        values = [X, Y, Z] + list(args.values())
+        values = list(args.values())
         b = np.broadcast(*values)
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
@@ -89,7 +108,7 @@ if __name__ == "__main__":
 
     S = State(weight="float")
 
-    S.append(X, Y, Z, weight=[100, 101])
+    S.append(X=X, Y=Y, Z=Z, weight=[100, 101])
 
     S.alive[1] = False
 
@@ -109,7 +128,7 @@ if __name__ == "__main__":
     print("alive :", S.alive)
     print("weight:", S.weight)  # type: ignore
 
-    S.append(1, 2, 3, weight=4)
+    S.append(X=1, Y=2, Z=3, weight=4)
 
     print("")
     print("len   :", len(S))
