@@ -21,7 +21,7 @@ def test_minimal():
 
 def test_append_scalar():
     state = State()
-    state.append(X=200, Y=100, Z=5)
+    state.append(X=200, Z=5, Y=100)
     assert len(state) == 1
     assert state.npid == 1
     assert np.all(state.pid == [0])
@@ -35,10 +35,11 @@ def test_append_array():
     assert len(state) == 2
     assert state.npid == 2
     assert np.all(state.pid == [0, 1])
+    print("----", state.alive)
     assert np.all(state.alive == [True, True])
-    assert np.all(state.X == [200, 201])
-    assert np.all(state.Y == [100, 100])
-    assert np.all(state.Z == [5, 10])
+    assert np.all(state.X == [200.0, 201.0])
+    assert np.all(state.Y == [100.0, 100.0])
+    assert np.all(state.Z == [5.0, 10.0])
 
 
 def test_extra_variables():
@@ -46,9 +47,8 @@ def test_extra_variables():
     assert len(state) == 0
     assert state.age.dtype == float
     assert state.stage.dtype == int
-    state.set_default_values(age=1.0)
-    state.append(X=1, Y=2, Z=3, stage=0)
-    # assert len(state.age) == 1
-    # assert np.all(state.age == [1])
-    # print(state.age)
-    # assert np.all(state.stage == [11])
+    state.set_default_value("age", 1.0)
+    state.append(X=1, Y=2, Z=3, stage=4)
+    assert len(state.age) == 1
+    assert np.all(state.age == [1])
+    assert np.all(state.stage == [4])
