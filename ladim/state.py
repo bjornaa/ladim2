@@ -6,19 +6,21 @@ Class for the state of the model
 # import os
 # import importlib
 # import logging
-#from typing import Any, Dict, Sized, Union, Optional, List, Mapping  # mypy
-from typing import List, Dict, Union, Sized
+from typing import List, Dict, Union, Sized, Sequence
 
 import numpy as np  # type: ignore
 
-# from .tracker import Tracker
-# from .gridforce import Grid, Forcing
 
 # ------------------------
 
-Arraylike = Union[np.ndarray, List[float], float]
-Variables = Dict[str, Arraylike]
+# Kan bruke Sequence[Scalar] for 1D arrays o.l.
+# kan sette dette som Vector?
+Scalar = Union[float, int, bool]
+#Arraylike = Union[np.ndarray, List[Scalar], Scalar]
+#Variables = Dict[str, Arraylike]
 DType = Union[str, type]
+Vector = Union[Scalar, Sequence[Scalar]]
+
 
 
 class State(Sized):
@@ -43,7 +45,7 @@ class State(Sized):
 
         # Start with empty state, with correct variables of correct type
         self.npid: int = 0
-        self.variables = ['pid', 'alive', 'X', 'Y', 'Z']
+        self.variables = ["pid", "alive", "X", "Y", "Z"]
         self.pid = np.array([], int)
         self.alive = np.array([], bool)
         self.X = np.array([], float)
@@ -69,31 +71,38 @@ class State(Sized):
                 raise TypeError(f"Default value for {var} should be scalar")
             self.default_values[var] = np.array(value, dtype=getattr(self, var).dtype)
 
-    def append(self, **args: Arraylike):
+    def append(self, **args: Vector):
         """Append particles to the State object"""
 
         # Accept only state variables (except pid)
-        names = set(args.keys())
         state_vars = set(self.variables)
         state_vars.remove("pid")
-        assert names.issubset(state_vars)
+        for name in args:
+            if name not in state_vars:
+                raise ValueError(f"Invalid argument {name}")
 
-        # All state variables (except pid) should be included
-        # or have a default value
-        # (evt. få default = null)
-        vars_with_value = names.union(self.default_values)
-        assert state_vars.issubset(vars_with_value)
+        # ok_vars = arguments and variables with defaults
+        # arguments override the defaults
+        ok_vars = self.default_values.copy()
+        ok_vars.update(args)
+
+        # All state variables (except pid) should be ok
+        for name in state_vars:
+            if name not in set(ok_vars):
+                raise TypeError(f"Variable {name} has no value")
 
         # All input should be scalars or broadcastable 1D arrays
-        values = list(args.values())
-        b = np.broadcast(*values)
+        values = list(args)
+        b = np.broadcast(*ok_vars.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
         if b.ndim == 0:  # All arguments are scalar
-            values[0] = np.array([values[0]])  # Make first argument 1D
+            # values[0] = np.array([values[0]])  # Make first argument 1D
             b = np.broadcast([0])  # Make b.size = 1
         nparticles = b.size
-        values = np.broadcast_arrays(*values)
+
+        # Make all values 1D of correct shape
+        values = [np.broadcast_to(v, shape=(nparticles,)) for v in ok_vars.values()]
 
         # pid
         self.pid = np.concatenate(
@@ -101,11 +110,8 @@ class State(Sized):
         )
         self.npid = self.npid + nparticles
 
-        # alive
-        self.alive = np.concatenate((self.alive, nparticles * [True]))
-
-        # Rest of the variables
-        for name, value in zip(names, values):
+        # Set the state variables
+        for name, value in zip(list(ok_vars), values):
             setattr(self, name, np.concatenate((getattr(self, name), value)))
 
     def compactify(self):
@@ -117,42 +123,3 @@ class State(Sized):
 
     def __len__(self) -> int:
         return len(self.X)
-
-
-if __name__ == "__main__":
-
-    X = np.array([10.0, 10.1])
-    Y = np.array([0.0, 20.0])
-    Z = np.array([10.0, 5.0])
-    weight = np.array([10, 20], dtype=int)
-    extra_variables = dict(weight=weight)
-
-    S = State(weight="float")
-
-    S.append(X=X, Y=Y, Z=Z, weight=[100, 101])
-
-    S.alive[1] = False
-
-    D = dict(Y=np.array([11, 12]), Z=5, weight=[200], X=[1, 2])
-    S.append(**D)
-
-    print("len   :", len(S))
-    print("pid   :", S.pid)
-    print("alive :", S.alive)
-    print("weight:", S.weight)
-
-    S.compactify()
-
-    print("")
-    print("len   :", len(S))
-    print("pid   :", S.pid)
-    print("alive :", S.alive)
-    print("weight:", S.weight)  # type: ignore
-
-    S.append(X=1, Y=2, Z=3, weight=4)
-
-    print("")
-    print("len   :", len(S))
-    print("pid   :", S.pid)
-    print("alive :", S.alive)
-    print("weight:", S.weight)  # type: ignore
