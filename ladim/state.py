@@ -2,11 +2,12 @@
 Class for the state of the model
 """
 
-import sys
-import os
-import importlib
-import logging
-from typing import Any, Dict, Sized, Union, Optional, List, Mapping  # mypy
+# import sys
+# import os
+# import importlib
+# import logging
+#from typing import Any, Dict, Sized, Union, Optional, List, Mapping  # mypy
+from typing import List, Dict, Union, Sized
 
 import numpy as np  # type: ignore
 
@@ -23,30 +24,50 @@ DType = Union[str, type]
 class State(Sized):
     """The model variables at a given time"""
 
+    # def __init__(self, **args: Dict[str, DType]) -> None:
     def __init__(self, **args: DType) -> None:
+        """Initialize the state with dictionary of extra variables
+
+        These extra variables should be given by their dtype
+
+        Mandatory state variables: pid, alive, X, Y, Z
+        with predefined dtypes int, bool and float
+        should not be initialized.
+
+        attributes:
+          npid: Number of particles released so far
+          variables: List of names of state variables
+          default_values: Default values for initializing state variables
+
+        """
 
         # Start with empty state, with correct variables of correct type
-        self.npid = 0  # Number of particles involved
-        vars: Dict[str, DType] = dict(
-            pid=int, alive=bool, X=float, Y=float, Z=float
-        )
-        vars.update(args)
-        for var, dtype in vars.items():
+        self.npid: int = 0
+        self.variables = ['pid', 'alive', 'X', 'Y', 'Z']
+        self.pid = np.array([], int)
+        self.alive = np.array([], bool)
+        self.X = np.array([], float)
+        self.Y = np.array([], float)
+        self.Z = np.array([], float)
+
+        for var, dtype in args.items():
+            self.variables.append(var)
             setattr(self, var, np.array([], dtype=dtype))
 
-        self.variables = list(vars.keys())
-        self.dtypes = vars
-        self.default_values = {'alive': np.array(True, dtype=bool)}
+        # self.variables: List(str) = list(dtypes)
+        self.default_values = {"alive": np.array(True, dtype=bool)}
         # Kan sette alle andre default = 0
 
-    def set_default_value(self, variable, value) -> None:
-        """Set default values for a variable"""
-        if variable not in self.variables:
-            raise ValueError(f"No such variable: ", variable)
-        if variable == 'pid':
-            raise ValueError("Can not set default for pid")
-        self.default_values[variable] = np.array(value, dtype=self.dtypes[variable])
-
+    def set_default_values(self, **args: Union[float, int, bool]) -> None:
+        """Set default values for state variables"""
+        for var, value in args.items():
+            if var not in self.variables:
+                raise ValueError(f"No such variable: ", var)
+            if var == "pid":
+                raise ValueError("Can not set default for pid")
+            if not np.isscalar(value):
+                raise TypeError(f"Default value for {var} should be scalar")
+            self.default_values[var] = np.array(value, dtype=getattr(self, var).dtype)
 
     def append(self, **args: Arraylike):
         """Append particles to the State object"""
@@ -54,14 +75,14 @@ class State(Sized):
         # Accept only state variables (except pid)
         names = set(args.keys())
         state_vars = set(self.variables)
-        state_vars.remove('pid')
-        assert(names.issubset(state_vars))
+        state_vars.remove("pid")
+        assert names.issubset(state_vars)
 
         # All state variables (except pid) should be included
         # or have a default value
         # (evt. få default = null)
         vars_with_value = names.union(self.default_values)
-        assert(state_vars.issubset(vars_with_value))
+        assert state_vars.issubset(vars_with_value)
 
         # All input should be scalars or broadcastable 1D arrays
         values = list(args.values())
@@ -118,7 +139,7 @@ if __name__ == "__main__":
     print("len   :", len(S))
     print("pid   :", S.pid)
     print("alive :", S.alive)
-    print("weight:", S.weight)  # type: ignore
+    print("weight:", S.weight)
 
     S.compactify()
 
