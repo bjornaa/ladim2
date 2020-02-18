@@ -16,11 +16,10 @@ import numpy as np  # type: ignore
 # Kan bruke Sequence[Scalar] for 1D arrays o.l.
 # kan sette dette som Vector?
 Scalar = Union[float, int, bool]
-#Arraylike = Union[np.ndarray, List[Scalar], Scalar]
-#Variables = Dict[str, Arraylike]
+# Arraylike = Union[np.ndarray, List[Scalar], Scalar]
+# Variables = Dict[str, Arraylike]
 DType = Union[str, type]
 Vector = Union[Scalar, Sequence[Scalar]]
-
 
 
 class State(Sized):
@@ -32,8 +31,8 @@ class State(Sized):
 
         These extra variables should be given by their dtype
 
-        Mandatory state variables: pid, alive, X, Y, Z
-        with predefined dtypes int, bool and float
+        Mandatory state variables: pid, alive, active, X, Y, Z
+        with predefined dtypes int, 2*bool, and 3*float
         should not be initialized.
 
         attributes:
@@ -48,6 +47,7 @@ class State(Sized):
         self.variables = ["pid", "alive", "X", "Y", "Z"]
         self.pid = np.array([], int)
         self.alive = np.array([], bool)
+        self.active = np.array([], bool)
         self.X = np.array([], float)
         self.Y = np.array([], float)
         self.Z = np.array([], float)
@@ -57,7 +57,9 @@ class State(Sized):
             setattr(self, var, np.array([], dtype=dtype))
 
         # self.variables: List(str) = list(dtypes)
-        self.default_values = {"alive": np.array(True, dtype=bool)}
+        self.default_values = dict(
+            alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
+        )
         # Kan sette alle andre default = 0
 
     def set_default_values(self, **args: Union[float, int, bool]) -> None:
@@ -123,3 +125,10 @@ class State(Sized):
 
     def __len__(self) -> int:
         return len(self.X)
+
+    def update(self, velocity, dt):
+        X1 = self.X + dt*velocity.U
+        Y1 = self.Y + dt*velocity.V
+
+        self.X = np.where(self.active, X1, self.X)
+        self.Y = np.where(self.active, Y1, self.Y)
