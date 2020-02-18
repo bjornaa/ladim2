@@ -127,8 +127,8 @@ class State(Sized):
         return len(self.X)
 
     def update(self, velocity, dt):
-        X1 = self.X + dt*velocity.U
-        Y1 = self.Y + dt*velocity.V
+        X1 = self.X + dt * velocity.U
+        Y1 = self.Y + dt * velocity.V
 
         self.X = np.where(self.active, X1, self.X)
         self.Y = np.where(self.active, Y1, self.Y)
