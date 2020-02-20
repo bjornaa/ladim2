@@ -2,11 +2,7 @@
 Class for the state of the model
 """
 
-# import sys
-# import os
-# import importlib
-# import logging
-from typing import List, Dict, Union, Sized, Sequence
+from typing import List, Dict, Union, Sized, Sequence, Tuple
 
 import numpy as np  # type: ignore
 
@@ -73,7 +69,7 @@ class State(Sized):
                 raise TypeError(f"Default value for {var} should be scalar")
             self.default_values[var] = np.array(value, dtype=getattr(self, var).dtype)
 
-    def append(self, **args: Vector):
+    def append(self, **args: Vector) -> None:
         """Append particles to the State object"""
 
         # Accept only state variables (except pid)
@@ -116,7 +112,7 @@ class State(Sized):
         for name, value in zip(list(ok_vars), values):
             setattr(self, name, np.concatenate((getattr(self, name), value)))
 
-    def compactify(self):
+    def compactify(self) -> None:
         """Remove dead particles"""
         alive = self.alive.copy()
         for var in self.variables:
@@ -126,9 +122,12 @@ class State(Sized):
     def __len__(self) -> int:
         return len(self.X)
 
-    def update(self, velocity, dt):
-        X1 = self.X + dt * velocity.U
-        Y1 = self.Y + dt * velocity.V
+    def update(self, velocity: Tuple[np.ndarray, np.ndarray], dt: int) -> None:
+        # X1 = self.X + dt * velocity.U
+        # Y1 = self.Y + dt * velocity.V
+        X1 = self.X + dt * velocity[0]
+        Y1 = self.Y + dt * velocity[1]
 
+        # Only update active particles
         self.X = np.where(self.active, X1, self.X)
         self.Y = np.where(self.active, Y1, self.Y)
