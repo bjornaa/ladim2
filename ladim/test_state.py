@@ -13,7 +13,7 @@ def test_minimal():
     S = State()
     assert len(S) == 0
     assert S.npid == 0
-    assert set(S.variables) == {"pid", "alive", "X", "Y", "Z"}
+    assert set(S.variables) == {"pid", "X", "Y", "Z", "active", "alive"}
     assert S.pid.dtype == int
     assert S.alive.dtype == bool
     assert S.X.dtype == np.float64
@@ -46,6 +46,7 @@ def test_init_args_dict():
 def test_set_default():
     S = State(age=float, stage=int)
     S.set_default_values(age=0, stage=1, Z=5)
+    assert S.default_values["active"] == True
     assert S.default_values["alive"] == True
     assert S.default_values["age"] == 0
     assert S.default_values["stage"] == 1
@@ -84,20 +85,27 @@ def test_append_scalar():
     assert len(state) == 1
     assert state.npid == 1
     assert np.all(state.pid == [0])
+    assert np.all(state.active == [True])
     assert np.all(state.alive == [True])
     assert np.all(state.X == [200])
 
 
 def test_append_array():
+    """Append an array to a non-empty state"""
     state = State()
-    state.append(X=np.array([200, 201]), Y=100, Z=[5, 10])
-    assert len(state) == 2
-    assert state.npid == 2
-    assert np.all(state.pid == [0, 1])
-    assert np.all(state.alive == [True, True])
-    assert np.all(state.X == [200.0, 201.0])
-    assert np.all(state.Y == [100.0, 100.0])
-    assert np.all(state.Z == [5.0, 10.0])
+    state.append(X=200, Z=5, Y=100)
+    length = len(state)
+    npid = state.npid
+    X = state.X
+    state.append(X=np.array([201, 202]), Y=110, Z=[5, 10])
+    assert len(state) == length + 2
+    assert state.npid == npid + 2
+    assert np.all(state.pid == [0, 1, 2])
+    assert np.all(state.active == 3*[True])
+    assert np.all(state.alive == 3*[True])
+    assert np.all(state.X == [200, 201.0, 202.0])
+    assert np.all(state.Y == [100.0, 110.0, 110.0])
+    assert np.all(state.Z == [5.0, 5.0, 10.0])
 
 
 def test_extra_variables():
@@ -139,11 +147,14 @@ def test_compactify():
     assert len(S) == 2
     S.append(X=[21, 22], Y=[3, 4])
     assert len(S) == 4
-    # Remove second particle
+    # Kill second particle
     S.alive[1] = False
     S.compactify()
     assert len(S) == 3
+    assert S.npid == 4
+    assert np.all(S.active == True)
     assert np.all(S.alive == True)
     assert np.all(S.pid == [0, 2, 3])
     assert np.all(S.X == [10, 21, 22])
+    # The arrays should be contiguous after removing an element
     assert S.X.flags["C_CONTIGUOUS"]

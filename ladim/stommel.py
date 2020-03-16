@@ -68,8 +68,6 @@ def psi(X, Y):
 
 
 def initial_release():
-    Npar = 720
-
     x0 = lambda_ / 3.0
     y0 = b / 3.0
     r1 = 800 * km

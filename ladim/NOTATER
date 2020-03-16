@@ -1,0 +1,12 @@
+2020-03-16
+
+Lage en state-klasse med bare fysiske variable?
+pid, X, Y, Z, active, alive
+
+Forenkler nye partikler og oppdatering.
+
+Hva med biologiske state-variable?
+Må følge med på kompaktifisering. Tilby en metode for dette?
+Alternativt fortsette med biologiske state-variable i state.py?
+
+Mangler active-variabel legger den til.

@@ -40,14 +40,13 @@ class State(Sized):
 
         # Start with empty state, with correct variables of correct type
         self.npid: int = 0
-        self.variables = ["pid", "alive", "X", "Y", "Z"]
+        self.variables = ["pid", "X", "Y", "Z", "active", "alive"]
         self.pid = np.array([], int)
-        self.alive = np.array([], bool)
-        self.active = np.array([], bool)
         self.X = np.array([], float)
         self.Y = np.array([], float)
         self.Z = np.array([], float)
-
+        self.active = np.array([], bool)
+        self.alive = np.array([], bool)
         for var, dtype in args.items():
             self.variables.append(var)
             setattr(self, var, np.array([], dtype=dtype))
@@ -56,7 +55,6 @@ class State(Sized):
         self.default_values = dict(
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
-        # Kan sette alle andre default = 0
 
     def set_default_values(self, **args: Union[float, int, bool]) -> None:
         """Set default values for state variables"""
