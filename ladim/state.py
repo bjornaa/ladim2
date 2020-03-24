@@ -118,9 +118,11 @@ class State(Sized):
             setattr(self, var, A[alive])
 
     def __len__(self) -> int:
-        return len(self.X)
+        return len(self.pid)
 
+    # Ikke bra, velocity passer kanskje ikke koordsys.
     def update(self, velocity: Tuple[np.ndarray, np.ndarray], dt: int) -> None:
+
         # X1 = self.X + dt * velocity.U
         # Y1 = self.Y + dt * velocity.V
         X1 = self.X + dt * velocity[0]

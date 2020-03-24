@@ -1,0 +1,90 @@
+LADiM 2
+-------
+
+Desiderata:
+
+1) Skal ha en baklengs kompabilitetsmode:
+Kommando ladim som leser en konfigurasjon fra yaml-fil og kan ta inn plug-in
+ibm og gridforce. Mindre oppgraderinger av formater er OK.
+
+2) Skal ha en application program interface (API) som gjør ladim tilgjengelig som
+en python-pakke. F.eks ved import ladim, import ladim.api eller lignende.
+
+Begrunnelse for 1) er opplagt, LADiM skal fortsatt være brukbar for de oppgaver som
+gjøres i dag med eventuelt små endringer.
+
+Begrunnelse for 2) er økt fleksibilitet.
+
+Eksempel: Dersom man i dag ønsker å testehorisontalt varierende diffusjonskoeff.
+så må man først bestemme seg for hvordan det skal spesifiseres i yaml-filen, deretter
+modifisere config-prosesseringsmodulen (som begynner å bli komplisert pga. baklengs kompabilitet) og deretter endre tracker-modulen. Alternativt hacke rundt i koden.
+Med en fornuftig API kan en lage et hoveprogram som bruker de komponentene som trengs.
+
+Eksempel: Kobling av lakselusdrift og populasjonsdynamisk anleggsmodell. Kunne kanskje
+teoretisk gjøres med anleggsmodell i en ibm med inaktive partikler, men tilbakekobling
+mot klekking av nauplier blir vanskelig inn i en release-fil som leses initielt.
+API-versjon vil kunne brukes av et hovedprogram som kobler LADiM og en
+(populasjonsdynamisk eller individbasert) anleggsmodell hvor partikkelslipp håndteres
+dynamisk.
+
+Mange andre muligheter, f.eks. bruke LADiM til å generere strømlinjer eller "moving
+vectors" eller annen fancy visualisering av strømfelt. Simuleringer med flere typer partikler (t.d. fiskelarver og olje) med ulike IBM-er.
+
+Hva skal inngå?
+---------------
+
+i) state-modul
+
+Holde på tilstandsvariable spesielt fysiske, 3D posisjon, "active" og "alive".
+Videre mulighet for ekstra (f.eks. biologiske) tilstandsvariable for å støtte
+IBM-er av den typen vi har nå. Mer avanserte IBM-er kan velge å ikke bruke denne
+muligheten og selv holde styr på sine variable. LADiM blir her bare et bibliotek
+som brukes for å flytte på partiklene.
+Metoder:
+init – definere variable
+append – legge til flere partikler
+compactify – fjerne "døde" partikler
+
+ii) tracker-modul
+
+Flytte partiklene basert på drivkrefter. Ulike numeriske metoder. Mulighet for
+variabel diffusjon og korreksjons-"hastighet".
+Må kjenne koordinatsystemets metrikk, bunntopografi og landmaske, hastighet
+diffusjonskeff.
+Metoder:
+  update(state,...) : Oppdatere tilstanden.
+  ulike adveksjonsmetoder, diffusjon.
+
+Kommentar: update kunne også vært en metode til en state-klasse. Ulempen er at da må
+state avhenge av koordinatsyst, forccing, ...
+Får også muligheten til å håndtere oppdatering uavhengig av en tracker-modul, f,eks.
+ved analytiske strømfelt (jfr, Stommel-eksempel)
+
+iii) gridforce
+
+Tracker-modul avhenger av grid=koord.syst og forcing. Rimelig å kreve at de er klasser
+som oppfyller en oppgitt protokoll. Dagens gridforce (evt. modifisert) bør kunne brukes.
+Men hovedprogram kan velge å håndtere dette selv.
+
+iv) particle release
+
+Dette bør gå greitt via append-metode til state. Må kunne håndtere default verdier for
+eventuelt ekstra variable (t.d. age=0 for alder). Et hovedprogram kan velge å bruke
+release-modulen, men kan velge en tilpasset og mindre komplisert og/eller mer dynamisk
+løsning.
+
+v) lagring
+
+Her vil nåværende løsning tilbys dersom en ønsker en sekvens av partikkelfordelinger.
+Men dersom partikler ikke dør kan et enklere 2D matrise format være et alternativ. Andre
+format enn netcdf kan være aktuelle. Kanskje en ikke ønsker å lagre, programmet animerer
+partiklene direkte.
+
+vi) Konfigurering
+
+Konfigurering må være "ortogonal". Kan gjerne ha sentral yaml-konfigurering, men den må
+ikke rote sammen de ulike komponentene. Mer tilpassede program gir mindre behov for
+standard konfigureringsmaskineri.
+
+Målet er å få et spekter hvor en kan bruke en ferdig LADiM-modell som før, bruke plugins
+og eventuelt lage eget hovedprogram som bruker state og eventuelt så mange ferdige moduler en ønsker.

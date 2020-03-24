@@ -17,8 +17,7 @@ alfa = beta / r  #                                             [m-1]
 lambda_ = 10000 * km  # West-east extent of domain             [m]
 b = 6300 * km  #        South-north extent of domain           [m]
 F = 0.1  #              Wind stress amplitude                  [N m-2]
-rho = 1025.0  #         Density [kg/m3]
-
+rho = 1025.0  #         Density                                [kg/m3]
 gamma = F * pi / (r * b)  #                                    [kg m2 s-1]
 G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  #             [m2 s-1]
 
@@ -30,9 +29,7 @@ q = 1 - p
 # --- Simulation ---
 day = 86400
 simulation_time = 1736 * day
-# simulation_time = 200 * day
 dt = day
-# dt = 500000
 Nsteps = simulation_time // dt
 
 
