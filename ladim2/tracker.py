@@ -104,7 +104,7 @@ class Tracker:
         state.X = X
         state.Y = Y
 
-    #@njit
+    # @njit
     def EF(self, X, Y, Z, force) -> Velocity:
         """Euler-Forward advective velocity"""
 

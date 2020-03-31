@@ -101,8 +101,8 @@ def test_append_array():
     assert len(state) == length + 2
     assert state.npid == npid + 2
     assert np.all(state.pid == [0, 1, 2])
-    assert np.all(state.active == 3*[True])
-    assert np.all(state.alive == 3*[True])
+    assert np.all(state.active == 3 * [True])
+    assert np.all(state.alive == 3 * [True])
     assert np.all(state.X == [200, 201.0, 202.0])
     assert np.all(state.Y == [100.0, 110.0, 110.0])
     assert np.all(state.Z == [5.0, 5.0, 10.0])

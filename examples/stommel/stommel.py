@@ -9,7 +9,7 @@ from ladim2 import analytical
 
 # Global variables (parameters)
 
-km = 1000.0 #                                                  [m]
+km = 1000.0  #                                                  [m]
 D = 200.0  #            Depth                                  [m]
 r = 1.0e-6  #           Bottom friction coefficient            [s-1]
 beta = 1.0e-11  #       Coriolis derivative                    [m-1 s-1]
