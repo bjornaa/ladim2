@@ -1,7 +1,7 @@
 import numpy as np  # type: ignore
 import pytest  # type: ignore
 
-from state import State  # type: ignore
+from ladim2.state import State  # type: ignore
 
 # ------------
 # __init__

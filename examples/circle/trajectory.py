@@ -5,8 +5,8 @@ from typing import Tuple, Sequence
 
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
-from state import State
-import analytical
+from ladim2.state import State
+from ladim2 import analytical
 
 a: float = 0.01
 # dt: int = 0.3   # seconds    <1% error EF

@@ -11,7 +11,7 @@
 # import logging
 from typing import Any, Tuple, Dict
 import numpy as np
-from state import State
+from .state import State
 
 from numba import njit
 
@@ -85,6 +85,7 @@ class Tracker:
         Y1[I] = Y[I]
         # Kill particles trying to move out of the grid
         state.alive[I] = False
+        state.active[I] = False  # Not necessary if they are removed
 
         # if self.active_check:
         # Do not move inactive particles

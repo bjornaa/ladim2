@@ -2,8 +2,8 @@ import numpy as np
 from numpy import pi, exp, sin, cos
 import matplotlib.pyplot as plt
 
-from state import State
-from tracker import Tracker
+from ladim2.state import State
+from ladim2.tracker import Tracker
 
 
 def main():

@@ -5,7 +5,7 @@ from typing import Tuple, Union, Sequence, Callable
 
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
-from state import State
+from .state import State
 
 Vector = Union[float, np.ndarray]
 

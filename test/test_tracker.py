@@ -1,7 +1,6 @@
 import numpy as np
-from ladim.state import State
-
-# from ladim.tracker import Tracker
+from ladim2.state import State
+from ladim2.tracker import Tracker
 
 
 class Grid:
@@ -12,8 +11,9 @@ class Grid:
         self.xmax = self.imax - 1.0
         self.ymin = 0.0
         self.ymax = self.jmax - 1.0
+        self.dt = 600
 
-    def sample_metric(self, X, Y):
+    def metric(self, X, Y):
         return 100 * np.ones_like(X), 100 * np.ones_like(Y)
 
     def sample_depth(self, X, Y):
@@ -29,8 +29,8 @@ class Grid:
         return 5.0 * np.ones(len(X)), 60.0 * np.ones(len(X))
 
 
-class Forcing:
-    def __init__(self):
+class Forcing():
+    def __init__(self, grid):
         pass
 
     def velocity(self, X, Y, Z):
@@ -48,32 +48,40 @@ def test_out_of_area():
     """
 
     config = dict(
-        warm_start_file="",
         start_time=np.datetime64("2017-02-10 20"),
-        dt=600,
         particle_variables=[],
-        ibm_module="ladim.ibms.ibm_salmon_lice",
+        #ibm_module="ladim.ibms.ibm_salmon_lice",
         ibm_variables=["super", "age"],
         advection="EF",
         diffusion=False,
     )
+    state = State()
     grid = Grid()
-    state = State(config, grid)
-    forcing = Forcing()
+    forcing = Forcing(grid=grid)
+    tracker = Tracker(config)
 
     state.pid = np.array([0, 1, 2])
     state.X = np.array([30, grid.imax - 2.1, 11.1])
     state.Y = np.array([30, grid.jmax - 2.1, 22.2])
     state.Z = 5.0 * np.ones(len(state.pid))
-    state["super"] = np.array([1001.0, 1002.0, 1003.0])
-    state["age"] = np.zeros(len(state.pid))
+    #state["super"] = np.array([1001.0, 1002.0, 1003.0])
+    state.super = np.array([1001.0, 1002.0, 1003.0])
+    state.age = np.zeros(len(state.pid))
+    # Disse burde bli initiert, virker bare ved append?
+    state.alive = np.array([True, True, True])
+    state.active = np.array([True, True, True])
 
-    state.update(grid, forcing)
+    tracker.update(state, grid, forcing)
+
+    # Killed particle 1, out-of-area
+    # Question: should tracker.update do a compactify?
+    assert np.all(state.alive == [True, False, True])
+    assert np.all(state.active == [True, False, True])
 
     # Killed particle out-of-area
-    assert len(state.pid) == 2
-    assert state.pid[0] == 0
-    assert state.pid[1] == 2
+    # assert len(state.pid) == 2
+    # assert state.pid[0] == 0
+    # assert state.pid[1] == 2
 
 
 if __name__ == "__main__":
