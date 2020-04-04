@@ -5,7 +5,7 @@
 # Bjørn Ådlandsvik, <bjorn@imr.no>
 # Institute of Marine Research
 #
-# Licenced under the MIT license
+# Licensed under the MIT license
 # ------------------------------------
 
 # import logging
@@ -22,7 +22,8 @@ Velocity = Tuple[np.ndarray, np.ndarray]
 class Tracker:
     """The physical particle tracking kernel"""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    # def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, **config) -> None:
         # logging.info("Initiating the particle tracking")
         # self.dt = grid["dt"]
         self.advection = config.get("advection", None)

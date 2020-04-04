@@ -1,0 +1,14 @@
+Remake of the old ladim line example
+
+Will have two versions:
+
+1) line.py
+A script that calls the necessary modules with configuration
+in the script.
+
+Presently no output netcdf file.
+
+2) As old ladim example
+A configuration file and release file as input to a ladim2 application
+
+Perhaps also a third version, as a jupyter notebook

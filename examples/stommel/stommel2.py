@@ -10,12 +10,11 @@ def main():
 
     # --- Simulation ---
     Nsteps = 1736
-    config = dict(advection="EF")
 
     # --- Setup ---
     g = Grid()
     f = Forcing(grid=g)
-    tracker = Tracker(config)
+    tracker = Tracker(advection="EF")
     state = State()
 
     # Initialize

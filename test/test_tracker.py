@@ -45,7 +45,7 @@ def test_advection():
     state = State()
     grid = Grid()
     forcing = Forcing(grid=grid)
-    tracker = Tracker(config=dict(advection="EF"))
+    tracker = Tracker(advection="EF")
 
     X = [30, 22.2, 11.1]
     Y = [40, 42, 45]
@@ -63,7 +63,8 @@ def test_out_of_area():
     state = State()
     grid = Grid()
     forcing = Forcing(grid=grid)
-    tracker = Tracker(config=dict(advection="EF"))
+    config = dict(advection="EF")
+    tracker = Tracker(**config)
 
     X = [30, grid.imax - 2.1, 11.1]
     Y = [30, grid.jmax - 2.1, 22.2]

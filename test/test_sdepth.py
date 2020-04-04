@@ -26,6 +26,8 @@ C_random.sort()
 # Test the sdepth function
 # --------------------------
 
+# --- Default = Vtransform=1
+
 
 def test1D_unstretched():
     """C = S should give equally distributed sigma-coordinates"""
@@ -64,7 +66,7 @@ def test_shape():
     assert Z.shape == (len(C), Mp, Lp)
 
 
-# # -------------------------------------------------
+# --- Vtransform=2
 
 
 # class test_sdepth_Vtransform2(unittest.TestCase):
@@ -114,10 +116,11 @@ def test_shape_Vtransform2():
     assert Z.shape == (N, Mp, Lp)
 
 
-# # ------------------------
+# -------------
+# s_stretch
+# -------------
 
-
-# class test_s_stretch(unittest.TestCase):
+# --- Default = Vstretching=1
 
 
 def test_valid_output():
@@ -147,7 +150,7 @@ def test_valid_output_w():
     assert len(C) == N + 1
 
 
-# class test_Vstretching4(unittest.TestCase):
+# --- Vstretching=4
 
 
 def test_valid_output_stretch4():
