@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import ladim2
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
+from ladim2.timer import Timer
 from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 
@@ -27,7 +28,8 @@ dt = 3600  # seconds
 # -------------------
 
 g = Grid(grid_file=data_file, dt=dt)
-f = Forcing(grid=g, forcing_file=data_file, start_time=start_time, stop_time=stop_time)
+t = Timer(start=start_time, stop=stop_time, dt=dt)
+f = Forcing(grid=g, timer=t, forcing_file=data_file)
 
 # Make initial state
 
@@ -48,8 +50,8 @@ state = State()
 state.append(X=X0, Y=Y0, Z=Z0)
 
 # Number of time steps
-period = np.datetime64(stop_time) - np.datetime64(start_time)
-nsteps = period // np.timedelta64(dt, "s")
+# period = np.datetime64(stop_time) - np.datetime64(start_time)
+# nsteps = period // np.timedelta64(dt, "s")
 
 tracker = Tracker(advection="EF")
 
@@ -60,9 +62,9 @@ tracker = Tracker(advection="EF")
 
 # Mer konsistent å bruke forcing=f,
 # alternativ: bruke force overalt i stedet for forcing
-for n in range(nsteps):
+for n in range(t.Nsteps):
     # if n % 10 == 0: print(n)
-    tracker.update(state, grid=g, force=f)
+    tracker.update(state, grid=g, timer=t, force=f)
 
 
 # --------------

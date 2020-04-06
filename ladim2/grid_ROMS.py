@@ -53,8 +53,6 @@ class Grid:
             raise SystemExit(1)
         ncid.set_auto_maskandscale(False)
 
-        self.dt = kwargs["dt"]
-
         # Subgrid, only considers internal grid cells
         # 1 <= i0 < i1 <= imax-1, default=end points
         # 1 <= j0 < j1 <= jmax-1, default=end points

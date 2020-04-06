@@ -46,12 +46,12 @@ class Tracker:
         # self.active_check = 'active' in config['ibm_variables']
 
     # def move_particles(self, grid: Grid, force: Forcing, state: State) -> None:
-    def update(self, state: State, grid, force) -> None:
+    def update(self, state: State, grid, timer, force) -> None:
         """Move the particles"""
 
         X, Y, Z = state.X, state.Y, state.Z
         dx, dy = grid.metric(X, Y)
-        dt = grid.dt
+        dt = timer.dt
         # self.num_particles = len(X)
         # Make more elegant, need not do every time
         # Works for C-grid

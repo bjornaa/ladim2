@@ -11,7 +11,6 @@ class Grid:
         self.xmax = self.imax - 1.0
         self.ymin = 0.0
         self.ymax = self.jmax - 1.0
-        self.dt = 600
 
     def metric(self, X, Y):
         return 100 * np.ones_like(X), 100 * np.ones_like(Y)
@@ -29,8 +28,13 @@ class Grid:
         return 5.0 * np.ones(len(X)), 60.0 * np.ones(len(X))
 
 
+class Timer:
+    def __init__(self):
+        self.dt = 600
+
+
 class Forcing:
-    def __init__(self, grid):
+    def __init__(self, grid, timer):
         pass
 
     def velocity(self, X, Y, Z):
@@ -44,14 +48,15 @@ def test_advection():
     """Check advection with constant velocity"""
     state = State()
     grid = Grid()
-    forcing = Forcing(grid=grid)
+    timer = Timer()
+    forcing = Forcing(grid=grid, timer=timer)
     tracker = Tracker(advection="EF")
 
     X = [30, 22.2, 11.1]
     Y = [40, 42, 45]
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update(state, grid, timer, forcing)
 
     assert all(state.X == [x + 3 for x in X])
     assert all(state.Y == [y + 6 for y in Y])
@@ -62,7 +67,8 @@ def test_out_of_area():
 
     state = State()
     grid = Grid()
-    forcing = Forcing(grid=grid)
+    timer = Timer()
+    forcing = Forcing(grid=grid, timer=timer)
     config = dict(advection="EF")
     tracker = Tracker(**config)
 
@@ -71,7 +77,7 @@ def test_out_of_area():
 
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update(state, grid, timer, forcing)
 
     # Killed particle 1, out-of-area
     # Question: should tracker.update do a compactify?

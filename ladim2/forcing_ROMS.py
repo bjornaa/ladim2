@@ -24,13 +24,15 @@ class Forcing:
 
     """
 
-    def __init__(self, grid, forcing_file, start_time, stop_time, **args):
+    def __init__(self, grid, timer, forcing_file, **args):
 
         logging.info("Initiating forcing")
 
         self.grid = grid  # Get the grid objec.
         # self.config = config["gridforce"]
         # self.ibm_forcing = config["ibm_forcing"]
+
+        self.timer = timer
 
         files = self.find_files(forcing_file)
         print("files = ", files)
@@ -40,8 +42,8 @@ class Forcing:
             raise SystemExit(3)
         logging.info("Number of forcing files = {}".format(numfiles))
 
-        self.start_time = np.datetime64(start_time)
-        self.stop_time = np.datetime64(stop_time)
+        #self.start_time = .start_time)
+        #self.stop_time = np.datetime64(t.stop_time)
 
         # ---------------------------
         # Overview of all the files
@@ -176,15 +178,15 @@ class Forcing:
         logging.info(f"Last forcing time = {time1}")
         # start_time = self.start_time)
         # stop_time = self.stop_time)
-        dt = np.timedelta64(self.grid.dt, "s")
+        dt = np.timedelta64(self.timer.dt, "s")
 
         # Check that forcing period covers the simulation period
         # ------------------------------------------------------
 
-        if time0 > self.start_time:
+        if time0 > self.timer.start_time:
             logging.error("No forcing at start time")
             raise SystemExit(3)
-        if time1 < self.stop_time:
+        if time1 < self.timer.stop_time:
             logging.error("No forcing at stop time")
             raise SystemExit(3)
 
@@ -192,8 +194,9 @@ class Forcing:
         # --------------------------------------------
         steps = []  # Model time step of forcing
         for t in all_frames:
-            dtime = np.timedelta64(t - self.start_time, "s")
-            steps.append(int(dtime / dt))
+            #dtime = np.timedelta64(t - self.start_time, "s")
+            #steps.append(int(dtime / dt))
+            steps.append(self.timer.time2step(t))
 
         file_idx = dict()  # Dårlig navn
         frame_idx = dict()
