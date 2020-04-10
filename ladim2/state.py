@@ -55,6 +55,7 @@ class State(Sized):
         self.default_values = dict(
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
+        self.particle_variables: Dict[str, Vector] = dict()
 
     def set_default_values(self, **args: Union[float, int, bool]) -> None:
         """Set default values for state variables"""
@@ -119,6 +120,10 @@ class State(Sized):
 
     def __len__(self) -> int:
         return len(self.pid)
+
+    # Allow read only state[var]
+    def __getitem__(self, name: str) -> None:
+        return getattr(self, name)
 
     # Ikke bra, velocity passer kanskje ikke koordsys.
     def update(self, velocity: Tuple[np.ndarray, np.ndarray], dt: int) -> None:

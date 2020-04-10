@@ -59,6 +59,7 @@ class Timer:
 
         self.Nsteps = (self.stop_time - self.start_time) // self._dt
 
+
     def time2step(self, time_: Time) -> int:
         """Timestep from time
 
@@ -71,7 +72,7 @@ class Timer:
         """Return time in iso 8601 format from a time step"""
         return str(self.start_time + n * self._dt)
 
-    def step2nctime(self, n: int, unit: str = "s") -> Tuple[float, str]:
+    def step2nctime(self, n: int, unit: str = "s") -> float:
         """
         Return value and time from a time step following the netcdf standard
 
@@ -79,5 +80,8 @@ class Timer:
         """
         delta = self.start_time + n * self._dt - self.reference_time
         value = delta / np.timedelta64(1, unit)
-        unit_string = f"{Timer.unit_table[unit]} since {self.reference_time}"
-        return value, unit_string
+        # unit_string = f"{Timer.unit_table[unit]} since {self.reference_time}"
+        return value
+
+    def cf_units(self, unit):
+        return f"{Timer.unit_table[unit]} since {self.reference_time}"

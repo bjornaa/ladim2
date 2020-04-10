@@ -5,75 +5,95 @@
 # 2020-04-04
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-import ladim2
+# import ladim2
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
 from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
+from output import Output
 
 # --------------
 # Settings
 # --------------
 
-data_file = "../data/ocean_avg_0014.nc"
 start_time = "1989-05-24 12"
 stop_time = "1989-06-20"
+reference_time = "1970-01-01"
+# particle_variables=['release_X']
+data_file = "../data/ocean_avg_0014.nc"
+advection = "EF"
 dt = 3600  # seconds
+output_file = "out.nc"
+output_frequency = [3, "h"]
 
 # -------------------
 # Initialization
 # -------------------
 
-g = Grid(grid_file=data_file, dt=dt)
-t = Timer(start=start_time, stop=stop_time, dt=dt)
-f = Forcing(grid=g, timer=t, forcing_file=data_file)
+state = State()
+grid = Grid(grid_file=data_file, dt=dt)
+timer = Timer(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
+force = Forcing(grid=grid, timer=timer, forcing_file=data_file)
+tracker = Tracker(dt=dt, advection=advection)
 
-# Make initial state
+# Make initial state, num_particles points along a line
 
 # End points of line in grid coordinates
 x0, x1 = 63.55, 123.45
 y0, y1 = 90.0, 90
-
-Npart = 1000  # Number of particles along the line
-
-# Initial particle positions
-X0 = np.linspace(x0, x1, Npart)
-Y0 = np.linspace(y0, y1, Npart)
+num_particles = 1000
+X0 = np.linspace(x0, x1, num_particles)
+Y0 = np.linspace(y0, y1, num_particles)
 Z0 = 5  # Fixed particle depth
-
-# Vil slå de to under sammen, initiere State med partikkelfordeling
-# uten å ødelegge for initiering med IBM-variable
-state = State()
 state.append(X=X0, Y=Y0, Z=Z0)
 
-# Number of time steps
-# period = np.datetime64(stop_time) - np.datetime64(start_time)
-# nsteps = period // np.timedelta64(dt, "s")
+# Particle variables
+state.particle_variables = dict(X0=X0)
 
-tracker = Tracker(advection="EF")
+
+# Define output format
+output_instance_variables = dict(
+    pid=dict(ncformat="i4", long_name="particle identifier"),
+    X=dict(ncformat="f4", long_name="particle X-coordinate"),
+    Y=dict(ncformat="f4", long_name="particle Y-coordinate"),
+    Z=dict(
+        ncformat="f4",
+        long_name="particle depth",
+        standard_name="depth_below_surface",
+        units="m",
+        positive="down",
+    ),
+)
+
+output_particle_variables = dict(
+    X0=dict(ncformat="f4", long_name="X-coordinate of particle release")
+)
+
+output = Output(
+    state=state,
+    timer=timer,
+    filename=output_file,
+    frequency=output_frequency,
+    instance_variables=output_instance_variables,
+    particle_variables=output_particle_variables,
+)
+
 
 # -------------
 # Time loop
 # -------------
 
-
 # Mer konsistent å bruke forcing=f,
 # alternativ: bruke force overalt i stedet for forcing
-for n in range(t.Nsteps):
-    # if n % 10 == 0: print(n)
-    tracker.update(state, grid=g, timer=t, force=f)
-
+for step in range(timer.Nsteps):
+    tracker.update(state, grid=grid, force=force)
+    if step % output.frequency == 0:
+        output.write(step)
 
 # --------------
 # Finalisation
 # --------------
 
-# Plot the initial particle distribution
-plt.plot(X0, Y0, ".", color="cyan")
-# Plot the final particle distribution
-plt.plot(state.X, state.Y, ".", color="red")
-
-plt.show()
+output.close()
