@@ -14,28 +14,34 @@ def test_minimal():
     assert len(S) == 0
     assert S.npid == 0
     assert set(S.variables) == {"pid", "X", "Y", "Z", "active", "alive"}
+    assert S.instance_variables == {"pid", "X", "Y", "Z", "active", "alive"}
+    assert S.particle_variables == set()
     assert S.pid.dtype == int
-    assert S.alive.dtype == bool
+    assert all(S.pid == [])
     assert S.X.dtype == np.float64
+    assert all(S.variables["X"] == [])
+    assert all(S["X"] == [])
+    assert all(S.X == [])
+    assert S.alive.dtype == bool
     assert S.Y.dtype == float
-    assert S.Z.dtype == "float"
+    assert S.Z.dtype == "f8"
     assert S.default_values["alive"] == True
-    assert np.all(S.Y == [])
 
 
 def test_init_args():
     """Init State with extra variables"""
-    S = State(age=float, stage=int)
+    S = State(
+        variables=dict(age=float, stage=int, release_time=np.datetime64),
+        particle_variables=["release_time"],
+    )
+    assert 'age' in S.instance_variables
     assert S.age.dtype == float
-    assert np.all(S.age == [])
-
-
-def test_init_args_dict():
-    """Init state with extra variables in a dictionary"""
-    D = {"age": np.float64, "stage": int}
-    S = State(**D)
-    assert S.age.dtype == float
-    assert np.all(S.age == [])
+    assert S.stage.dtype == int
+    assert all(S.age == [])
+    assert S.particle_variables == {'release_time'}
+    assert S.release_time.dtype == np.datetime64
+    #cassert call(S.release_time == [])  # Does not work
+    assert np.all(S.release_time == np.array([], np.datetime64))
 
 
 # -------------------------
@@ -44,7 +50,7 @@ def test_init_args_dict():
 
 
 def test_set_default():
-    S = State(age=float, stage=int)
+    S = State(variables=dict(age=float, stage=int))
     S.set_default_values(age=0, stage=1, Z=5)
     assert S.default_values["active"] == True
     assert S.default_values["alive"] == True
@@ -55,21 +61,21 @@ def test_set_default():
 
 def test_set_default_err1():
     """Trying to set default for an undefined variable"""
-    S = State(age=float)
+    S = State(variables={"age": float})
     with pytest.raises(ValueError):
         S.set_default_values(length=4.3)
 
 
 def test_set_default_err2():
     """Trying to set default for pid"""
-    S = State(age=float)
+    S = State(dict(age=float))
     with pytest.raises(ValueError):
         S.set_default_values(pid=4)
 
 
 def test_set_default_err3():
     """Trying to set an array as default value"""
-    S = State(length=float)
+    S = State(dict(length=float))
     with pytest.raises(TypeError):
         S.set_default_values(length=[1.2, 4.3])
 
@@ -109,7 +115,7 @@ def test_append_array():
 
 
 def test_extra_variables():
-    state = State(age=float, stage="int")
+    state = State(dict(age=float, stage="int"))
     assert len(state) == 0
     assert state.age.dtype == float
     assert state.stage.dtype == int
@@ -120,19 +126,25 @@ def test_extra_variables():
     assert np.all(state.stage == [4])
 
 
-def test_append_illegal_variable():
+def test_append_nonvariable():
     """Append an undefined variable"""
-    state = State(age=float)
+    state = State(dict(age=float))
     with pytest.raises(ValueError):
         state.append(X=1, Y=2, Z=3, age=0, length=20)
 
 
 def test_missing_default():
-    state = State(age=float, stage=int)
+    state = State(dict(age=float, stage=int))
     # No default for stage
     state.set_default_values(age=0.0)
     with pytest.raises(TypeError):
         state.append(X=1, Y=2, Z=3)
+
+def test_not_append_pid():
+    """Can not append to pid"""
+    S = State()
+    with pytest.raises(ValueError):
+        S.append(X=10, Y=20, Z=5, pid=101)
 
 
 # --------------
@@ -158,3 +170,18 @@ def test_compactify():
     assert np.all(S.X == [10, 21, 22])
     # The arrays should be contiguous after removing an element
     assert S.X.flags["C_CONTIGUOUS"]
+
+def test_not_compactify_particle_variables():
+    S = State(variables=dict(age=float, X0=float), particle_variables=['X0'])
+    S.set_default_values(Z=5, age=0)
+    X0 = [10, 11, 12, 13]
+    Y0 = [20, 21, 22, 23]
+    S.append(X=X0, Y=Y0, X0=X0)
+    S.alive[1] = False
+    S.compactify()
+    assert len(S) == 3
+    assert all(S.pid == [0, 2, 3])
+    assert all(S.X == [10, 12, 13])
+    assert len(S.age) == 3
+    # particle_variable X0 is not compactified
+    assert all(S.X0 == X0)

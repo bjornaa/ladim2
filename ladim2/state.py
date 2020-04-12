@@ -7,6 +7,10 @@ from typing import List, Dict, Union, Sized, Sequence, Tuple
 import numpy as np  # type: ignore
 
 
+# From State point-of-view the only difference between
+# instance anc particle variables is that instance variables
+# are affected by the compactify operation
+
 # ------------------------
 
 # Kan bruke Sequence[Scalar] for 1D arrays o.l.
@@ -22,7 +26,7 @@ class State(Sized):
     """The model variables at a given time"""
 
     # def __init__(self, **args: Dict[str, DType]) -> None:
-    def __init__(self, **args: DType) -> None:
+    def __init__(self, variables=None, particle_variables=None) -> None:
         """Initialize the state with dictionary of extra variables
 
         These extra variables should be given by their dtype
@@ -38,24 +42,32 @@ class State(Sized):
 
         """
 
-        # Start with empty state, with correct variables of correct type
-        self.npid: int = 0
-        self.variables = ["pid", "X", "Y", "Z", "active", "alive"]
-        self.pid = np.array([], int)
-        self.X = np.array([], float)
-        self.Y = np.array([], float)
-        self.Z = np.array([], float)
-        self.active = np.array([], bool)
-        self.alive = np.array([], bool)
-        for var, dtype in args.items():
-            self.variables.append(var)
-            setattr(self, var, np.array([], dtype=dtype))
+        # Make variables dictionary (with values = dtype)
+        mandatory_variables = dict(
+            pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
+        )
+        if variables is None:
+            variables = dict()
+        self.variables = dict(mandatory_variables, **variables)
 
-        # self.variables: List(str) = list(dtypes)
+        # Replace the dtypes by empty arrays
+        self.variables = {
+            var: np.array([], dtype) for var, dtype in self.variables.items()
+        }
+
+        # Sets of particle and instance variables
+        if particle_variables is None:
+            self.particle_variables = set()
+        else:
+            self.particle_variables = set(particle_variables)
+        self.instance_variables = set(self.variables) - self.particle_variables
+
+        # Predefined default values
         self.default_values = dict(
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
-        self.particle_variables: Dict[str, Vector] = dict()
+
+        self.npid: int = 0   # Total number of pids used
 
     def set_default_values(self, **args: Union[float, int, bool]) -> None:
         """Set default values for state variables"""
@@ -71,7 +83,7 @@ class State(Sized):
     def append(self, **args: Vector) -> None:
         """Append particles to the State object"""
 
-        # Accept only state variables (except pid)
+        # Accept only instance variables (except pid)
         state_vars = set(self.variables)
         state_vars.remove("pid")
         for name in args:
@@ -80,8 +92,9 @@ class State(Sized):
 
         # ok_vars = arguments and variables with defaults
         # arguments override the defaults
-        ok_vars = self.default_values.copy()
-        ok_vars.update(args)
+        ok_vars = dict(self.default_values, **args)
+        #ok_vars = self.default_values.copy()
+        #ok_vars.update(args)
 
         # All state variables (except pid) should be ok
         for name in state_vars:
@@ -111,28 +124,23 @@ class State(Sized):
         for name, value in zip(list(ok_vars), values):
             setattr(self, name, np.concatenate((getattr(self, name), value)))
 
+
     def compactify(self) -> None:
         """Remove dead particles"""
         alive = self.alive.copy()
-        for var in self.variables:
+        for var in self.instance_variables:
             A = getattr(self, var)
             setattr(self, var, A[alive])
 
     def __len__(self) -> int:
         return len(self.pid)
 
-    # Allow read only state[var]
-    def __getitem__(self, name: str) -> None:
+
+
+    # Allow item notation, state[var]
+    def __getitem__(self, name: str):
         return getattr(self, name)
 
-    # Ikke bra, velocity passer kanskje ikke koordsys.
-    def update(self, velocity: Tuple[np.ndarray, np.ndarray], dt: int) -> None:
-
-        # X1 = self.X + dt * velocity.U
-        # Y1 = self.Y + dt * velocity.V
-        X1 = self.X + dt * velocity[0]
-        Y1 = self.Y + dt * velocity[1]
-
-        # Only update active particles
-        self.X = np.where(self.active, X1, self.X)
-        self.Y = np.where(self.active, Y1, self.Y)
+    # Allow attribute notation, (should be read-only)
+    def __getattr__(self, var: str):
+        return self.variables[var]

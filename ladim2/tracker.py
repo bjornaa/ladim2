@@ -24,7 +24,7 @@ class Tracker:
 
     # def __init__(self, config: Dict[str, Any]) -> None:
     # def __init__(self, **config) -> None:
-        # logging.info("Initiating the particle tracking")
+    # logging.info("Initiating the particle tracking")
 
     def __init__(self, dt, advection, diffusion=0.0):
 
