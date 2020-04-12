@@ -45,7 +45,8 @@ get_velocity = analytical.get_velocity2
 
 def advance(state: State, dt: int) -> None:
     velocity = get_velocity(state, sample_velocity, dt)
-    state.update(velocity, dt)
+    state.X = state.X + dt * velocity[0]
+    state.Y = state.Y + dt * velocity[1]
 
 
 def append_trajectory(trajectory, state):

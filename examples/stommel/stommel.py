@@ -44,7 +44,8 @@ def main():
     # Time loop
     for n in range(Nsteps):
         velocity = get_velocity(state, sample_velocity, dt)
-        state.update(velocity, dt)
+        state.X += dt * velocity[0]
+        state.Y += dt * velocity[1]
 
     # Plot results
     plot_particles(state, X0, Y0)

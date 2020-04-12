@@ -27,6 +27,7 @@ class Forcing:
     def __init__(self, grid, timer, forcing_file, **args):
 
         logging.info("Initiating forcing")
+        print("Forcing.__init__")
 
         self.grid = grid  # Get the grid objec.
         # self.config = config["gridforce"]
@@ -35,15 +36,15 @@ class Forcing:
         self.timer = timer
 
         files = self.find_files(forcing_file)
-        print("files = ", files)
+        # print("files = ", files)
         numfiles = len(files)
         if numfiles == 0:
             logging.error("No input file: {}".format(forcing_file))
             raise SystemExit(3)
         logging.info("Number of forcing files = {}".format(numfiles))
 
-        #self.start_time = .start_time)
-        #self.stop_time = np.datetime64(t.stop_time)
+        # self.start_time = .start_time)
+        # self.stop_time = np.datetime64(t.stop_time)
 
         # ---------------------------
         # Overview of all the files
@@ -115,9 +116,9 @@ class Forcing:
             raise SystemExit(3)
 
         self.steps = steps
-        #self.files = files
+        # self.files = files
 
-        print("Init: finished")
+        # print("Init: finished")
 
     # ===================================================
     @staticmethod
@@ -142,7 +143,7 @@ class Forcing:
           num_frames: Mapping: filename -> number of time frames in file
 
         """
-        print("scan starting")
+        # print("scan starting")
         all_frames = []  # All time frames
         num_frames = {}  # Number of time frames in each file
         for fname in files:
@@ -165,7 +166,7 @@ class Forcing:
             raise SystemExit(4)
 
         logging.info(f"Number of available forcing times = {len(all_frames)}")
-        print("scan finished")
+        # print("scan finished")
         return all_frames, num_frames
 
     # -----------------------------------------
@@ -194,8 +195,8 @@ class Forcing:
         # --------------------------------------------
         steps = []  # Model time step of forcing
         for t in all_frames:
-            #dtime = np.timedelta64(t - self.start_time, "s")
-            #steps.append(int(dtime / dt))
+            # dtime = np.timedelta64(t - self.start_time, "s")
+            # steps.append(int(dtime / dt))
             steps.append(self.timer.time2step(t))
 
         file_idx = dict()  # Dårlig navn

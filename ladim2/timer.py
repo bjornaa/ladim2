@@ -30,6 +30,7 @@ TimeDelta = Union[int, np.timedelta64, datetime.timedelta]
 # TODO: Implement reasonable behaviour for backward tracking
 #       stop before start
 
+
 class Timer:
 
     unit_table = dict(s="seconds", m="minutes", h="hours", d="days")
@@ -47,6 +48,9 @@ class Timer:
         dt given i seconds (Være mer generell?)
 
         """
+
+        print("Timer.__init__")
+
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
         if reference:
@@ -58,7 +62,6 @@ class Timer:
         # Eller self.dt = np.timedelta64(dt, 's')
 
         self.Nsteps = (self.stop_time - self.start_time) // self._dt
-
 
     def time2step(self, time_: Time) -> int:
         """Timestep from time
@@ -83,5 +86,5 @@ class Timer:
         # unit_string = f"{Timer.unit_table[unit]} since {self.reference_time}"
         return value
 
-    def cf_units(self, unit):
+    def cf_units(self, unit='s'):
         return f"{Timer.unit_table[unit]} since {self.reference_time}"

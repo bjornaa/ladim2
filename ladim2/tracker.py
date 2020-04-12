@@ -28,6 +28,8 @@ class Tracker:
 
     def __init__(self, dt, advection, diffusion=0.0):
 
+        print("Tracker-.__init__")
+
         self.dt = dt
         self.advection = advection  # Name of advection method
         self.diffusion = diffusion

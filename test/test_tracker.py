@@ -50,13 +50,13 @@ def test_advection():
     grid = Grid()
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
-    tracker = Tracker(advection="EF")
+    tracker = Tracker(advection="EF", dt=600)
 
     X = [30, 22.2, 11.1]
     Y = [40, 42, 45]
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, timer, forcing)
+    tracker.update(state, grid,  forcing)
 
     assert all(state.X == [x + 3 for x in X])
     assert all(state.Y == [y + 6 for y in Y])
@@ -69,7 +69,7 @@ def test_out_of_area():
     grid = Grid()
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
-    config = dict(advection="EF")
+    config = dict(advection="EF", dt=600)
     tracker = Tracker(**config)
 
     X = [30, grid.imax - 2.1, 11.1]
@@ -77,7 +77,7 @@ def test_out_of_area():
 
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, timer, forcing)
+    tracker.update(state, grid, forcing)
 
     # Killed particle 1, out-of-area
     # Question: should tracker.update do a compactify?

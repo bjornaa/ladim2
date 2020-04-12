@@ -35,6 +35,8 @@ class Grid:
 
     def __init__(self, **kwargs):
 
+
+        print("Grid.__init__")
         config = kwargs
 
         # logging.info("Initializing ROMS-type grid object")

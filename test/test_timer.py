@@ -77,14 +77,12 @@ def test_step2nctime():
     stop_time = "2020-04-05 12:00:00"
     t = Timer(start=start_time, stop=stop_time, dt=3600)
 
-    value, units = t.step2nctime(10)
-    assert value == 36000
-    assert units == "seconds since 2020-04-04T12:00:00"
+    assert(t.cf_units() == "seconds since 2020-04-04T12:00:00")
+    assert(t.cf_units('s') == "seconds since 2020-04-04T12:00:00")
+    assert(t.cf_units('h') == "hours since 2020-04-04T12:00:00")
+    assert(t.cf_units(unit='h') == "hours since 2020-04-04T12:00:00")
 
-    value, units = t.step2nctime(10, unit="m")
-    assert value == 600
-    assert units == "minutes since 2020-04-04T12:00:00"
-
-    value, units = t.step2nctime(10, unit="h")
-    assert value == 10
-    assert units == "hours since 2020-04-04T12:00:00"
+    assert(t.step2nctime(10) == 36000)
+    assert(t.step2nctime(10, unit='s') == 36000)
+    assert(t.step2nctime(10, unit="m") == 600)
+    assert(t.step2nctime(10, unit="h") == 10)

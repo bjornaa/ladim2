@@ -42,6 +42,8 @@ class State(Sized):
 
         """
 
+        print("State.__init__")
+
         # Make variables dictionary (with values = dtype)
         mandatory_variables = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
@@ -115,14 +117,15 @@ class State(Sized):
         values = [np.broadcast_to(v, shape=(nparticles,)) for v in ok_vars.values()]
 
         # pid
-        self.pid = np.concatenate(
-            (self.pid, np.arange(self.npid, self.npid + nparticles, dtype=int))
+        self.variables['pid'] = np.concatenate(
+            (self.variables['pid'], np.arange(self.npid, self.npid + nparticles, dtype=int))
         )
         self.npid = self.npid + nparticles
 
         # Set the state variables
         for name, value in zip(list(ok_vars), values):
-            setattr(self, name, np.concatenate((getattr(self, name), value)))
+            #setattr(self, name, np.concatenate((getattr(self, name), value)))
+            self.variables[name] = np.concatenate((self.variables[name], value))
 
 
     def compactify(self) -> None:

@@ -14,7 +14,7 @@ def main():
     # --- Setup ---
     g = Grid()
     f = Forcing(grid=g)
-    tracker = Tracker(advection="EF")
+    tracker = Tracker(dt=86400, advection="EF")
     state = State()
 
     # Initialize

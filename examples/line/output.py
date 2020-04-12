@@ -6,9 +6,17 @@ from netCDF4 import Dataset
 
 class Output:
     def __init__(
-        self, state, timer, filename, frequency, instance_variables, particle_variables
+        self,
+        state,
+        timer,
+        release,
+        filename,
+        frequency,
+        instance_variables,
+        particle_variables,
     ):
 
+        print("Output.__init__")
         self.instance_count = 0
         self.record_count = 0
         self.step2nctime = timer.step2nctime
@@ -24,6 +32,7 @@ class Output:
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables
         self.state = state
+        self.num_particles = release.total_num_particles
         self.ncid = self._create_netcdf(filename)
 
     def write(self, step):
@@ -49,6 +58,10 @@ class Output:
         self.instance_count = end
         self.record_count += 1
 
+    def save_particle_variables(self):
+        for var in self.particle_variables:
+            self.ncid.variables[var][:] = self.state[var]
+
     def close(self):
         self.ncid.close()
 
@@ -61,8 +74,7 @@ class Output:
         # Works only for initial particle release
         # Else releaser should give total number
         if self.particle_variables:
-            num_particles = len(next(iter(self.state.particle_variables.values())))
-            ncid.createDimension("particle", num_particles)
+            ncid.createDimension("particle", self.num_particles)
 
         # Coordinate variables
         v = ncid.createVariable("time", "f8", ("time",))
@@ -102,8 +114,6 @@ class Output:
         ncid.source = "Lagrangian Advection and Diffusion Model, python version"
         ncid.representation = "Ragged contiguous by time"
 
-        # Save particle variables, works only for initial release
-        for var, value in self.particle_variables.items():
-            ncid.variables[var][:] = self.state.particle_variables[var]
+
 
         return ncid

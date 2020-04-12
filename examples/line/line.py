@@ -49,8 +49,11 @@ Y0 = np.linspace(y0, y1, num_particles)
 Z0 = 5  # Fixed particle depth
 state.append(X=X0, Y=Y0, Z=Z0)
 
-# Particle variables
-state.particle_variables = dict(X0=X0)
+# Tungvint måte å gi info til output
+class Release():
+    def __init__(self, num_particles):
+        self.total_num_particles=num_particles
+release = Release(num_particles)
 
 
 # Define output format
@@ -71,15 +74,13 @@ output_particle_variables = dict(
     X0=dict(ncformat="f4", long_name="X-coordinate of particle release")
 )
 
-output = Output(
-    state=state,
-    timer=timer,
+
+output = Output(state=state, timer=timer, release=release,
     filename=output_file,
     frequency=output_frequency,
     instance_variables=output_instance_variables,
     particle_variables=output_particle_variables,
 )
-
 
 # -------------
 # Time loop
@@ -90,6 +91,7 @@ output = Output(
 for step in range(timer.Nsteps):
     tracker.update(state, grid=grid, force=force)
     if step % output.frequency == 0:
+        print(step)
         output.write(step)
 
 # --------------
