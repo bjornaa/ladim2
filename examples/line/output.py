@@ -9,14 +9,21 @@ class Output:
         self,
         state,
         timer,
-        release,
+        # release,
         filename,
         frequency,
-        instance_variables,
-        particle_variables,
+        total_num_particles=0,
+        instance_variables=None,
+        particle_variables=None,
     ):
 
         print("Output.__init__")
+
+        if instance_variables is None:
+            particle_variables = dict()
+        if particle_variables is None:
+            particle_variables = dict()
+
         self.instance_count = 0
         self.record_count = 0
         self.step2nctime = timer.step2nctime
@@ -32,7 +39,7 @@ class Output:
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables
         self.state = state
-        self.num_particles = release.total_num_particles
+        self.num_particles = total_num_particles
         self.ncid = self._create_netcdf(filename)
 
     def write(self, step):
@@ -113,7 +120,5 @@ class Output:
         ncid.institution = "Institute of Marine Research"
         ncid.source = "Lagrangian Advection and Diffusion Model, python version"
         ncid.representation = "Ragged contiguous by time"
-
-
 
         return ncid

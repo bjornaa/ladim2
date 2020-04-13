@@ -10,7 +10,7 @@ import numpy as np
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
-from ladim2.forcing_ROMS import Forcing
+from forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from output import Output
 
@@ -33,9 +33,9 @@ output_frequency = [3, "h"]
 # -------------------
 
 state = State()
-grid = Grid(grid_file=data_file, dt=dt)
+grid = Grid(filename=data_file)
 timer = Timer(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
-force = Forcing(grid=grid, timer=timer, forcing_file=data_file)
+force = Forcing(grid=grid, timer=timer, filename=data_file)
 tracker = Tracker(dt=dt, advection=advection)
 
 # Make initial state, num_particles points along a line
@@ -50,10 +50,12 @@ Z0 = 5  # Fixed particle depth
 state.append(X=X0, Y=Y0, Z=Z0)
 
 # Tungvint måte å gi info til output
-class Release():
-    def __init__(self, num_particles):
-        self.total_num_particles=num_particles
-release = Release(num_particles)
+# class Release:
+#     def __init__(self, num_particles):
+#         self.total_num_particles = num_particles
+
+
+# release = Release(num_particles)
 
 
 # Define output format
@@ -75,9 +77,13 @@ output_particle_variables = dict(
 )
 
 
-output = Output(state=state, timer=timer, release=release,
+output = Output(
+    state=state,
+    timer=timer,
+    # elease=release,
     filename=output_file,
     frequency=output_frequency,
+    total_num_particles=num_particles,
     instance_variables=output_instance_variables,
     particle_variables=output_particle_variables,
 )

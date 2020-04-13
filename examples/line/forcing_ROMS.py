@@ -24,7 +24,7 @@ class Forcing:
 
     """
 
-    def __init__(self, grid, timer, forcing_file, **args):
+    def __init__(self, grid, timer, filename, **kwargs):
 
         logging.info("Initiating forcing")
         print("Forcing.__init__")
@@ -35,11 +35,11 @@ class Forcing:
 
         self.timer = timer
 
-        files = self.find_files(forcing_file)
+        files = self.find_files(filename)
         # print("files = ", files)
         numfiles = len(files)
         if numfiles == 0:
-            logging.error("No input file: {}".format(forcing_file))
+            logging.error("No input file: {}".format(filename))
             raise SystemExit(3)
         logging.info("Number of forcing files = {}".format(numfiles))
 

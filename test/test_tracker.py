@@ -56,7 +56,7 @@ def test_advection():
     Y = [40, 42, 45]
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid,  forcing)
+    tracker.update(state, grid, forcing)
 
     assert all(state.X == [x + 3 for x in X])
     assert all(state.Y == [y + 6 for y in Y])

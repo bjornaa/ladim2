@@ -33,25 +33,24 @@ class Grid:
 
     # Lagrer en del unødige attributter
 
-    def __init__(self, **kwargs):
-
+    def __init__(self, filename, subgrid=None, Vinfo=None):
 
         print("Grid.__init__")
-        config = kwargs
 
         # logging.info("Initializing ROMS-type grid object")
 
         # Grid file
-        if "grid_file" in config:
-            grid_file = config["grid_file"]
-        else:
-            # logging.error("No grid file specified")
-            raise SystemExit(1)
-
+        # if "file" in config:
+        #     filename = config["file"]
+        # else:
+        #     # logging.error("No grid file specified")
+        #     print("No grid file specified")
+        #     raise SystemExit(1)
         try:
-            ncid = Dataset(grid_file)
+            ncid = Dataset(filename)
         except OSError:
             # logging.error("Could not open grid file " + grid_file)
+            print("Could not open grid file " + filename)
             raise SystemExit(1)
         ncid.set_auto_maskandscale(False)
 
@@ -61,10 +60,10 @@ class Grid:
         # Here, imax, jmax refers to whole grid
         jmax, imax = ncid.variables["h"].shape
         whole_grid = [1, imax - 1, 1, jmax - 1]
-        if "subgrid" in config:
-            limits = list(config["subgrid"])
-        else:
+        if subgrid is None:
             limits = whole_grid
+        else:
+            limits = subgrid
 
         if limits[0] < 1 or limits[0] > limits[1] or limits[1] > imax - 1:
             raise SystemExit("Illegal subgrid specification")
@@ -79,7 +78,7 @@ class Grid:
         self.imax = self.i1 - self.i0
         self.jmax = self.j1 - self.j0
         # print('Grid : imax, jmax, size = ',
-        #      self.imax, self.jmax, self.imax*self.jmax)
+        #     self.imax, self.jmax, self.imax*self.jmax)
 
         # Limits for where velocities are defined
         self.xmin = float(self.i0)
@@ -99,8 +98,7 @@ class Grid:
 
         # Vertical grid
 
-        if "Vinfo" in config:
-            Vinfo = config["Vinfo"]
+        if Vinfo is not None:
             self.N = Vinfo["N"]
             self.hc = Vinfo["hc"]
             self.Vstretching = Vinfo.get("Vstretching", 1)

@@ -34,13 +34,13 @@ def test_init_args():
         variables=dict(age=float, stage=int, release_time=np.datetime64),
         particle_variables=["release_time"],
     )
-    assert 'age' in S.instance_variables
+    assert "age" in S.instance_variables
     assert S.age.dtype == float
     assert S.stage.dtype == int
     assert all(S.age == [])
-    assert S.particle_variables == {'release_time'}
+    assert S.particle_variables == {"release_time"}
     assert S.release_time.dtype == np.datetime64
-    #cassert call(S.release_time == [])  # Does not work
+    # cassert call(S.release_time == [])  # Does not work
     assert np.all(S.release_time == np.array([], np.datetime64))
 
 
@@ -144,6 +144,7 @@ def test_missing_default():
     with pytest.raises(TypeError):
         state.append(X=1, Y=2, Z=3)
 
+
 def test_not_append_pid():
     """Can not append to pid"""
     S = State()
@@ -175,8 +176,9 @@ def test_compactify():
     # The arrays should be contiguous after removing an element
     assert S.X.flags["C_CONTIGUOUS"]
 
+
 def test_not_compactify_particle_variables():
-    S = State(variables=dict(age=float, X0=float), particle_variables=['X0'])
+    S = State(variables=dict(age=float, X0=float), particle_variables=["X0"])
     S.set_default_values(Z=5, age=0)
     X0 = [10, 11, 12, 13]
     Y0 = [20, 21, 22, 23]

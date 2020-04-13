@@ -17,11 +17,16 @@ time_control:
     # Time step
     dt: 3600
 
-grid:
-    grid_file: ../data/ocean_avg_0014.nc
+# grid:
+#     filename: ../data/ocean_avg_0014.nc
 
 forcing:
-    forcing_file: ../data/ocean_avg_0014.nc
+    filename: ../data/ocean_avg_0014.nc
+
+# state:
+#     variables:
+#         X0: float
+#     particle_variables: [X0]
 
 tracker:
     advection: EF
@@ -29,12 +34,12 @@ tracker:
 release:
     filename : line.rls
     # Sjekk hvordan pandas gir tilsvarende info:
-    variables: {release_time: time,
-                X: float,
-                Y: float,
-                Z: float}
-    # Time-independent variables,
-    # particle_variables: [release_time]
+    # variables: {release_time: time,
+    #             X: float,
+    #             Y: float,
+    #             Z: float}
+    # # Time-independent variables,
+    # # particle_variables: [release_time]
 
 
 output:
@@ -50,5 +55,5 @@ output:
             standard_name: depth_below_surface
             units: m
             positive: down
-    particle_variables:
-        X0: {ncformat: f4, long_name: X-coordinate of particle release}
+    # particle_variables:
+    #     X0: {ncformat: f4, long_name: X-coordinate of particle release}

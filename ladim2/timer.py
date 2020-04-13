@@ -86,5 +86,5 @@ class Timer:
         # unit_string = f"{Timer.unit_table[unit]} since {self.reference_time}"
         return value
 
-    def cf_units(self, unit='s'):
+    def cf_units(self, unit="s"):
         return f"{Timer.unit_table[unit]} since {self.reference_time}"

@@ -69,7 +69,7 @@ class State(Sized):
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
 
-        self.npid: int = 0   # Total number of pids used
+        self.npid: int = 0  # Total number of pids used
 
     def set_default_values(self, **args: Union[float, int, bool]) -> None:
         """Set default values for state variables"""
@@ -95,8 +95,8 @@ class State(Sized):
         # ok_vars = arguments and variables with defaults
         # arguments override the defaults
         ok_vars = dict(self.default_values, **args)
-        #ok_vars = self.default_values.copy()
-        #ok_vars.update(args)
+        # ok_vars = self.default_values.copy()
+        # ok_vars.update(args)
 
         # All state variables (except pid) should be ok
         for name in state_vars:
@@ -117,16 +117,18 @@ class State(Sized):
         values = [np.broadcast_to(v, shape=(nparticles,)) for v in ok_vars.values()]
 
         # pid
-        self.variables['pid'] = np.concatenate(
-            (self.variables['pid'], np.arange(self.npid, self.npid + nparticles, dtype=int))
+        self.variables["pid"] = np.concatenate(
+            (
+                self.variables["pid"],
+                np.arange(self.npid, self.npid + nparticles, dtype=int),
+            )
         )
         self.npid = self.npid + nparticles
 
         # Set the state variables
         for name, value in zip(list(ok_vars), values):
-            #setattr(self, name, np.concatenate((getattr(self, name), value)))
+            # setattr(self, name, np.concatenate((getattr(self, name), value)))
             self.variables[name] = np.concatenate((self.variables[name], value))
-
 
     def compactify(self) -> None:
         """Remove dead particles"""
@@ -137,8 +139,6 @@ class State(Sized):
 
     def __len__(self) -> int:
         return len(self.pid)
-
-
 
     # Allow item notation, state[var]
     def __getitem__(self, name: str):
