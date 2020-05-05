@@ -32,7 +32,7 @@ tracker:
     advection: EF
 
 release:
-    filename : line.rls
+    release_file : line.rls
     # Sjekk hvordan pandas gir tilsvarende info:
     # variables: {release_time: time,
     #             X: float,

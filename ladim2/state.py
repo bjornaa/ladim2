@@ -8,7 +8,7 @@ import numpy as np  # type: ignore
 
 
 # From State point-of-view the only difference between
-# instance anc particle variables is that instance variables
+# instance and particle variables is that instance variables
 # are affected by the compactify operation
 
 # ------------------------
@@ -23,22 +23,33 @@ Vector = Union[Scalar, Sequence[Scalar]]
 
 
 class State(Sized):
-    """The model variables at a given time"""
+    """
+    The model variables at a given time
 
-    # def __init__(self, **args: Dict[str, DType]) -> None:
-    def __init__(self, variables=None, particle_variables=None) -> None:
-        """Initialize the state with dictionary of extra variables
+    Mandatory state variables: pid, alive, active, X, Y, Z
+    with predefined dtypes int, 2*bool, and 3*float
 
-        These extra variables should be given by their dtype
+    attributes:
+        npid: Number of particles released so far
+        variables: Dictionary of state variables
+        default_values: Default values for initializing state variables
 
-        Mandatory state variables: pid, alive, active, X, Y, Z
-        with predefined dtypes int, 2*bool, and 3*float
-        should not be initialized.
+    methods:
+        set_default_values: Define default values for state variables
+        append: Append new particles to the state
+        compactify: Throw out dead particles
 
-        attributes:
-          npid: Number of particles released so far
-          variables: List of names of state variables
-          default_values: Default values for initializing state variables
+    """
+
+    def __init__(
+        self, variables: Dict[str, type] = None, particle_variables: List[str] = None
+    ) -> None:
+        """
+        Initialize the state
+
+        variables: dictionary of extra state variables with their dtype,
+                   mandatory variables should not be given
+        particle_variables: list of names of variables that are time independent
 
         """
 
@@ -92,29 +103,26 @@ class State(Sized):
             if name not in state_vars:
                 raise ValueError(f"Invalid argument {name}")
 
-        # ok_vars = arguments and variables with defaults
-        # arguments override the defaults
-        ok_vars = dict(self.default_values, **args)
-        # ok_vars = self.default_values.copy()
-        # ok_vars.update(args)
+        vars_with_default = dict(self.default_values, **args)
 
         # All state variables (except pid) should be ok
         for name in state_vars:
-            if name not in set(ok_vars):
+            if name not in set(vars_with_default):
                 raise TypeError(f"Variable {name} has no value")
 
         # All input should be scalars or broadcastable 1D arrays
         values = list(args)
-        b = np.broadcast(*ok_vars.values())
+        b = np.broadcast(*vars_with_default.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
         if b.ndim == 0:  # All arguments are scalar
-            # values[0] = np.array([values[0]])  # Make first argument 1D
             b = np.broadcast([0])  # Make b.size = 1
         nparticles = b.size
 
         # Make all values 1D of correct shape
-        values = [np.broadcast_to(v, shape=(nparticles,)) for v in ok_vars.values()]
+        values = [
+            np.broadcast_to(v, shape=(nparticles,)) for v in vars_with_default.values()
+        ]
 
         # pid
         self.variables["pid"] = np.concatenate(
@@ -126,7 +134,7 @@ class State(Sized):
         self.npid = self.npid + nparticles
 
         # Set the state variables
-        for name, value in zip(list(ok_vars), values):
+        for name, value in zip(list(vars_with_default), values):
             # setattr(self, name, np.concatenate((getattr(self, name), value)))
             self.variables[name] = np.concatenate((self.variables[name], value))
 
@@ -141,9 +149,9 @@ class State(Sized):
         return len(self.pid)
 
     # Allow item notation, state[var]
-    def __getitem__(self, name: str):
-        return getattr(self, name)
+    def __getitem__(self, var: str) -> np.ndarray:
+        return getattr(self, var)
 
     # Allow attribute notation, (should be read-only)
-    def __getattr__(self, var: str):
+    def __getattr__(self, var: str) -> np.ndarray:
         return self.variables[var]

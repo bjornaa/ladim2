@@ -3,7 +3,7 @@ from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
 from forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
-from release import Release
+from ladim2.release import ParticleReleaser
 from output import Output
 from configure import configure
 
@@ -23,7 +23,7 @@ grid = Grid(**config["grid"])
 force = Forcing(grid=grid, timer=timer, **config["forcing"])
 # tracker = Tracker(dt=timer.dt, **config["tracker"])
 tracker = Tracker(**config["tracker"])
-release = Release(**config["release"])
+release = ParticleReleaser(time_control=timer, **config["release"])
 output = Output(state=state, timer=timer, **config["output"])
 
 # --------------------------
@@ -34,9 +34,10 @@ output = Output(state=state, timer=timer, **config["output"])
 # Også initiering av variable som ikke er i release-filen
 # X0 er et eksempel.
 print("Initial particle release")
-# V = release.df.drop(columns="release_time")
-# V["X0"] = V["X"]  # Add the particle variable
-V = release.df
+V = next(release)
+# TODO: Simplify release
+## next provides pid, this is handled by state itself
+V = V.drop(columns='pid')
 state.append(**V)
 
 # --------------
