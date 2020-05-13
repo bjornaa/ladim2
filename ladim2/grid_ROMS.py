@@ -33,7 +33,7 @@ class Grid:
 
     # Lagrer en del unødige attributter
 
-    def __init__(self, filename, subgrid=None, Vinfo=None):
+    def __init__(self, filename, subgrid=None, Vinfo=None, **args):
 
         print("Grid.__init__")
 

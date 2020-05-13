@@ -16,19 +16,12 @@ import numpy as np
 import pandas as pd
 from typing import Iterator, List
 
-from netCDF4 import Dataset
-
 # from .utilities import ingrid
-# from .configuration import Config
-
-
-# from .gridforce import Grid
 
 
 class ParticleReleaser(Iterator):
     """Particle Release Class"""
 
-    # def __init__(self, config: Config, grid) -> None:
     def __init__(
         self,
         release_file,
@@ -56,17 +49,17 @@ class ParticleReleaser(Iterator):
             raise SystemExit(3)
 
         # Make the dataframe explicitly discrete
+        # REMARK: continuous flag is unnecessary,
+        # could use release_frequency == True (not None, > 0)
         if continuous:
             self.release_frequency = release_frequency
             self.discretize()
-
 
         # Now discrete, remove everything before start
         self._df = self._df[self._df.index >= self.start_time]
         if len(self._df) == 0:  # All release before start
             logging.critical("All particles released before simulation start")
             raise SystemExit(3)
-
 
         # # Optionally, remove everything outside a subgrid
         # try:
@@ -79,14 +72,9 @@ class ParticleReleaser(Iterator):
         #     if len(A) < lenA:
         #         logging.warning("Ignoring particle release outside subgrid")
 
-
-
-
-
         # # If warm start, no new release at start time (already accounted for)
         # if config["start"] == "warm":
         #     A = A[A.index > start_time]
-
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum()
@@ -153,18 +141,17 @@ class ParticleReleaser(Iterator):
 
         # self.particles_released = particles_released
 
-
         # # Reset the counter after the particle counting
         # self._index = 0  # Index of next release
         # self._particle_count = warm_particle_count
 
-        #self.df = A
+        # self.df = A
 
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release
 
            Return a DataFrame with the release info,
-           repeating mult times
+           repeated mult times
 
         """
 
@@ -182,7 +169,7 @@ class ParticleReleaser(Iterator):
         # file_time = self._file_times[self._file_index]
 
         V = self._B[self._index]
-        nnew = V.mult.sum()
+        # nnew = V.mult.sum()
         # Workaround, missing repeat method for pandas DataFrame
         V0 = V.to_records(index=False)
         V0 = V0.repeat(V.mult)
@@ -190,16 +177,6 @@ class ParticleReleaser(Iterator):
         # Do not need the mult column any more
         V.drop("mult", axis=1, inplace=True)
         # Buffer the new values
-        # self.V = V
-        # self._file_index += 1
-
-        # Add the new pids
-        nnew = len(V)
-
-        pids = pd.Series(
-            range(self._particle_count, self._particle_count + nnew), name="pid"
-        )
-        V = V.join(pids)
 
         # Update the counters
         self._index += 1
@@ -217,7 +194,7 @@ class ParticleReleaser(Iterator):
         # Add dtype arguments, may override the defaults
         datatype = dict(dtype0, **datatype)
 
-        df = pd.read_csv(
+        return pd.read_csv(
             rls_file,
             parse_dates=["release_time"],
             names=names,
@@ -225,12 +202,6 @@ class ParticleReleaser(Iterator):
             delim_whitespace=True,
             index_col="release_time",
         )
-
-        # TODO, better error checking
-        # do not allow no header and no names
-        # do not allow or choose action for both header and names
-
-        return df
 
     def clean_release_data(self, grid):
         """Make sure the release data have mult, X, and Y columns

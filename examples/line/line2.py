@@ -1,7 +1,7 @@
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
-from forcing_ROMS import Forcing
+from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from output import Output
@@ -37,7 +37,7 @@ print("Initial particle release")
 V = next(release)
 # TODO: Simplify release
 ## next provides pid, this is handled by state itself
-V = V.drop(columns='pid')
+# V = V.drop(columns='pid')
 state.append(**V)
 
 # --------------

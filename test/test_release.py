@@ -60,7 +60,7 @@ def test_read_release_no_header_no_names():
 
     # Have more explicit error
     with pytest.raises(ValueError):
-        A = ParticleReleaser.read_release_file(f)
+        ParticleReleaser.read_release_file(f)
 
 
 def test_read_release_both_header_names():
@@ -75,12 +75,9 @@ def test_read_release_both_header_names():
     )
 
     with pytest.raises(ValueError):
-        A = ParticleReleaser.read_release_file(
+        ParticleReleaser.read_release_file(
             f, names=["mult", "release_time", "X", "Y", "Z"]
         )
-
-
-# --------------------------------------------------
 
 
 def test_clean_add_mult():
@@ -112,10 +109,11 @@ def test_clean_nopos():
     )
 
     with pytest.raises(SystemExit):
-        pr = ParticleReleaser(f, TimeControl())
+        ParticleReleaser(f, TimeControl())
 
 
 def test_clean_convert_lonlat():
+    """Test automatic conversion from geographical to grid coordinates"""
 
     # Use grid coords = lon, 2*lat (suitable for 60 deg north)
     class Grid:
@@ -151,9 +149,6 @@ def test_clean_lonlat_no_convert():
 
     with pytest.raises(SystemExit):
         ParticleReleaser(f, time_control=TimeControl())
-
-
-# -------------------------------------------
 
 
 def test_remove_late_release():
@@ -232,7 +227,7 @@ def test_too_late_release():
     """
     )
     with pytest.raises(SystemExit):
-        pr = ParticleReleaser(f, time_control=TimeControl())
+        ParticleReleaser(f, time_control=TimeControl())
 
 
 def test_too_early_release():
@@ -247,7 +242,7 @@ def test_too_early_release():
     """
     )
     with pytest.raises(SystemExit):
-        pr = ParticleReleaser(f, time_control=TimeControl())
+        ParticleReleaser(f, time_control=TimeControl())
 
 
 def test_continuous0():
@@ -341,7 +336,7 @@ def test_continuous_freq_mismatch():
         """
     release_time      X     Y    Z
     2015-03-01      100   400    5
-    2015-04-02T06   101   401    5
+    2015-04-02T06   106   406    5
     """
     )
 
@@ -355,7 +350,44 @@ def test_continuous_freq_mismatch():
     assert len(pr.steps) == 7
     assert all(pr.steps == 48 * np.arange(7))
     assert df.index[3] == t_ctrl.start_time + 3 * freq
-    assert all(df.X == 4 * [100] + 3 * [101])
+    assert all(df.X == 4 * [100] + 3 * [106])
+
+
+# Multiple releases between release times
+# Ignoring all but last
+# Is this best behaviour
+# Alternative: All releases between are released
+#    at release time.
+# Advantage: Number of particles become correct
+# Alternative: Raise an error (or warning)
+#    user responsibility to match up release times.
+def test_continuous_freq_mismatch2():
+    """
+    file times and freq does not match
+
+    Two releases between release times,
+    First is ignored, last work from release time
+
+    Example below, same result as if second line removed
+    """
+
+    f = StringIO(
+        """
+    release_time      X     Y    Z
+    2015-03-01      100   400    5
+    2015-04-02T05   105   405    5
+    2015-04-02T06   106   406    5
+    """
+    )
+
+    t_ctrl = TimeControl()
+    freq = np.timedelta64(12, "h")
+    pr = ParticleReleaser(
+        f, time_control=t_ctrl, continuous=True, release_frequency=freq,
+    )
+    df = pr._df
+    assert pr.total_particle_count == 7
+    assert all(df.X == 4 * [100] + 3 * [106])
 
 
 def test_iterate1():
@@ -368,20 +400,18 @@ def test_iterate1():
     """
     )
 
-    freq = np.timedelta64(12, "h")
     pr = ParticleReleaser(f, time_control=TimeControl())
     A = next(pr)
     assert len(A) == 1
-    assert A.pid[0] == 0
     assert A.X[0] == 100
     A = next(pr)
     assert len(A) == 1
-    assert A.pid[0] == 1
     assert A.X[0] == 111
     A = next(pr)
     assert len(A) == 1
-    assert A.pid[0] == 2
     assert A.X[0] == 200
+    with pytest.raises(StopIteration):
+        next(pr)
 
 
 def test_iterate2():
@@ -405,22 +435,15 @@ def test_iterate2():
         f, time_control=t_ctrl, continuous=True, release_frequency=freq,
     )
 
-    pid0 = 0
     for k in range(3):
         A = next(pr)
-        assert all(A.pid == [pid0, pid0 + 1])
         assert all(A.X == [100, 110])
-        pid0 += len(A)
     for k in range(2):
         A = next(pr)
-        assert all(A.pid == [pid0, pid0 + 1, pid0 + 2])
         assert all(A.X == [101, 111, 121])
-        pid0 += len(A)
     for k in range(2):
         A = next(pr)
-        assert all(A.pid == [pid0])
         assert all(A.X == [102])
-        pid0 += len(A)
     with pytest.raises(StopIteration):
         next(pr)
 

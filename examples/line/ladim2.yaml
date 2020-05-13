@@ -17,10 +17,12 @@ time_control:
     # Time step
     dt: 3600
 
-# grid:
-#     filename: ../data/ocean_avg_0014.nc
+grid:
+    module: grid_ROMS
+    #     filename: ../data/ocean_avg_0014.nc
 
 forcing:
+    module: forcing_ROMS
     filename: ../data/ocean_avg_0014.nc
 
 # state:
@@ -43,6 +45,7 @@ release:
 
 
 output:
+    module: output
     filename: out.nc
     frequency: [3, h]
     instance_variables:

@@ -15,6 +15,7 @@ class Output:
         total_num_particles=0,
         instance_variables=None,
         particle_variables=None,
+        **args,
     ):
 
         print("Output.__init__")
