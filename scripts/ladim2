@@ -1,0 +1,5 @@
+#! /usr/bin/env python
+
+from ladim2 import main
+
+main("ladim2.yaml" )
