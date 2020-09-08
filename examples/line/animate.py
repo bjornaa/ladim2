@@ -11,7 +11,6 @@ from postladim import ParticleFile
 
 # Files
 particle_file = "out.nc"
-# particle_file = 'line_0004.nc'
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
@@ -57,8 +56,7 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 # Plot initial particle distribution
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
-# title = ax.set_title(pf.time(0))
-timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.95, pf.time(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
@@ -69,6 +67,7 @@ def animate(t):
     return particle_dist, timestamp
 
 
+# Make mouse click halt the animation
 anim_running = True
 
 
@@ -94,6 +93,5 @@ anim = FuncAnimation(
 )
 
 # anim.save('line.gif',  writer='imagemagick')
-
 fig.canvas.mpl_connect("button_press_event", onClick)
 plt.show()

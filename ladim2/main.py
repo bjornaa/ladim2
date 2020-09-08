@@ -1,4 +1,3 @@
-
 from .state import State
 from .grid import Grid
 from .timer import Timer
@@ -10,6 +9,7 @@ from .configure import configure
 
 # Limitation, presently only instantaneous particle release
 
+
 def main(configuration_file):
     """Main function for complete particle tracking model"""
 
@@ -18,7 +18,6 @@ def main(configuration_file):
     # ----------------
 
     config = configure(configuration_file)
-
 
     # -------------------
     # Initialization

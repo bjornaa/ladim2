@@ -86,4 +86,5 @@ def test_out_of_area():
 
 
 if __name__ == "__main__":
-    test_ok()
+    pass
+    # test_ok()

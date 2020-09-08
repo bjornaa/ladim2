@@ -2,7 +2,8 @@ import sys
 import os
 import importlib
 
-"""Wrapper around selected orcing classes"""
+"""Wrapper around selected forcing classes"""
+
 
 def Forcing(**args):
 
@@ -11,5 +12,5 @@ def Forcing(**args):
     sys.path.insert(0, "/home/bjorn/ladim2/ladim2")
     sys.path.insert(0, os.getcwd())
 
-    F = importlib.import_module(args['module']).Forcing
+    F = importlib.import_module(args["module"]).Forcing
     return F(**args)

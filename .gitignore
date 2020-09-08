@@ -1,6 +1,7 @@
 # Python stuff
 *.pyc
 build/
+.mypy
 
 # Hidden directories
 .*/
@@ -16,7 +17,7 @@ examples/data/*
 # Release files
 *.rls
 
-# Documentation stuff
+# Documentation build stuff
 doc/build
 
 # Emacs noise

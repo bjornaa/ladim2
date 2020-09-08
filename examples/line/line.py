@@ -1,5 +1,4 @@
 # The line example as a scipt
-# Presently without storing results
 
 # Bjørn Ådlandsvik
 # 2020-04-04
@@ -10,7 +9,7 @@ import numpy as np
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
-from forcing_ROMS import Forcing
+from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from output import Output
 
