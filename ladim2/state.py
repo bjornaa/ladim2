@@ -96,45 +96,44 @@ S-
     def append(self, **args: Vector) -> None:
         """Append particles to the State object"""
 
-        # Accept only instance variables (except pid)
-        state_vars = set(self.variables)
-        state_vars.remove("pid")
+        # state_vars = instance_variables (without pid)
+        state_vars = set(self.variables) - {"pid"}
+        # state_vars.remove("pid")
+        # Accept only state:vars
         for name in args:
             if name not in state_vars:
                 raise ValueError(f"Invalid argument {name}")
 
-        vars_with_default = dict(self.default_values, **args)
-
-        # All state variables (except pid) should be ok
+        # Variables must have a value
+        value_vars = dict(self.default_values, **args)
         for name in state_vars:
-            if name not in set(vars_with_default):
+            if name not in set(value_vars):
                 raise TypeError(f"Variable {name} has no value")
 
-        # All input should be scalars or broadcastable 1D arrays
+        # Broadcast all variables to 1D arrays
+        #    Raise ValueError if not compatible
         values = list(args)
-        b = np.broadcast(*vars_with_default.values())
+        b = np.broadcast(*value_vars.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
-        if b.ndim == 0:  # All arguments are scalar
-            b = np.broadcast([0])  # Make b.size = 1
-        nparticles = b.size
-
-        # Make all values 1D of correct shape
+        # if b.ndim == 0:  # All arguments are scalar
+        #    b = np.broadcast([0])  # Make b.size = 1
+        num_new_particles = b.size
         values = [
-            np.broadcast_to(v, shape=(nparticles,)) for v in vars_with_default.values()
+            np.broadcast_to(v, shape=(num_new_particles,)) for v in value_vars.values()
         ]
 
-        # pid
+        # pid must be handles separately
         self.variables["pid"] = np.concatenate(
             (
                 self.variables["pid"],
-                np.arange(self.npid, self.npid + nparticles, dtype=int),
+                np.arange(self.npid, self.npid + num_new_particles, dtype=int),
             )
         )
-        self.npid = self.npid + nparticles
+        self.npid = self.npid + num_new_particles
 
-        # Set the state variables
-        for name, value in zip(list(vars_with_default), values):
+        # Concatenate the state variables
+        for name, value in zip(list(value_vars), values):
             # setattr(self, name, np.concatenate((getattr(self, name), value)))
             self.variables[name] = np.concatenate((self.variables[name], value))
 

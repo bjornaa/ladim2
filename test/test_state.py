@@ -137,6 +137,18 @@ def test_append_nonvariable():
         state.append(X=1, Y=2, Z=3, age=0, length=20)
 
 
+def test_append_missing_variable():
+    state = State()
+    with pytest.raises(TypeError):
+        state.append(X=100, Z=10)
+
+
+def test_append_shape_mismatch():
+    state = State()
+    with pytest.raises(ValueError):
+        state.append(X=[100, 101], Y=[200, 201, 202], Z=5)
+
+
 def test_missing_default():
     state = State(dict(age=float, stage=int))
     # No default for stage
@@ -192,6 +204,27 @@ def test_not_compactify_particle_variables():
     # particle_variable X0 is not compactified
     assert all(S.X0 == X0)
 
+
+# ----------------
+# Update
+# ----------------
+
+
+def test_update():
+    S = State()
+    S.append(X=[100, 110], Y=[200], Z=5)
+    assert all(S.X == [100, 110])
+    S["X"] += 1
+    assert all(S.X == [101, 111])
+    S["X"][0] += 1
+    assert all(S.X == [102, 111])
+    # May follow xarray and disallow dot-style assignment
+    S.X += 1
+    assert all(S.X == [103, 112])
+    S.variables["X"] += 1
+    assert all(S.X == [104, 113])
+
+
 def test_update_and_append_and_compactify():
     """Check that updating bug has been fixed"""
     S = State()
@@ -203,19 +236,23 @@ def test_update_and_append_and_compactify():
 
     # Update position
     S["X"] += 1
+    assert all(S.pid == [0])
     assert all(S.X == [101])
 
     # Update first particle and add two new particles
     S["X"] += 1
     S.append(X=np.array([200, 300]), Y=np.array([20, 30]), Z=5)
+    assert all(S.pid == [0, 1, 2])
     assert all(S.X == [102, 200, 300])
 
     # Update particle positions and kill the first particle, pid=0
     S["X"] = S["X"] + 1.0
     S["alive"][0] = False
     S.compactify()
+    assert all(S.pid == [1, 2])
     assert all(S.X == [201, 301])
 
     # Update positions
     S["X"] = S["X"] + 1
+    assert all(S.pid == [1, 2])
     assert all(S.X == [202, 302])
