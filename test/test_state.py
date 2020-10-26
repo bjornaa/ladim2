@@ -191,3 +191,31 @@ def test_not_compactify_particle_variables():
     assert len(S.age) == 3
     # particle_variable X0 is not compactified
     assert all(S.X0 == X0)
+
+def test_update_and_append_and_compactify():
+    """Check that updating bug has been fixed"""
+    S = State()
+
+    # One particle
+    S.append(X=100, Y=10, Z=5)
+    assert all(S.pid == [0])
+    assert all(S.X == [100])
+
+    # Update position
+    S["X"] += 1
+    assert all(S.X == [101])
+
+    # Update first particle and add two new particles
+    S["X"] += 1
+    S.append(X=np.array([200, 300]), Y=np.array([20, 30]), Z=5)
+    assert all(S.X == [102, 200, 300])
+
+    # Update particle positions and kill the first particle, pid=0
+    S["X"] = S["X"] + 1.0
+    S["alive"][0] = False
+    S.compactify()
+    assert all(S.X == [201, 301])
+
+    # Update positions
+    S["X"] = S["X"] + 1
+    assert all(S.X == [202, 302])

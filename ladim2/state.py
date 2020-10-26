@@ -2,7 +2,7 @@
 Class for the state of the model
 """
 
-from typing import List, Dict, Union, Sized, Sequence, Tuple
+from typing import List, Dict, Union, Sized, Sequence, Any
 
 import numpy as np  # type: ignore
 
@@ -50,7 +50,7 @@ class State(Sized):
         variables: dictionary of extra state variables with their dtype,
                    mandatory variables should not be given
         particle_variables: list of names of variables that are time independent
-
+S-
         """
 
         print("State.__init__")
@@ -86,7 +86,7 @@ class State(Sized):
         """Set default values for state variables"""
         for var, value in args.items():
             if var not in self.variables:
-                raise ValueError(f"No such variable: ", var)
+                raise ValueError("No such variable: ", var)
             if var == "pid":
                 raise ValueError("Can not set default for pid")
             if not np.isscalar(value):
@@ -142,16 +142,19 @@ class State(Sized):
         """Remove dead particles"""
         alive = self.alive.copy()
         for var in self.instance_variables:
-            A = getattr(self, var)
-            setattr(self, var, A[alive])
+            A = self.variables[var]
+            self.variables[var] = A[alive]
 
     def __len__(self) -> int:
         return len(self.pid)
 
     # Allow item notation, state[var]
     def __getitem__(self, var: str) -> np.ndarray:
-        return getattr(self, var)
+        return self.variables[var]
 
-    # Allow attribute notation, (should be read-only)
+    def __setitem__(self, var: str, item: Any) -> None:
+        self.variables[var] = item
+
+    # Allow attribute notation, (should be read-only?)
     def __getattr__(self, var: str) -> np.ndarray:
         return self.variables[var]
