@@ -104,8 +104,8 @@ class Tracker:
         X[I] = X1[I]
         Y[I] = Y1[I]
 
-        state.X = X
-        state.Y = Y
+        state["X"] = X
+        state["Y"] = Y
 
     # @njit
     def EF(self, X, Y, Z, force) -> Velocity:

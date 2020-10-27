@@ -2,7 +2,14 @@
 Class for the state of the model
 """
 
-from typing import List, Dict, Union, Sized, Sequence, Any
+# ----------------------------------
+# Bjørn Ådlandsvik
+# Institute of Marine Research
+# October 2020
+# ----------------------------------
+
+from numbers import Number
+from typing import List, Dict, Union, Sized, Sequence, Optional
 
 import numpy as np  # type: ignore
 
@@ -13,13 +20,14 @@ import numpy as np  # type: ignore
 
 # ------------------------
 
-# Kan bruke Sequence[Scalar] for 1D arrays o.l.
-# kan sette dette som Vector?
-Scalar = Union[float, int, bool]
-# Arraylike = Union[np.ndarray, List[Scalar], Scalar]
-# Variables = Dict[str, Arraylike]
-DType = Union[str, type]
-Vector = Union[Scalar, Sequence[Scalar]]
+# Define some types
+Scalar = Number
+Arraylike = Union[np.ndarray, Sequence[Scalar], Scalar]
+
+# State has no internal difference between particle and instance variable.
+# With append also particle variables needs a value
+# Have an undef value?, nan for float types,
+# Should not compactify particle variables
 
 
 class State(Sized):
@@ -41,8 +49,16 @@ class State(Sized):
 
     """
 
+    # The data are kept in the dictionary variables
+    # instance_variables and particle_variables are sets
+
+    # The length of the state should only be allowed to change by
+    # append and compactify (rename the last to kill?)
+
     def __init__(
-        self, variables: Dict[str, type] = None, particle_variables: List[str] = None
+        self,
+        variables: Optional[Dict[str, type]] = None,
+        particle_variables: Optional[List[str]] = None,
     ) -> None:
         """
         Initialize the state
@@ -50,22 +66,22 @@ class State(Sized):
         variables: dictionary of extra state variables with their dtype,
                    mandatory variables should not be given
         particle_variables: list of names of variables that are time independent
-S-
+
         """
 
-        print("State.__init__")
+        # print("State.__init__")
 
-        # Make variables dictionary (with values = dtype)
+        # Make dtypes dictionary
         mandatory_variables = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
         )
         if variables is None:
             variables = dict()
-        self.variables = dict(mandatory_variables, **variables)
+        self.dtypes = dict(mandatory_variables, **variables)
 
-        # Replace the dtypes by empty arrays
+        # Make empty arrays of correct dtype
         self.variables = {
-            var: np.array([], dtype) for var, dtype in self.variables.items()
+            var: np.array([], dtype) for var, dtype in self.dtypes.items()
         }
 
         # Sets of particle and instance variables
@@ -82,7 +98,7 @@ S-
 
         self.npid: int = 0  # Total number of pids used
 
-    def set_default_values(self, **args: Union[float, int, bool]) -> None:
+    def set_default_values(self, **args: Scalar) -> None:
         """Set default values for state variables"""
         for var, value in args.items():
             if var not in self.variables:
@@ -91,15 +107,17 @@ S-
                 raise ValueError("Can not set default for pid")
             if not np.isscalar(value):
                 raise TypeError(f"Default value for {var} should be scalar")
-            self.default_values[var] = np.array(value, dtype=getattr(self, var).dtype)
+            self.default_values[var] = np.array(value, dtype=self.dtypes[var])
 
-    def append(self, **args: Vector) -> None:
+    def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""
+
+        # Howto handle particle variables?
 
         # state_vars = instance_variables (without pid)
         state_vars = set(self.variables) - {"pid"}
-        # state_vars.remove("pid")
-        # Accept only state:vars
+
+        # Accept only state_vars
         for name in args:
             if name not in state_vars:
                 raise ValueError(f"Invalid argument {name}")
@@ -112,16 +130,17 @@ S-
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
-        values = list(args)
+        ### values = list(args)
         b = np.broadcast(*value_vars.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
         # if b.ndim == 0:  # All arguments are scalar
         #    b = np.broadcast([0])  # Make b.size = 1
         num_new_particles = b.size
-        values = [
-            np.broadcast_to(v, shape=(num_new_particles,)) for v in value_vars.values()
-        ]
+        values = {
+            var: np.broadcast_to(v, shape=(num_new_particles,))
+            for var, v in value_vars.items()
+        }
 
         # pid must be handles separately
         self.variables["pid"] = np.concatenate(
@@ -132,17 +151,15 @@ S-
         )
         self.npid = self.npid + num_new_particles
 
-        # Concatenate the state variables
-        for name, value in zip(list(value_vars), values):
-            # setattr(self, name, np.concatenate((getattr(self, name), value)))
-            self.variables[name] = np.concatenate((self.variables[name], value))
+        # Concatenate the rest of the variables
+        for var in state_vars:
+            self.variables[var] = np.concatenate((self.variables[var], values[var]))
 
     def compactify(self) -> None:
-        """Remove dead particles"""
+        """Remove dead particles from the instance variables"""
         alive = self.alive.copy()
         for var in self.instance_variables:
-            A = self.variables[var]
-            self.variables[var] = A[alive]
+            self.variables[var] = self.variables[var][alive]
 
     def __len__(self) -> int:
         return len(self.pid)
@@ -151,9 +168,19 @@ S-
     def __getitem__(self, var: str) -> np.ndarray:
         return self.variables[var]
 
-    def __setitem__(self, var: str, item: Any) -> None:
-        self.variables[var] = item
+    def __setitem__(self, var: str, item: Arraylike) -> None:
+        value = np.array(item, dtype=self.dtypes[var])
+        # The size of item should be unchanged
+        if np.size(value) != len(self.variables[var]):
+            raise KeyError("Size of data should be unchanged")
+        else:
+            self.variables[var] = value
 
     # Allow attribute notation, (should be read-only?)
     def __getattr__(self, var: str) -> np.ndarray:
         return self.variables[var]
+
+    # Disallow
+    # def __setattr__(self, var: str, item: Arraylike) -> None:
+    # self.__setitem__(var, item)
+    # self.variables[var] = np.array(item, dtype=self.dtypes[var])
