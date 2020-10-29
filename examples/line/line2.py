@@ -1,3 +1,4 @@
+from ladim2.configure import configure
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timer import Timer
@@ -5,7 +6,7 @@ from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from output import Output
-from configure import configure
+#from configure import configure
 
 # ----------------
 # Configuration

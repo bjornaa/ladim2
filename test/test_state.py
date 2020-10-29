@@ -1,14 +1,14 @@
 import numpy as np  # type: ignore
 import pytest  # type: ignore
 
-from ladim2.state import State  # type: ignore
+from ladim2.state import State
 
 # ------------
 # __init__
 # ------------
 
 
-def test_minimal():
+def test_init_minimal():
     """Init State with no arguments"""
     S = State()
     assert len(S) == 0
@@ -22,62 +22,55 @@ def test_minimal():
     assert all(S.variables["X"] == [])
     assert all(S["X"] == [])
     assert all(S.X == [])
-    assert S.alive.dtype == bool
     assert S.Y.dtype == float
     assert S.Z.dtype == "f8"
+    assert S.alive.dtype == bool
     assert S.default_values["alive"] == True
 
 
 def test_init_args():
     """Init State with extra variables"""
     S = State(
-        variables=dict(age=float, stage=int, release_time=np.datetime64),
-        particle_variables=["release_time"],
+        instance_variables=dict(age=float, stage=int),
+        particle_variables=dict(release_time=np.datetime64),
+        default_values=dict(age=0, stage=1),
     )
     assert "age" in S.instance_variables
-    assert S.age.dtype == float
+    assert S.age.dtype == np.float
+    assert S.default_values["age"] == 0
     assert S.stage.dtype == int
-    assert all(S.age == [])
     assert S.particle_variables == {"release_time"}
     assert S.release_time.dtype == np.datetime64
-    # cassert call(S.release_time == [])  # Does not work
-    assert np.all(S.release_time == np.array([], np.datetime64))
+    assert S.dtypes["release_time"] == np.datetime64  # dtypes attr not needed?
+    assert all(S.release_time == np.array([], np.datetime64))
 
 
-# -------------------------
-# set_default_values
-# -------------------------
+def test_override_mandatory():
+    S = State(instance_variables=dict(X="f4"))
+    assert S.X.dtype == np.float32
 
 
-def test_set_default():
-    S = State(variables=dict(age=float, stage=int))
-    S.set_default_values(age=0, stage=1, Z=5)
-    assert S.default_values["active"] == True
-    assert S.default_values["alive"] == True
-    assert S.default_values["age"] == 0
-    assert S.default_values["stage"] == 1
-    assert S.default_values["Z"] == 5.0
-
-
+# Presently does not generate error, perhaps it should?
+# or, perhaps a warning
 def test_set_default_err1():
     """Trying to set default for an undefined variable"""
-    S = State(variables={"age": float})
-    with pytest.raises(ValueError):
-        S.set_default_values(length=4.3)
+    S = State(particle_variables={"age": float}, default_values=dict(length=4.3))
+    assert S.default_values["length"] == 4.3
 
 
 def test_set_default_err2():
     """Trying to set default for pid"""
-    S = State(dict(age=float))
     with pytest.raises(ValueError):
-        S.set_default_values(pid=4)
+        S = State(default_values=dict(pid=42))
 
 
 def test_set_default_err3():
     """Trying to set an array as default value"""
-    S = State(dict(length=float))
     with pytest.raises(TypeError):
-        S.set_default_values(length=[1.2, 4.3])
+        S = State(
+            instance_variables=dict(length=float),
+            default_values=dict(length=[1.2, 4.3]),
+        )
 
 
 # --------------------
@@ -118,29 +111,37 @@ def test_append_array():
     assert np.all(state.Z == [5.0, 5.0, 10.0])
 
 
-def test_extra_variables():
-    state = State(dict(age=float, stage="int"))
+def test_extra_instance_variables():
+    """Append with extra instance variables, with and without default"""
+    state = State(
+        instance_variables=dict(age=float, stage="int"), default_values=dict(stage=1)
+    )
     assert len(state) == 0
     assert state.age.dtype == float
     assert state.stage.dtype == int
-    state.set_default_values(age=1.0)
-    state.append(X=1, Y=2, Z=3, stage=4)
-    assert len(state.age) == 1
-    assert np.all(state.age == [1])
-    assert np.all(state.stage == [4])
+    state.append(X=[1, 2], Y=2, Z=3, age=0)
+    assert len(state) == 2
+    assert all(state.age == [0, 0])
+    assert all(state.stage == [1, 1])
 
 
 def test_append_nonvariable():
     """Append an undefined variable"""
-    state = State(dict(age=float))
+    state = State()
     with pytest.raises(ValueError):
-        state.append(X=1, Y=2, Z=3, age=0, length=20)
+        state.append(X=1, Y=2, Z=3, length=20)
 
 
 def test_append_missing_variable():
     state = State()
     with pytest.raises(TypeError):
         state.append(X=100, Z=10)
+
+
+def test_append_missing_particle_variable():
+    state = State(particle_variables=dict(X_start=float))
+    with pytest.raises(TypeError):
+        state.append(X=100, Y=200, Z=5)
 
 
 def test_append_shape_mismatch():
@@ -150,9 +151,10 @@ def test_append_shape_mismatch():
 
 
 def test_missing_default():
-    state = State(dict(age=float, stage=int))
+    state = State(
+        instance_variables=dict(age=float, stage=int), default_values=dict(age=0)
+    )
     # No default for stage
-    state.set_default_values(age=0.0)
     with pytest.raises(TypeError):
         state.append(X=1, Y=2, Z=3)
 
@@ -164,14 +166,51 @@ def test_not_append_pid():
         S.append(X=10, Y=20, Z=5, pid=101)
 
 
+# ----------------
+# Update
+# ----------------
+
+
+def test_update_item():
+    S = State()
+    S.append(X=[100, 110], Y=[200, 210], Z=5)
+    S["X"] += 1
+    assert all(S.variables["X"] == [101, 111])
+
+
+# Perhaps disallow
+def test_update_attr():
+    S = State()
+    S.append(X=[100, 110], Y=[200, 210], Z=5)
+    S.X += 1
+    assert all(S.X == [101, 111])
+    assert all(S.variables["X"] == [101, 111])
+
+
+def test_update_error_not_variable():
+    S = State()
+    S.append(X=[100, 110], Y=[200, 210], Z=5)
+    with pytest.raises(KeyError):
+        S["Lon"] = [4.5, 4.6]
+
+
+def test_update_error_wrong_size():
+    # Alternative broadcast the scalar, equivalent to s["X"] = [110, 100]
+    S = State()
+    S.append(X=[100, 110], Y=[200, 210], Z=5)
+    with pytest.raises(KeyError):
+        S["X"] = 110
+    with pytest.raises(KeyError):
+        S["X"] = [101, 111, 121]
+
+
 # --------------
 # Compactify
 # --------------
 
 
 def test_compactify():
-    S = State()
-    S.set_default_values(Z=5)
+    S = State(default_values=dict(Z=5))
     S.append(X=[10, 11], Y=[1, 2])
     assert len(S) == 2
     S.append(X=[21, 22], Y=[3, 4])
@@ -190,8 +229,7 @@ def test_compactify():
 
 
 def test_not_compactify_particle_variables():
-    S = State(variables=dict(age=float, X0=float), particle_variables=["X0"])
-    S.set_default_values(Z=5, age=0)
+    S = State(particle_variables=dict(X0=float), default_values=dict(Z=5))
     X0 = [10, 11, 12, 13]
     Y0 = [20, 21, 22, 23]
     S.append(X=X0, Y=Y0, X0=X0)
@@ -200,29 +238,8 @@ def test_not_compactify_particle_variables():
     assert len(S) == 3
     assert all(S.pid == [0, 2, 3])
     assert all(S.X == [10, 12, 13])
-    assert len(S.age) == 3
     # particle_variable X0 is not compactified
     assert all(S.X0 == X0)
-
-
-# ----------------
-# Update
-# ----------------
-
-
-def test_update():
-    S = State()
-    S.append(X=[100, 110], Y=[200], Z=5)
-    assert all(S.X == [100, 110])
-    S["X"] += 1
-    assert all(S.X == [101, 111])
-    S["X"][0] += 1
-    assert all(S.X == [102, 111])
-    # May follow xarray and disallow dot-style assignment
-    S.X += 1
-    assert all(S.X == [103, 112])
-    S.variables["X"] += 1
-    assert all(S.X == [104, 113])
 
 
 def test_update_and_append_and_compactify():

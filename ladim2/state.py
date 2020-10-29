@@ -2,6 +2,14 @@
 Class for the state of the model
 """
 
+# Tenk over:
+# Initier med 2 dicts, instance_variables og particle_variables
+# (med type)
+# s = State(instance_variables=dict(age, 'np.float64'),
+#           particle_variables=dict(X0, 'np.float64'))
+# default_values = dict(age=0)
+
+
 # ----------------------------------
 # Bjørn Ådlandsvik
 # Institute of Marine Research
@@ -57,15 +65,19 @@ class State(Sized):
 
     def __init__(
         self,
-        variables: Optional[Dict[str, type]] = None,
-        particle_variables: Optional[List[str]] = None,
+        instance_variables: Optional[Dict[str, type]] = None,
+        particle_variables: Optional[Dict[str, type]] = None,
+        default_values: Optional[Dict[str, Scalar]] = None,
     ) -> None:
         """
         Initialize the state
 
-        variables: dictionary of extra state variables with their dtype,
-                   mandatory variables should not be given
-        particle_variables: list of names of variables that are time independent
+        instance_variables: extra (non-mandatory) variables with dtype
+        particle_variables: particle variables with dtype
+        default_values: default initial values
+
+        mandatory particle variables: pid, X, Y, Z, active, alive
+        predefined defaults: active = True, alive = True
 
         """
 
@@ -75,39 +87,48 @@ class State(Sized):
         mandatory_variables = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
         )
-        if variables is None:
-            variables = dict()
-        self.dtypes = dict(mandatory_variables, **variables)
+        ivar = instance_variables if instance_variables else dict()
+        # Union of dictionaries, python 3.9: mandatory_variables | ivar
+        # Explicitly set instance variables override the defaults
+        ivar = dict(mandatory_variables, **ivar)
+        self.instance_variables = set(ivar)
 
-        # Make empty arrays of correct dtype
+        pvar = particle_variables if particle_variables else dict()
+        self.particle_variables = set(pvar)
+
+        # Raises TypeError if overlap
+        self.dtypes = dict(**ivar, **pvar)
+
+        # Data storage (initally empty)
         self.variables = {
             var: np.array([], dtype) for var, dtype in self.dtypes.items()
         }
 
-        # Sets of particle and instance variables
-        if particle_variables is None:
-            self.particle_variables = set()
-        else:
-            self.particle_variables = set(particle_variables)
-        self.instance_variables = set(self.variables) - self.particle_variables
-
-        # Predefined default values
-        self.default_values = dict(
+        # Default values
+        predef_default_values = dict(
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
+        dvals = default_values if default_values else dict()
+        if "pid" in dvals:
+            raise ValueError("Can not set default for pid")
+        for var, value in dvals.items():
+            if not np.isscalar(value):
+                raise TypeError(f"Default value for {var} should be scalar")
+
+        self.default_values = dict(predef_default_values, **dvals)
 
         self.npid: int = 0  # Total number of pids used
 
-    def set_default_values(self, **args: Scalar) -> None:
-        """Set default values for state variables"""
-        for var, value in args.items():
-            if var not in self.variables:
-                raise ValueError("No such variable: ", var)
-            if var == "pid":
-                raise ValueError("Can not set default for pid")
-            if not np.isscalar(value):
-                raise TypeError(f"Default value for {var} should be scalar")
-            self.default_values[var] = np.array(value, dtype=self.dtypes[var])
+    # def set_default_values(self, **args: Scalar) -> None:
+    #     """Set default values for state variables"""
+    #     for var, value in args.items():
+    #         if var not in self.variables:
+    #             raise ValueError("No such variable: ", var)
+    #         if var == "pid":
+    #             raise ValueError("Can not set default for pid")
+    #         if not np.isscalar(value):
+    #             raise TypeError(f"Default value for {var} should be scalar")
+    #         self.default_values[var] = np.array(value, dtype=self.dtypes[var])
 
     def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""
