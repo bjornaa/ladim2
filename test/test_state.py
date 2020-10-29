@@ -25,7 +25,7 @@ def test_init_minimal():
     assert S.Y.dtype == float
     assert S.Z.dtype == "f8"
     assert S.alive.dtype == bool
-    assert S.default_values["alive"] == True
+    assert S.default_values["alive"]
 
 
 def test_init_args():
@@ -50,12 +50,10 @@ def test_override_mandatory():
     assert S.X.dtype == np.float32
 
 
-# Presently does not generate error, perhaps it should?
-# or, perhaps a warning
 def test_set_default_err1():
     """Trying to set default for an undefined variable"""
-    S = State(particle_variables={"age": float}, default_values=dict(length=4.3))
-    assert S.default_values["length"] == 4.3
+    with pytest.raises(ValueError):
+        S = State(particle_variables={"age": float}, default_values=dict(length=4.3))
 
 
 def test_set_default_err2():
@@ -95,7 +93,6 @@ def test_append_array():
     state.append(X=200, Z=5, Y=100)
     length = len(state)
     npid = state.npid
-    X = state.X
     state.append(X=np.array([201, 202]), Y=110, Z=[5, 10])
     assert len(state) == length + 2
     assert state.npid == npid + 2
@@ -220,8 +217,8 @@ def test_compactify():
     S.compactify()
     assert len(S) == 3
     assert S.npid == 4
-    assert np.all(S.active == True)
-    assert np.all(S.alive == True)
+    assert np.all(S.active)
+    assert np.all(S.alive)
     assert np.all(S.pid == [0, 2, 3])
     assert np.all(S.X == [10, 21, 22])
     # The arrays should be contiguous after removing an element

@@ -2,14 +2,6 @@
 Class for the state of the model
 """
 
-# Tenk over:
-# Initier med 2 dicts, instance_variables og particle_variables
-# (med type)
-# s = State(instance_variables=dict(age, 'np.float64'),
-#           particle_variables=dict(X0, 'np.float64'))
-# default_values = dict(age=0)
-
-
 # ----------------------------------
 # Bjørn Ådlandsvik
 # Institute of Marine Research
@@ -17,7 +9,7 @@ Class for the state of the model
 # ----------------------------------
 
 from numbers import Number
-from typing import List, Dict, Union, Sized, Sequence, Optional
+from typing import Dict, Union, Sized, Sequence, Optional
 
 import numpy as np  # type: ignore
 
@@ -57,8 +49,8 @@ class State(Sized):
 
     """
 
-    # The data are kept in the dictionary variables
-    # instance_variables and particle_variables are sets
+    # The data are kept in the variables dictionary
+    # instance_variables and particle_variables are sets of names
 
     # The length of the state should only be allowed to change by
     # append and compactify (rename the last to kill?)
@@ -109,26 +101,18 @@ class State(Sized):
             alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
         )
         dvals = default_values if default_values else dict()
+        # Some quality control
         if "pid" in dvals:
             raise ValueError("Can not set default for pid")
         for var, value in dvals.items():
+            if var not in self.variables:
+                raise ValueError("No such variable: ", var)
             if not np.isscalar(value):
                 raise TypeError(f"Default value for {var} should be scalar")
 
         self.default_values = dict(predef_default_values, **dvals)
 
         self.npid: int = 0  # Total number of pids used
-
-    # def set_default_values(self, **args: Scalar) -> None:
-    #     """Set default values for state variables"""
-    #     for var, value in args.items():
-    #         if var not in self.variables:
-    #             raise ValueError("No such variable: ", var)
-    #         if var == "pid":
-    #             raise ValueError("Can not set default for pid")
-    #         if not np.isscalar(value):
-    #             raise TypeError(f"Default value for {var} should be scalar")
-    #         self.default_values[var] = np.array(value, dtype=self.dtypes[var])
 
     def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""
@@ -151,7 +135,6 @@ class State(Sized):
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
-        ### values = list(args)
         b = np.broadcast(*value_vars.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
@@ -194,8 +177,7 @@ class State(Sized):
         # The size of item should be unchanged
         if np.size(value) != len(self.variables[var]):
             raise KeyError("Size of data should be unchanged")
-        else:
-            self.variables[var] = value
+        self.variables[var] = value
 
     # Allow attribute notation, (should be read-only?)
     def __getattr__(self, var: str) -> np.ndarray:
