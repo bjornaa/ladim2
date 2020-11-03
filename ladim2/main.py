@@ -1,6 +1,6 @@
 from .state import State
 from .grid import Grid
-from .timer import Timer
+from .timekeeper import TimeKeeper
 from .forcing import Forcing
 from .tracker import Tracker
 from .release import ParticleReleaser
@@ -24,12 +24,12 @@ def main(configuration_file):
     # -------------------
 
     state = State(**config["state"])
-    timer = Timer(**config["time_control"])
+    timer = TimeKeeper(**config["time_control"])
     grid = Grid(**config["grid"])
     force = Forcing(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
     release = ParticleReleaser(time_control=timer, **config["release"])
-    output = Output(state=state, timer=timer, **config["output"])
+    output = Output(timer=timer, **config["output"])
 
     # --------------------------
     # Initial particle release
@@ -49,16 +49,20 @@ def main(configuration_file):
     # Time loop
     # --------------
 
+    # Number of time steps between output (have that computed in output.py)
+    output_period_step = output.output_period / timer._dt
+    print("output_period", output_period_step)
     print("Time loop")
-    for step in range(timer.Nsteps):
+    for step in range(timer.Nsteps+1):
+        print(step)
         tracker.update(state, grid=grid, force=force)
-        if step % output.frequency == 0:
-            output.write(step)
+        if step % output_period_step == 0:
+            output.write(state)
 
     # --------------
     # Finalisation
     # --------------
 
     print("Cleaning up")
-    output.save_particle_variables()
-    output.close()
+    #output.save_particle_variables()
+    #output.close()

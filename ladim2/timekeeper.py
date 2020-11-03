@@ -62,6 +62,7 @@ class TimeKeeper:
         self._dt = np.timedelta64(dt, "s")
         self.dt = self._dt.astype("int")
 
+        # Number of time steps (excluding initial)
         self.Nsteps = (self.stop_time - self.start_time) // self._dt
         self.simulation_time = self.Nsteps * self._dt
 

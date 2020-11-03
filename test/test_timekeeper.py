@@ -92,3 +92,13 @@ def test_step2nctime():
     assert t.step2nctime(10, unit="s") == 36000
     assert t.step2nctime(10, unit="m") == 600
     assert t.step2nctime(10, unit="h") == 10
+
+
+    # With explicit reference time
+    reference_time = "2020-04-04"   # 12 h = 43200 s before start
+    t = TimeKeeper(start=start_time, stop=stop_time, reference=reference_time, dt=3600)
+
+    assert t.cf_units() == "seconds since 2020-04-04T00:00:00"
+    assert t.step2nctime(0) == 43200
+    assert t.step2nctime(0, unit="h") == 12
+    assert t.step2nctime(10) == 43200 + 10 * 3600

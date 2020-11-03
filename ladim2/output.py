@@ -13,13 +13,11 @@
 # import os
 import re
 from pathlib import Path
-from typing import Dict, Generator, Union, Optional, Any
+from typing import Dict, Generator, Union, Optional, Sequence, Any
 
-import numpy as np             # type: ignore
-from netCDF4 import Dataset    # type: ignore
+import numpy as np  # type: ignore
+from netCDF4 import Dataset  # type: ignore
 
-# from .timekeeper import TimeKeeper  # For typing
-# from .state import State  # For typing
 from .timekeeper import TimeKeeper  # For typing
 from .state import State  # For typing
 
@@ -41,13 +39,14 @@ class Output:
         self,
         timer: TimeKeeper,
         filename: Union[Path, str],
-        # num_output: int,  # Number of times with output
-        output_period: np.timedelta64,  # Time interval between outputs
+        output_period: Union[
+            int, np.timedelta64, Sequence
+        ],  # Time interval between outputs
         num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Any],
         particle_variables: Optional[Dict[str, Any]] = None,
         ncargs: Optional[Dict[str, Any]] = None,
-        numrec: int = 0,  # Number of records per file, no multfile if zeo
+        numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
         global_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -56,7 +55,6 @@ class Output:
 
         self.timer = timer
         self.filename = filename
-        # self.num_output = num_output
         self.num_particles = num_particles
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables if particle_variables else dict()
@@ -68,9 +66,17 @@ class Output:
 
         self.global_attributes = global_attributes
 
-        self.num_records = 1 + (timer.stop_time - timer.start_time) // output_period
-        if skip_initial:
-            self.num_records -= 1
+        if isinstance(output_period, Sequence):  #  [value, unitchar]
+            self.output_period = np.timedelta64(
+                output_period[0], output_period[1]
+            ).astype("m8[s]")
+        else:
+            self.output_period = np.timedelta64(output_period, "s")
+        self.output_period_steps = self.output_period // timer._dt
+
+        self.num_records = (timer.stop_time - timer.start_time) // self.output_period
+        if not skip_initial:  # Add an initial record
+            self.num_records += 1
 
         if self.numrec:
             self.multifile = True
@@ -90,30 +96,11 @@ class Output:
 
         self.step2nctime = timer.step2nctime
         self.time_unit = "s"
-        self.nctime = 0  # juster hvis skip_initial
+        self.nctime = timer.step2nctime(0, "s")
         self.cf_units = timer.cf_units(self.time_unit)
-        # Use output period in time steps
-        self.output_period = np.timedelta64(output_period, "s")
-        # self.num_records = timer.Nsteps * self.timer._dt // self.output_period
-
-        # self.filenames = fname_gnrt(self.filename)
-
-        # self.record_count = 0  # Record number to write (start at zero)
-        # self.instance_count = 0  # Count of written particle instances
-        # self.outcount = -1  # No output yet
-        # self.file_counter = -1  # No file yer
-        # self.skip_output = config["skip_initial"]
-        # self.dt = config["dt"]
-        # self.release = release
-        # # Indicator for lon/lat output
-        # self.lonlat = (
-        #     "lat" in self.instance_variables or "lon" in self.instance_variables
-        # )
 
     def create_netcdf(self) -> Dataset:
         """Create a LADiM output netCDF file"""
-
-        # print(locals())
 
         # Handle netcdf args
         ncargs = self.ncargs
@@ -170,8 +157,6 @@ class Output:
         start = self.local_instance_count
         end = start + count
 
-        print(self.local_record_count, self.local_num_records)
-
         # rec_count = self.record_count % self.numrec  # record count *in* the file
 
         self.nc.variables["time"][self.local_record_count] = self.nctime
@@ -198,6 +183,9 @@ class Output:
                 self.nc = self.create_netcdf()
                 self.local_instance_count = 0
                 self.local_record_count = 0
+
+    def close(self) -> None:
+        self.nc.close()
 
 
 def fname_gnrt(filename: Path) -> Generator[Path, None, None]:

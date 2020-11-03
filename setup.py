@@ -9,5 +9,6 @@ setup(
     author="Bjørn Ådlandsvik",
     author_email="bjorn@imr.no",
     packages=["ladim2"],
+    scripts=["scripts/ladim2"],
     requires=["numpy", "yaml", "netCDF4", "pandas"],
 )

@@ -2,4 +2,4 @@
 
 from ladim2 import main
 
-main("ladim2.yaml" )
+main.main("ladim2.yaml")

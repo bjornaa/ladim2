@@ -8,47 +8,34 @@ import pytest
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
 from ladim2.output import fname_gnrt, Output
-# from .output import fname_gnrt, Output
-# from .timekeeper import TimeKeeper
-# from .state import State
 
 NCFILE = Path("output_test.nc")
 
 
-@pytest.fixture(scope="function")
-def initiate_output():
-
-    config = dict(
-        timer=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
-        filename=NCFILE,
-        num_particles=3,
-        output_period=np.timedelta64(12, "h"),
-        ncargs=dict(format="NETCDF4_CLASSIC"),
-        instance_variables=dict(
-            pid=dict(
-                encoding=dict(datatype="i", zlib=True),
-                attributes=dict(long_name="particle_identifier"),
-            ),
-            X=dict(
-                encoding=dict(datatype="f4"),
-                attributes=dict(long_name="particle X-coordinate"),
-            ),
+config0 = dict(
+    timer=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
+    filename=NCFILE,
+    num_particles=3,
+    output_period=np.timedelta64(12, "h"),
+    ncargs=dict(format="NETCDF4_CLASSIC"),
+    instance_variables=dict(
+        pid=dict(
+            encoding=dict(datatype="i", zlib=True),
+            attributes=dict(long_name="particle_identifier"),
         ),
-        particle_variables=dict(
-            X0=dict(
-                encoding=dict(datatype="f4"),
-                attributes=dict(long_name="inital X-position"),
-            ),
+        X=dict(
+            encoding=dict(datatype="f4"),
+            attributes=dict(long_name="particle X-coordinate"),
         ),
-        global_attributes=dict(
-            institution="Institute of Marine Research", source="LADiM"
+    ),
+    particle_variables=dict(
+        X0=dict(
+            encoding=dict(datatype="f4"),
+            attributes=dict(long_name="inital X-position"),
         ),
-    )
-
-    out = Output(**config)
-    yield out
-    # teardown
-    NCFILE.unlink()
+    ),
+    global_attributes=dict(institution="Institute of Marine Research", source="LADiM"),
+)
 
 
 def test_filename():
@@ -80,25 +67,33 @@ def test_filename():
     assert next(g) == Path("kake_42_008.nc")
 
 
-def test_output_init(initiate_output):
+def test_output_init():
     """Test module initialization"""
-    out = initiate_output
+    out = Output(**config0)
+
     # Check some attributes
     assert out.filename == NCFILE
     assert set(out.instance_variables) == {"pid", "X"}
-    # NCFILE.unlink()
+    assert out.output_period_steps == 24  # 12 h / 0.5 h
+    out.close()
+    NCFILE.unlink()
 
 
-def test_file_creation(initiate_output):
+def test_file_creation():
     """Test the file creation part of the initialization"""
 
-    out = initiate_output
+    out = Output(**config0)
     # Close the file before testing
-    out.nc.close()
+    out.close()
 
-    # NetCDF file is created and looks OK
+    # NetCDF file is created and is a netCDF file
     assert NCFILE.exists()
-    assert subprocess.run(["ncdump", "-h", str(NCFILE)], shell=False).returncode == 0
+    assert (
+        subprocess.run(
+            ["ncdump", "-h", str(NCFILE)], stdout=subprocess.DEVNULL, shell=False
+        ).returncode
+        == 0
+    )
 
     # Check some of the content
     with Dataset(NCFILE) as nc:
@@ -109,15 +104,37 @@ def test_file_creation(initiate_output):
         assert nc.variables["pid"].dimensions == ("particle_instance",)
         assert nc.variables["X0"].dimensions == ("particle",)
         assert set(nc.ncattrs()) == {"institution", "source"}
-        # assert nc.source == "LADiM"
+        assert nc.getncattr("source") == "LADiM"
 
-    # NCFILE.unlink()
+    NCFILE.unlink()
 
 
-def test_write(initiate_output):
-    """Writing the works"""
+def test_reference_time():
+    """Explicit reference time"""
+
     state = State()
-    out = initiate_output
+    timer = TimeKeeper(
+        start="2020-01-01 12", stop="2020-01-03 12", reference="2000-01-01", dt=1800,
+    )
+    config = dict(config0, timer=timer)
+    out = Output(**config)
+    state.append(X=100, Y=10, Z=5)
+    out.write(state)
+    out.close()
+    with Dataset(NCFILE) as nc:
+        tvar = nc.variables["time"]
+        assert tvar.units == "seconds since 2000-01-01T00:00:00"
+        assert (
+            timer.reference_time + np.timedelta64(int(tvar[0]), "s")
+            ==     timer.start_time
+        )
+    NCFILE.unlink()
+
+
+def test_write():
+    """Write a sequence of states"""
+    state = State()
+    out = Output(**config0)
 
     assert out.record_count == 0
     assert out.instance_count == 0
@@ -165,47 +182,17 @@ def test_write(initiate_output):
             nc.variables["X"][:] == [100, 101, 102, 200, 300, 201, 301, 202, 302]
         )
 
-    # NCFILE.unlink()
+    NCFILE.unlink()
 
 
 def test_multifile():
     """Test the multifile functionality"""
-    config = dict(
-        timer=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
-        filename="a.nc",
-        num_particles=3,
-        output_period=np.timedelta64(12, "h"),
-        numrec=2,
-        ncargs=dict(format="NETCDF4_CLASSIC"),
-        instance_variables=dict(
-            pid=dict(
-                encoding=dict(datatype="i", zlib=True),
-                attributes=dict(long_name="particle_identifier"),
-            ),
-            X=dict(
-                encoding=dict(datatype="f4"),
-                attributes=dict(long_name="particle X-coordinate"),
-            ),
-        ),
-        particle_variables=dict(
-            X0=dict(
-                encoding=dict(datatype="f4"),
-                attributes=dict(long_name="inital X-position"),
-            ),
-        ),
-        global_attributes=dict(
-            institution="Institute of Marine Research", source="LADiM"
-        ),
-    )
 
     h = 3600
 
+    config = dict(config0, filename="a.nc", numrec=2)
     out = Output(**config)
-
     state = State()
-
-    # assert out.record_count == 0
-    # assert out.instance_count == 0
 
     # First file
     state.append(X=100, Y=10, Z=5)
@@ -240,5 +227,5 @@ def test_multifile():
     assert all(nc.variables["pid"][:] == [1, 2])
 
     # Clean up
-    for i in range(2):
+    for i in range(3):
         Path(f"a_00{i}.nc").unlink()
