@@ -13,7 +13,7 @@
 # import os
 import re
 from pathlib import Path
-from typing import Dict, Generator, Union, Optional, Sequence, Any
+from typing import AnyStr, Dict, Generator, Union, Optional, Sequence, Any
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
@@ -21,6 +21,7 @@ from netCDF4 import Dataset  # type: ignore
 from .timekeeper import TimeKeeper  # For typing
 from .state import State  # For typing
 
+Variable = Dict[str, Any]
 
 class Output:
     """Class for writing LADiM results to netCDF
@@ -43,8 +44,8 @@ class Output:
             int, np.timedelta64, Sequence
         ],  # Time interval between outputs
         num_particles: int,  # Total number of particles
-        instance_variables: Dict[str, Any],
-        particle_variables: Optional[Dict[str, Any]] = None,
+        instance_variables: Dict[str, Variable],
+        particle_variables: Optional[Dict[str, Variable]] = None,
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,

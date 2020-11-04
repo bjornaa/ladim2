@@ -7,11 +7,12 @@
 # ================================
 
 import datetime
-from typing import Union, Optional
+import re
+from typing import Union, Optional, Sequence
 import numpy as np  # type: ignore
 
 Time = Union[str, np.datetime64, datetime.datetime]
-TimeDelta = Union[int, np.timedelta64, datetime.timedelta]
+TimeDelta = Union[int, np.timedelta64, datetime.timedelta, Sequence, str]
 
 # TODO: Implement reasonable behaviour for backward tracking
 #       stop before start
@@ -59,7 +60,12 @@ class TimeKeeper:
             self.reference_time = np.datetime64(reference, "s")
         else:
             self.reference_time = self.start_time
-        self._dt = np.timedelta64(dt, "s")
+        if isinstance(dt, str):
+            self._dt = parse_isoperiod(dt)
+        elif isinstance(dt, Sequence):  # yaml type [5, "m"] or (5, "m")
+            self._dt = np.timedelta64(dt[0], dt[1]).astype("m8[s]")
+        else:  # use default unit "s"
+            self._dt = np.timedelta64(dt, "s")
         self.dt = self._dt.astype("int")
 
         # Number of time steps (excluding initial)
@@ -91,3 +97,29 @@ class TimeKeeper:
     def cf_units(self, unit="s"):
         """Return string with units for time following the CF standard"""
         return f"{self.unit_table[unit]} since {self.reference_time}"
+
+
+def parse_isoperiod(s: str) -> np.timedelta64:
+    """Parse an ISO 8601 time period
+
+    Valid input format examples:
+        PT3H:     3 hours
+        PT30M:    30 minutes
+        PT600S:   600 seconds = 10 minutes
+        PT16M40S: 1000 seconds
+
+    """
+
+    pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"
+    m = re.match(pattern, s)
+    if m is None:
+        raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
+    td = np.timedelta64(0, "s")
+    if not any(m.groups()):
+        raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
+    for item in m.groups():
+        if item:
+            value = int(item[:-1])
+            unit = item[-1].lower()
+            td = td + np.timedelta64(value, unit)
+    return td

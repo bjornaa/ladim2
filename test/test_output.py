@@ -86,7 +86,7 @@ def test_file_creation():
     # Close the file before testing
     out.close()
 
-    # NetCDF file is created and is a netCDF file
+    # The file exist and is recognized by ncdump as a netcdf file
     assert NCFILE.exists()
     assert (
         subprocess.run(
@@ -125,8 +125,7 @@ def test_reference_time():
         tvar = nc.variables["time"]
         assert tvar.units == "seconds since 2000-01-01T00:00:00"
         assert (
-            timer.reference_time + np.timedelta64(int(tvar[0]), "s")
-            ==     timer.start_time
+            timer.reference_time + np.timedelta64(int(tvar[0]), "s") == timer.start_time
         )
     NCFILE.unlink()
 
@@ -226,6 +225,6 @@ def test_multifile():
     assert all(nc.variables["particle_count"][:] == [2])
     assert all(nc.variables["pid"][:] == [1, 2])
 
-    # Clean up
-    for i in range(3):
-        Path(f"a_00{i}.nc").unlink()
+    # Clean up, remove the netcdf files
+    for file_ in Path(".").glob("a_0??.nc"):
+        file_.unlink()

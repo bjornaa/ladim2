@@ -18,7 +18,6 @@ class Output:
         **args,
     ):
 
-        print("Output.__init__")
 
         if instance_variables is None:
             particle_variables = dict()
@@ -95,9 +94,6 @@ class Output:
         v.long_name = "number of particles in a given timestep"
         v.ragged_row_count = "particle count at nth timestep"
 
-        # v = ncid.createVariable('release_time', 'f8', ('particle',))
-        # v.long_name = "particle release time"
-        # v.units = "seconds since 1970-01-01T00:00:00"
 
         # Define output instance variables
         for var, ncatts in self.instance_variables.items():

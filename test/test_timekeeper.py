@@ -3,7 +3,9 @@
 import datetime
 import numpy as np
 
-from ladim2.timekeeper import TimeKeeper
+import pytest
+
+from ladim2.timekeeper import TimeKeeper, parse_isoperiod
 
 
 def test_init():
@@ -24,8 +26,18 @@ def test_init():
     t = TimeKeeper(start=start_time, stop=stop_time, dt=dt, reference="2020-01-01")
     assert str(t.reference_time) == "2020-01-01T00:00:00"
 
-    # dt as timedelta
+    # dt as timedelta (both datetime and numpy)
+    t = TimeKeeper(start_time, stop_time, dt=datetime.timedelta(seconds=3600))
+    assert t.dt == 3600
     t = TimeKeeper(start_time, stop_time, dt=np.timedelta64(1, "h"))
+    assert t.dt == 3600
+
+    # dt as yaml-type timedeltas
+    t = TimeKeeper(start_time, stop_time, dt=[1, "h"])
+    assert t.dt == 3600
+
+    # dt specified in ISO 8601 format
+    t = TimeKeeper(start_time, stop_time, dt="PT1H")
     assert t.dt == 3600
 
     # start - stop not divisible by dt
@@ -93,12 +105,40 @@ def test_step2nctime():
     assert t.step2nctime(10, unit="m") == 600
     assert t.step2nctime(10, unit="h") == 10
 
-
     # With explicit reference time
-    reference_time = "2020-04-04"   # 12 h = 43200 s before start
+    reference_time = "2020-04-04"  # 12 h = 43200 s before start
     t = TimeKeeper(start=start_time, stop=stop_time, reference=reference_time, dt=3600)
 
     assert t.cf_units() == "seconds since 2020-04-04T00:00:00"
     assert t.step2nctime(0) == 43200
     assert t.step2nctime(0, unit="h") == 12
     assert t.step2nctime(10) == 43200 + 10 * 3600
+
+
+def test_parse_isoperiod():
+    """Test the parsing of iso 8601 time period"""
+
+    assert parse_isoperiod("PT2H") == np.timedelta64(2, "h")
+    assert parse_isoperiod("PT09M") == np.timedelta64(9, "m")
+    assert parse_isoperiod("PT30S") == np.timedelta64(30, "s")
+    assert parse_isoperiod("PT600S") == np.timedelta64(10, "m")
+    assert parse_isoperiod("PT16M40S") == np.timedelta64(1000, "s")
+
+    with pytest.raises(ValueError):  # Must have at least of the items
+        parse_isoperiod("PT")
+    with pytest.raises(ValueError):  # T is necessary
+        parse_isoperiod("P30S")
+    with pytest.raises(ValueError):  # P is necessary
+        parse_isoperiod("T30S")
+    with pytest.raises(ValueError):  # Must use upper case
+        parse_isoperiod("PT30s")
+    with pytest.raises(ValueError):  # Only one item per unit
+        parse_isoperiod("PT100S30S")
+    with pytest.raises(ValueError):  # Only units H, M, S are accepted
+        parse_isoperiod("PT20A")
+    with pytest.raises(ValueError):  # Must follow the logcal H,M,S order
+        parse_isoperiod("PT40S16M")
+    with pytest.raises(ValueError):  # The P must start the string
+        parse_isoperiod("APT40S")
+    with pytest.raises(ValueError):  # Nothing after the items
+        parse_isoperiod("PT40SZ")
