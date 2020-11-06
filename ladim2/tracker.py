@@ -12,8 +12,9 @@
 from typing import Any, Tuple, Dict
 import numpy as np
 from .state import State
+from .timekeeper import normalize_period
 
-from numba import njit
+#from numba import njit
 
 Velocity = Tuple[np.ndarray, np.ndarray]
 # State = Any  # Could not find any better
@@ -30,7 +31,7 @@ class Tracker:
 
         print("Tracker.__init__")
 
-        self.dt = dt
+        self.dt = normalize_period(dt).astype("int")   # integer, unit = seconds
         self.advection = advection  # Name of advection method
         self.diffusion = diffusion
 

@@ -21,7 +21,8 @@ from .timekeeper import normalize_period
 # from .utilities import ingrid
 
 
-class ParticleReleaser(Iterator):
+#class ParticleReleaser(Iterator):
+class ParticleReleaser:
     """Particle Release Class"""
 
     def __init__(
