@@ -6,7 +6,7 @@
 
 version: 2.0
 
-time_control:
+time:
     # Start of simulation
     start: 1989-05-24 12:00:00
     # End of simulation
@@ -48,9 +48,7 @@ output:
     # module: output
     filename: out.nc
     ncargs: {data_model: NETCDF3_CLASSIC}
-    # output_period: [3, h]
-    output_period: 10800   # 3 hours
-    num_particles: 1000
+    output_period: [3, h]
     instance_variables:
         pid:
             encoding: {datatype: i4, zlib=True}

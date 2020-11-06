@@ -14,14 +14,14 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import List, Optional
+from typing import List, Optional, Iterator
 
 from .timekeeper import normalize_period
 
 # from .utilities import ingrid
 
 
-class ParticleReleaser:
+class ParticleReleaser(Iterator):
     """Particle Release Class"""
 
     def __init__(

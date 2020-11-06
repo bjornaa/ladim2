@@ -18,7 +18,7 @@ from typing import AnyStr, Dict, Generator, Union, Optional, Sequence, Any
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-from .timekeeper import TimeKeeper  # For typing
+from .timekeeper import TimeKeeper, normalize_period
 from .state import State  # For typing
 
 Variable = Dict[str, Any]
@@ -27,8 +27,9 @@ class Output:
     """Class for writing LADiM results to netCDF
 
     Attributes:
-        filename:  name of netcdf-file
+        filename:       Name or name-pattern of output netcdf-file
         num_particles:  Total number of particles in the simulation
+        output_period:  Time period between writes
         instance_variables
         particle_variables
         ncargs
@@ -40,9 +41,7 @@ class Output:
         self,
         timer: TimeKeeper,
         filename: Union[Path, str],
-        output_period: Union[
-            int, np.timedelta64, Sequence
-        ],  # Time interval between outputs
+        output_period: Union[int, np.timedelta64, Sequence],
         num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
@@ -67,12 +66,7 @@ class Output:
 
         self.global_attributes = global_attributes
 
-        if isinstance(output_period, Sequence):  #  [value, unitchar]
-            self.output_period = np.timedelta64(
-                output_period[0], output_period[1]
-            ).astype("m8[s]")
-        else:
-            self.output_period = np.timedelta64(output_period, "s")
+        self.output_period = normalize_period(output_period)
         self.output_period_steps = self.output_period // timer._dt
 
         self.num_records = (timer.stop_time - timer.start_time) // self.output_period
