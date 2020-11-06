@@ -22,4 +22,8 @@ def configure(config_file):
     # Use time step from time_control
     config["tracker"]["dt"] = config["time_control"]["dt"]
 
+    config["release"]["timekeeper"] = config["time_control"]
+
+
+
     return config

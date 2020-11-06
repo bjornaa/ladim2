@@ -14,28 +14,31 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import Iterator, List
+from typing import List, Optional
+
+from .timekeeper import normalize_period
 
 # from .utilities import ingrid
 
 
-class ParticleReleaser(Iterator):
+class ParticleReleaser:
     """Particle Release Class"""
 
     def __init__(
         self,
         release_file,
-        time_control,
+        timer,
         grid=None,
         names=None,
         dtype=None,
         continuous=False,
         release_frequency=0,  # frequnency in seconds
-        warm_start=False,
+        # warm_start=False,
+        **args,
     ):
 
-        self.start_time = time_control.start_time
-        self.stop_time = time_control.stop_time
+        self.start_time = timer.start_time
+        self.stop_time = timer.stop_time
 
         # # logging.info("Initializing the particle releaser")
 
@@ -52,7 +55,7 @@ class ParticleReleaser(Iterator):
         # REMARK: continuous flag is unnecessary,
         # could use release_frequency == True (not None, > 0)
         if continuous:
-            self.release_frequency = release_frequency
+            self.release_frequency = normalize_period(release_frequency)
             self.discretize()
 
         # Now discrete, remove everything before start
@@ -86,7 +89,7 @@ class ParticleReleaser(Iterator):
 
         # Compute the release time steps
         rel_time = self.times - self.start_time
-        self.steps = rel_time // time_control.dt
+        self.steps = rel_time // timer.dt
 
         # # Make dataframes for each timeframe
         # # self._B = [x[1] for x in A.groupby('release_time')]
@@ -185,14 +188,20 @@ class ParticleReleaser(Iterator):
         return V
 
     @staticmethod
-    def read_release_file(rls_file, names=None, dtype=None):
+    def read_release_file(
+        rls_file, names: Optional[list] = None, dtype: Optional[dict] = None
+    ) -> pd.DataFrame:
+        """Read the release file into a pandas DataFrame"""
 
-        if dtype == None:
-            datatype = dict()
+
+        datatype = dtype if dtype else dict()
         # Add in default dtypes
         dtype0 = dict(mult=int, X=float, Y=float, Z=float, lon=float, lat=float)
         # Add dtype arguments, may override the defaults
         datatype = dict(dtype0, **datatype)
+
+        # print("release: names =", names)
+        # print("release: datatype =", datatype)
 
         return pd.read_csv(
             rls_file,
@@ -262,10 +271,10 @@ class ParticleReleaser(Iterator):
         # time1 = stop_time
         # times = np.arange(time0, time1, release_frequency)
 
-        times = np.arange(file_times[0], self.stop_time, self.release_frequency)
-        # df = df.reindex(times, method='pad')
-        #     # A['release_time'] = df.index
-        # Reindex does not work with non-unique index
+        times = np.arange(
+            file_times[0], self.stop_time, np.timedelta64(self.release_frequency, "s")
+        )
+
         # Reindex the index
         J = pd.Series(file_times, index=file_times).reindex(times, method="pad")
         num_entries_per_time = {i: mylen(df.loc[i]) for i in file_times}

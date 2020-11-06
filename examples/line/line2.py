@@ -25,7 +25,7 @@ grid = Grid(**config["grid"])
 force = Forcing(grid=grid, timer=timer, **config["forcing"])
 # tracker = Tracker(dt=timer.dt, **config["tracker"])
 tracker = Tracker(**config["tracker"])
-release = ParticleReleaser(time_control=timer, **config["release"])
+release = ParticleReleaser(timer=timer, **config["release"])
 output = Output(timer=timer, **config["output"])
 
 # --------------------------

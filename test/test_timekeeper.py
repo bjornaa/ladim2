@@ -5,7 +5,7 @@ import numpy as np
 
 import pytest
 
-from ladim2.timekeeper import TimeKeeper, parse_isoperiod
+from ladim2.timekeeper import TimeKeeper, normalize_period
 
 
 def test_init():
@@ -27,8 +27,8 @@ def test_init():
     assert str(t.reference_time) == "2020-01-01T00:00:00"
 
     # dt as timedelta (both datetime and numpy)
-    t = TimeKeeper(start_time, stop_time, dt=datetime.timedelta(seconds=3600))
-    assert t.dt == 3600
+    # t = TimeKeeper(start_time, stop_time, dt=datetime.timedelta(seconds=3600))
+    # assert t.dt == 3600
     t = TimeKeeper(start_time, stop_time, dt=np.timedelta64(1, "h"))
     assert t.dt == 3600
 
@@ -115,30 +115,43 @@ def test_step2nctime():
     assert t.step2nctime(10) == 43200 + 10 * 3600
 
 
-def test_parse_isoperiod():
-    """Test the parsing of iso 8601 time period"""
+# def test_parse_isoperiod():
+def test_normalize_period():
 
-    assert parse_isoperiod("PT2H") == np.timedelta64(2, "h")
-    assert parse_isoperiod("PT09M") == np.timedelta64(9, "m")
-    assert parse_isoperiod("PT30S") == np.timedelta64(30, "s")
-    assert parse_isoperiod("PT600S") == np.timedelta64(10, "m")
-    assert parse_isoperiod("PT16M40S") == np.timedelta64(1000, "s")
+    assert normalize_period(1800) == np.timedelta64(30, "m")
+    assert normalize_period(np.timedelta64(300, "s")) == np.timedelta64(5, "m")
+    assert normalize_period(datetime.timedelta(seconds=60)) == np.timedelta64(1, "m")
+    assert normalize_period([1, "h"]) == np.timedelta64(1, "h")
+    assert normalize_period("PT2H") == np.timedelta64(2, "h")
+    assert normalize_period("PT09M") == np.timedelta64(9, "m")
+    assert normalize_period("PT30S") == np.timedelta64(30, "s")
+    assert normalize_period("PT600S") == np.timedelta64(10, "m")
+    assert normalize_period("PT16M40S") == np.timedelta64(1000, "s")
 
-    with pytest.raises(ValueError):  # Must have at least of the items
-        parse_isoperiod("PT")
+    with pytest.raises(ValueError):  # Only string allowed is the ISO 8601 type
+        normalize_period("600")
+    with pytest.raises(ValueError):  # Unit should be "h", "m", or "s"
+        normalize_period([1, "min"])
+    with pytest.raises(ValueError):  # List/tuple should have two elements
+        normalize_period([3600])
+    with pytest.raises(ValueError):  # List/tuple should have two elements
+        normalize_period([3600, "h", "s"])
+
+    with pytest.raises(ValueError):  # Must have at least one of the items
+        normalize_period("PT")
     with pytest.raises(ValueError):  # T is necessary
-        parse_isoperiod("P30S")
+        normalize_period("P30S")
     with pytest.raises(ValueError):  # P is necessary
-        parse_isoperiod("T30S")
+        normalize_period("T30S")
     with pytest.raises(ValueError):  # Must use upper case
-        parse_isoperiod("PT30s")
+        normalize_period("PT30s")
     with pytest.raises(ValueError):  # Only one item per unit
-        parse_isoperiod("PT100S30S")
+        normalize_period("PT100S30S")
     with pytest.raises(ValueError):  # Only units H, M, S are accepted
-        parse_isoperiod("PT20A")
+        normalize_period("PT20A")
     with pytest.raises(ValueError):  # Must follow the logcal H,M,S order
-        parse_isoperiod("PT40S16M")
+        normalize_period("PT40S16M")
     with pytest.raises(ValueError):  # The P must start the string
-        parse_isoperiod("APT40S")
+        normalize_period("APT40S")
     with pytest.raises(ValueError):  # Nothing after the items
-        parse_isoperiod("PT40SZ")
+        normalize_period("PT40SZ")

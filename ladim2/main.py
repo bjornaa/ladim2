@@ -23,12 +23,13 @@ def main(configuration_file):
     # Initialization
     # -------------------
 
+    print("Initiating")
     state = State(**config["state"])
     timer = TimeKeeper(**config["time_control"])
     grid = Grid(**config["grid"])
     force = Forcing(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
-    release = ParticleReleaser(time_control=timer, **config["release"])
+    release = ParticleReleaser(timer=timer, **config["release"])
     output = Output(timer=timer, **config["output"])
 
     # --------------------------
@@ -54,7 +55,6 @@ def main(configuration_file):
     print("output_period", output_period_step)
     print("Time loop")
     for step in range(timer.Nsteps+1):
-        print(step)
         tracker.update(state, grid=grid, force=force)
         if step % output_period_step == 0:
             output.write(state)

@@ -25,7 +25,7 @@ class TimeKeeper:
         start_time: start time of simulation
         stop_time: stop time for simulation
         reference_time: reference time for cf-standard output
-        dt: np.timedelta64, model time step
+        dt: seconds, model time step
         Nsteps: Total number of time steps in simulation
 
     methods:
@@ -60,13 +60,8 @@ class TimeKeeper:
             self.reference_time = np.datetime64(reference, "s")
         else:
             self.reference_time = self.start_time
-        if isinstance(dt, str):
-            self._dt = parse_isoperiod(dt)
-        elif isinstance(dt, Sequence):  # yaml type [5, "m"] or (5, "m")
-            self._dt = np.timedelta64(dt[0], dt[1]).astype("m8[s]")
-        else:  # use default unit "s"
-            self._dt = np.timedelta64(dt, "s")
-        self.dt = self._dt.astype("int")
+        self._dt = normalize_period(dt)  # np.datetime64(-,"s")
+        self.dt = self._dt.astype("int")  # seconds
 
         # Number of time steps (excluding initial)
         self.Nsteps = (self.stop_time - self.start_time) // self._dt
@@ -99,27 +94,67 @@ class TimeKeeper:
         return f"{self.unit_table[unit]} since {self.reference_time}"
 
 
-def parse_isoperiod(s: str) -> np.timedelta64:
-    """Parse an ISO 8601 time period
+def normalize_period(per: TimeDelta) -> np.timedelta64:
+    """Normalize different time period formats to np.timedelta64(-,"s")
 
-    Valid input format examples:
-        PT3H:     3 hours
-        PT30M:    30 minutes
-        PT600S:   600 seconds = 10 minutes
-        PT16M40S: 1000 seconds
-
+    Accepted formats:
+       int:  numbe of seconds
+       np.timedelta64
+       [value, unit]:  np.timedelta(value, unit), unit = "h", "m", "s"
+       ISO 8601 format: "PTxHyMzS", x hours, y minutes, z seconds
     """
 
-    pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"
-    m = re.match(pattern, s)
-    if m is None:
-        raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
-    td = np.timedelta64(0, "s")
-    if not any(m.groups()):
-        raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
-    for item in m.groups():
-        if item:
-            value = int(item[:-1])
-            unit = item[-1].lower()
-            td = td + np.timedelta64(value, unit)
-    return td
+    if isinstance(per, (int, np.timedelta64, datetime.timedelta)):
+        return np.timedelta64(per, "s")
+    # if isinstance(per, np.timedelta64):
+    #    return per.astype("m8[s]")
+    if isinstance(per, (list, tuple)):
+        value, unit = per
+        try:
+            return np.timedelta64(np.timedelta64(value, unit), "s")
+        except (TypeError, ValueError):
+            raise ValueError(f"{per} is not a valid time period")
+
+    if isinstance(per, str):  # ISO 8601 standard PTxHyMzS
+        pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"
+        m = re.match(pattern, per)
+        if m is None:
+            raise ValueError(f"{per} is not a valid time period")
+        td = np.timedelta64(0, "s")
+        if not any(m.groups()):
+            raise ValueError(f"{per} is not a valid time period")
+        for item in m.groups():
+            if item:
+                value = int(item[:-1])
+                unit = item[-1].lower()
+                td = td + np.timedelta64(value, unit)
+        return td
+
+    # None of the above
+    raise ValueError(f"{per} is not a valid time period")
+
+
+# def parse_isoperiod(s: str) -> np.timedelta64:
+#     """Parse an ISO 8601 time period
+
+#     Valid input format examples:
+#         PT3H:     3 hours
+#         PT30M:    30 minutes
+#         PT600S:   600 seconds = 10 minutes
+#         PT16M40S: 1000 seconds
+
+#     """
+
+#     pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"
+#     m = re.match(pattern, s)
+#     if m is None:
+#         raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
+#     td = np.timedelta64(0, "s")
+#     if not any(m.groups()):
+#         raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
+#     for item in m.groups():
+#         if item:
+#             value = int(item[:-1])
+#             unit = item[-1].lower()
+#             td = td + np.timedelta64(value, unit)
+#     return td
