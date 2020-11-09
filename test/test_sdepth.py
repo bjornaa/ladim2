@@ -6,7 +6,6 @@
 # ----------------------------------
 
 import numpy as np
-import pytest
 
 from ladim2.util_ROMS import sdepth, s_stretch
 

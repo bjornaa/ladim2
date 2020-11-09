@@ -115,7 +115,6 @@ def test_step2nctime():
     assert t.step2nctime(10) == 43200 + 10 * 3600
 
 
-# def test_parse_isoperiod():
 def test_normalize_period():
 
     assert normalize_period(1800) == np.timedelta64(30, "m")

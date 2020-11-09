@@ -9,7 +9,8 @@ Class for the state of the model
 # ----------------------------------
 
 from numbers import Number
-from typing import Dict, Union, Sized, Sequence, Optional
+from collections.abc import Sized
+from typing import Dict, Union, Sequence, Optional
 
 import numpy as np  # type: ignore
 

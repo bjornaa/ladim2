@@ -11,16 +11,23 @@ LADiM Grid class for the Regional Ocean Model System (ROMS)
 # -----------------------------------
 
 # import sys
-import glob
+# import glob
+from pathlib import Path
+from typing import Union, Optional, Tuple
 
 # import logging
 import numpy as np
 from netCDF4 import Dataset
 
+from ladim2.grid import Grid
 from ladim2.sample import sample2D, bilin_inv
 
 
-class Grid:
+def makegrid(**args) -> Grid:
+    return Grid_ROMS(**args)
+
+
+class Grid_ROMS(Grid):
     """Simple ROMS grid object
 
     Possible grid arguments:
@@ -33,7 +40,13 @@ class Grid:
 
     # Lagrer en del unødige attributter
 
-    def __init__(self, filename, subgrid=None, Vinfo=None, **args):
+    def __init__(
+        self,
+        filename: Union[Path, str],
+        subgrid: Optional[Tuple[int, int, int, int]] = None,
+        Vinfo=None,
+        **args,
+    ) -> None:
 
         print("Grid.__init__")
 
@@ -50,7 +63,7 @@ class Grid:
             ncid = Dataset(filename)
         except OSError:
             # logging.error("Could not open grid file " + grid_file)
-            print("Could not open grid file " + filename)
+            print(f"Could not open grid file {filename}")
             raise SystemExit(1)
         ncid.set_auto_maskandscale(False)
 
@@ -58,8 +71,10 @@ class Grid:
         # 1 <= i0 < i1 <= imax-1, default=end points
         # 1 <= j0 < j1 <= jmax-1, default=end points
         # Here, imax, jmax refers to whole grid
+        imax: int
+        jmax: int
         jmax, imax = ncid.variables["h"].shape
-        whole_grid = [1, imax - 1, 1, jmax - 1]
+        whole_grid = (1, imax - 1, 1, jmax - 1)
         if subgrid is None:
             limits = whole_grid
         else:
@@ -165,7 +180,7 @@ class Grid:
         # Close the file(s)
         ncid.close()
 
-    def metric(self, X, Y):
+    def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
@@ -177,13 +192,15 @@ class Grid:
         A = self.dx[J, I]
         return A, A
 
-    def depth(self, X, Y):
+    def depth(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Return the depth of grid cells"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         return self.H[J, I]
 
-    def lonlat(self, X, Y, method="bilinear"):
+    def lonlat(
+        self, X: np.ndarray, Y: np.ndarray, method: str = "bilinear"
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)

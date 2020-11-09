@@ -13,7 +13,7 @@
 # import os
 import re
 from pathlib import Path
-from typing import AnyStr, Dict, Generator, Union, Optional, Sequence, Any
+from typing import Dict, Union, Optional, Sequence, Any, Generator
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
@@ -22,6 +22,7 @@ from .timekeeper import TimeKeeper, normalize_period
 from .state import State  # For typing
 
 Variable = Dict[str, Any]
+
 
 class Output:
     """Class for writing LADiM results to netCDF
@@ -38,17 +39,17 @@ class Output:
     """
 
     def __init__(
-        self,
-        timer: TimeKeeper,
-        filename: Union[Path, str],
-        output_period: Union[int, np.timedelta64, Sequence],
-        num_particles: int,  # Total number of particles
-        instance_variables: Dict[str, Variable],
-        particle_variables: Optional[Dict[str, Variable]] = None,
-        ncargs: Optional[Dict[str, Any]] = None,
-        numrec: int = 0,  # Number of records per file, no multfile if zero
-        skip_initial: Optional[bool] = False,
-        global_attributes: Optional[Dict[str, Any]] = None,
+            self,
+            timer: TimeKeeper,
+            filename: Union[Path, str],
+            output_period: Union[int, np.timedelta64, Sequence],
+            num_particles: int,  # Total number of particles
+            instance_variables: Dict[str, Variable],
+            particle_variables: Optional[Dict[str, Variable]] = None,
+            ncargs: Optional[Dict[str, Any]] = None,
+            numrec: int = 0,  # Number of records per file, no multfile if zero
+            skip_initial: Optional[bool] = False,
+            global_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         # logging.info("Initializing output")
@@ -144,7 +145,6 @@ class Output:
 
         Arguments:
           state: Model state
-          step: Time step number
 
         """
 

@@ -1,14 +1,35 @@
 import sys
 import os
+from pathlib import Path
+from abc import ABC, abstractmethod
 import importlib
 
+import numpy as np  # type: ignore
 
-def Grid(**args):
 
-    sys.path.insert(0, "/home/bjorn/ladim2/ladim2")
+#class Grid(ABC):
+class Grid():
+
+    @abstractmethod
+    def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        pass
+
+
+def makegrid(**args) -> Grid:
+
+    args = args.copy()
+    module = args.pop("module")
+
+    # System path for ladim2.ladim2
+    p = Path(__file__).parent
+    sys.path.insert(0, str(p))
+    # Working directory
     sys.path.insert(0, os.getcwd())
 
-    module = args["module"]
-
-    G = importlib.import_module(module).Grid
-    return G(**args)
+    # Import correct module
+    gmod = importlib.import_module(module)   # type: ignore
+    return gmod.makegrid(**args)

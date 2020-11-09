@@ -1,10 +1,9 @@
 # Move particle in a circle (clockwise)
 
 # from collections import namedtuple
-from typing import Tuple, Union, Sequence, Callable
+from typing import Tuple, Union, Callable
 
 import numpy as np  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
 from .state import State
 
 Vector = Union[float, np.ndarray]
@@ -41,7 +40,7 @@ def get_velocity2(
     u0, v0 = sample_func(x0, y0)
     x1, y1 = x0 + s * dt * u0, y0 + s * dt * v0
     u1, v1 = sample_func(x1, y1)
-    return ((1 - m) * u0 + m * u1, (1 - m) * v0 + m * v1)
+    return (1 - m) * u0 + m * u1, (1 - m) * v0 + m * v1
 
 
 def get_velocity4(

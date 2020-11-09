@@ -418,7 +418,7 @@ def test_iterate2():
     2015-04-03     102   402    5
     2015-04-04     103   403    5
     """
-     )
+    )
     timer = TimeKeeper()
     freq = np.timedelta64(12, "h")
     pr = ParticleReleaser(f, timer=timer, continuous=True, release_frequency=freq,)

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from .state import State
-from .grid import Grid
+from .grid import makegrid
 from .timekeeper import TimeKeeper
 from .forcing import Forcing
 from .tracker import Tracker
@@ -29,7 +29,7 @@ def main(configuration_file: Union[Path, str]) -> None:
     print("Initiating")
     state = State(**config["state"])
     timer = TimeKeeper(**config["time"])
-    grid = Grid(**config["grid"])
+    grid = makegrid(**config["grid"])
     force = Forcing(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
     release = ParticleReleaser(timer=timer, **config["release"])

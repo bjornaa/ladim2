@@ -1,4 +1,4 @@
-# Particle release class
+"""Particle release class"""
 
 # -------------------
 # release.py
@@ -11,18 +11,21 @@
 # Bergen, Norway
 # ----------------------------------
 
+from collections.abc import Iterator
+from pathlib import Path
 import logging
+from typing import List, Optional, Union
+
 import numpy as np
 import pandas as pd
-from typing import List, Optional, Iterator
 
 from .timekeeper import normalize_period
+from .grid import Grid
 
 # from .utilities import ingrid
 
 
-#class ParticleReleaser(Iterator):
-class ParticleReleaser:
+class ParticleReleaser(Iterator):
     """Particle Release Class"""
 
     def __init__(
@@ -190,10 +193,11 @@ class ParticleReleaser:
 
     @staticmethod
     def read_release_file(
-        rls_file, names: Optional[list] = None, dtype: Optional[dict] = None
+        rls_file: Union[Path, str],
+        names: Optional[list] = None,
+        dtype: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Read the release file into a pandas DataFrame"""
-
 
         datatype = dtype if dtype else dict()
         # Add in default dtypes
@@ -213,7 +217,7 @@ class ParticleReleaser:
             index_col="release_time",
         )
 
-    def clean_release_data(self, grid):
+    def clean_release_data(self, grid: Grid) -> None:
         """Make sure the release data have mult, X, and Y columns
 
         X and Y may be inferred from lon and lat using grid.ll2xy
@@ -242,7 +246,7 @@ class ParticleReleaser:
             df["lat"] = Y
             df.rename(columns={"lon": "X", "lat": "Y"}, inplace=True)
 
-    def discretize(self):
+    def discretize(self) -> None:
         """Make a continuous release sequence discrete"""
 
         df = self._df
