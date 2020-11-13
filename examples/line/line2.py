@@ -1,7 +1,7 @@
 from ladim2.configure import configure
 from ladim2.state import State
 from ladim2.grid_ROMS import makegrid
-from ladim2.timekeeper import TimeKeeper
+from ladim2.timekeeper import timer
 from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
@@ -21,7 +21,7 @@ config = configure("ladim2.yaml")
 # -------------------
 
 state = State(**config["state"])
-timer = TimeKeeper(**config["time"])
+timer = timer(**config["time"])
 grid = makegrid(**config["grid"])
 force = Forcing(grid=grid, timer=timer, **config["forcing"])
 # tracker = Tracker(dt=timer.dt, **config["tracker"])

@@ -14,12 +14,12 @@
 from collections.abc import Iterator
 from pathlib import Path
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 
-import numpy as np
+import numpy as np    # type: ignore
 import pandas as pd
 
-from .timekeeper import normalize_period
+from .timekeeper import TimeKeeper, normalize_period
 from .grid import Grid
 
 # from .utilities import ingrid
@@ -30,16 +30,16 @@ class ParticleReleaser(Iterator):
 
     def __init__(
         self,
-        release_file,
-        timer,
-        grid=None,
-        names=None,
-        dtype=None,
-        continuous=False,
-        release_frequency=0,  # frequnency in seconds
+        release_file: Union[Path, str],
+        timer: TimeKeeper,
+        grid: Optional[Grid] = None,
+        names: Optional[List[str]] = None,
+        dtype: Dict = None,
+        continuous: bool = False,
+        release_frequency: int = 0,  # frequnency in seconds
         # warm_start=False,
         **args,
-    ):
+    ) -> None:
 
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
@@ -47,7 +47,12 @@ class ParticleReleaser(Iterator):
         # # logging.info("Initializing the particle releaser")
 
         self._df = self.read_release_file(release_file, names, dtype)
-        self.clean_release_data(grid)
+
+        # If no mult column, add a column of ones
+        if "mult" not in self._df.columns:
+            self._df["mult"] = 1
+
+        self.clean_position(grid)
 
         # Remove everything after simulation stop time
         self._df = self._df[self._df.index <= self.stop_time]  # Use < ?
@@ -89,11 +94,8 @@ class ParticleReleaser(Iterator):
 
         # Release times
         self.times = self._df.index.unique()
+        self.steps = [timer.time2step(t) for t in self.times]
         # logging.info("Number of release times = {}".format(len(self.times)))
-
-        # Compute the release time steps
-        rel_time = self.times - self.start_time
-        self.steps = rel_time // timer.dt
 
         # # Make dataframes for each timeframe
         # # self._B = [x[1] for x in A.groupby('release_time')]
@@ -194,8 +196,8 @@ class ParticleReleaser(Iterator):
     @staticmethod
     def read_release_file(
         rls_file: Union[Path, str],
-        names: Optional[list] = None,
-        dtype: Optional[dict] = None,
+        names: Optional[List[str]] = None,
+        dtype: Optional[Dict] = None,
     ) -> pd.DataFrame:
         """Read the release file into a pandas DataFrame"""
 
@@ -217,27 +219,25 @@ class ParticleReleaser(Iterator):
             index_col="release_time",
         )
 
-    def clean_release_data(self, grid: Grid) -> None:
+    def clean_position(self, grid: Optional[Grid] = None) -> None:
         """Make sure the release data have mult, X, and Y columns
 
         X and Y may be inferred from lon and lat using grid.ll2xy
         """
 
         df = self._df
-        # If no mult column, add a column of ones
-        if "mult" not in df.columns:
-            df["mult"] = 1
+        # # If no mult column, add a column of ones
+        # if "mult" not in df.columns:
+        #     df["mult"] = 1
 
         # Conversion from longitude, latitude to grid coordinates
         if "X" not in df.columns or "Y" not in df.columns:
             if "lon" not in df.columns or "lat" not in df.columns:
-                # logging.critical("Particle release mush have position")
+                # logging.critical("Particle release must have position")
                 raise SystemExit(3)
-            # else
-            # Make good error message if grid.ll2xy does not exist
 
             try:
-                X, Y = grid.ll2xy(df["lon"], df["lat"])
+                X, Y = grid.ll2xy(df["lon"], df["lat"])   # type: ignore
             except AttributeError:
                 print("""Can not convert from lon/lat to grid coordinates""")
                 raise SystemExit(3)
@@ -245,6 +245,8 @@ class ParticleReleaser(Iterator):
             df["lon"] = X
             df["lat"] = Y
             df.rename(columns={"lon": "X", "lat": "Y"}, inplace=True)
+
+        self._df = df
 
     def discretize(self) -> None:
         """Make a continuous release sequence discrete"""

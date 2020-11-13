@@ -10,7 +10,7 @@ from postladim import ParticleFile
 # ---------------
 
 # Files
-particle_file = "streak.nc"
+particle_file = "out.nc"
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
@@ -65,21 +65,25 @@ X, Y = pf.position(0)
 pids = pf["pid"][0]
 
 
-C = age(0)
-vmax = pf.num_times / 6  # Maximum particle age in days
-pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
-cb = plt.colorbar(pdistr)
-cb.set_label("Particle age [days]", fontsize=14)
+# C = age(0)
+C = 5
+# vmax = pf.num_times / 6  # Maximum particle age in days
+# pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
+pdistr, = ax.plot(X, Y, 'ro')
+# cb = plt.colorbar(pdistr)
+# cb.set_label("Particle age [days]", fontsize=14)
 timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     X, Y = pf.position(t)
-    pdistr.set_offsets(np.vstack((X, Y)).T)
+    # pdistr.set_offsets(np.vstack((X, Y)).T)
+    pdistr.set_data(X, Y)
+
     # Particle age in days
-    C = age(t)
-    pdistr.set_array(C)
+    # C = age(t)
+    # pdistr.set_array(C)
     timestamp.set_text(pf.time(t))
     return pdistr, timestamp
 

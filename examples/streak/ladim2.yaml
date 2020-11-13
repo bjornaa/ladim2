@@ -9,7 +9,7 @@ time:
     # Start and stop of simulation
     start: 1989-05-24 12:00:00
     stop:  1989-06-15 12:00:00
-    dt: 3600   # 1 hour
+    dt: [30, "m"]
 
 grid:
     module: grid_ROMS
@@ -25,7 +25,12 @@ release:
     release_file : streak.rls
     names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
     continuous: True
-    release_frequency: 7200
+    release_frequency: 3600
+    particle_variables: [release_time]
+
+
+state:
+    particle_variables: {release_time: "M8"}
 
 # particle_release:
 #     # type = continuous or discrete [default]
@@ -57,10 +62,10 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
-    #particle_variables:
-    #    release_time:
-    #        encoding: {datatype: f8}
-    #        attributes: {unit: seconds since reference_time}
+    particle_variables:
+        release_time:
+            encoding: {datatype: f8}
+            attributes: {unit: seconds since reference_time}
 
 
 

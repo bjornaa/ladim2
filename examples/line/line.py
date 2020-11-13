@@ -8,7 +8,7 @@ import numpy as np
 # import ladim2
 from ladim2.state import State
 from ladim2.grid_ROMS import Grid
-from ladim2.timekeeper import TimeKeeper
+from ladim2.timekeeper import timer
 from ladim2.forcing_ROMS import Forcing
 from ladim2.tracker import Tracker
 from output import Output
@@ -33,7 +33,7 @@ output_frequency = [3, "h"]
 
 state = State()
 grid = Grid(filename=data_file)
-timer = TimeKeeper(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
+timer = timer(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
 force = Forcing(grid=grid, timer=timer, filename=data_file)
 tracker = Tracker(dt=dt, advection=advection)
 

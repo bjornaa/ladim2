@@ -3,7 +3,7 @@ import subprocess
 
 import numpy as np
 from netCDF4 import Dataset
-import pytest
+# import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper

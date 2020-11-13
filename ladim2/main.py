@@ -45,11 +45,6 @@ def main(configuration_file: Union[Path, str]) -> None:
     # Også initiering av variable som ikke er i release-filen
     # X0 er et eksempel.
     print("Initial particle release")
-    V = next(release)
-    # TODO: Simplify release
-    ## next provides pid, this is handled by state itself
-    # V = V.drop(columns='pid')
-    state.append(**V)
 
     # --------------
     # Time loop
@@ -57,10 +52,26 @@ def main(configuration_file: Union[Path, str]) -> None:
 
     # Number of time steps between output (have that computed in output.py)
     output_period_step = output.output_period / timer._dt
-    print("output_period", output_period_step)
+
+    # Initial particle release and output
+    step = 0
+    if 0 in release.steps:
+        V = next(release)
+        state.append(**V)
+    if not output.skip_initial:
+        output.write(state)
+
     print("Time loop")
-    for step in range(timer.Nsteps + 1):
+    while step < timer.Nsteps:
+
+        # Update
         tracker.update(state, grid=grid, force=force)
+        step += 1
+
+        # --- Particle release and output
+        if step in release.steps:
+            V = next(release)
+            state.append(**V)
         if step % output_period_step == 0:
             output.write(state)
 
@@ -69,5 +80,5 @@ def main(configuration_file: Union[Path, str]) -> None:
     # --------------
 
     print("Cleaning up")
-    # output.save_particle_variables()
-    # output.close()
+    output.write_particle_variables(state)
+    output.close()

@@ -7,8 +7,7 @@ import importlib
 import numpy as np  # type: ignore
 
 
-#class Grid(ABC):
-class Grid():
+class Grid(ABC):
 
     @abstractmethod
     def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
@@ -31,5 +30,5 @@ def makegrid(**args) -> Grid:
     sys.path.insert(0, os.getcwd())
 
     # Import correct module
-    gmod = importlib.import_module(module)   # type: ignore
-    return gmod.makegrid(**args)
+    gmod = importlib.import_module(module)
+    return gmod.makegrid(**args)    # type: ignore
