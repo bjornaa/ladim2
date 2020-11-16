@@ -32,7 +32,7 @@ def test_init_args():
     """Init State with extra variables"""
     S = State(
         instance_variables=dict(age=float, stage=int),
-        particle_variables=dict(release_time=np.datetime64),
+        particle_variables=dict(release_time="time"),
         default_values=dict(age=0, stage=1),
     )
     assert "age" in S.instance_variables
@@ -40,8 +40,8 @@ def test_init_args():
     assert S.default_values["age"] == 0
     assert S.stage.dtype == int
     assert S.particle_variables == {"release_time"}
-    assert S.release_time.dtype == np.datetime64
-    assert S.dtypes["release_time"] == np.datetime64  # dtypes attr not needed?
+    assert S.release_time.dtype == np.dtype("M8[s]")
+    assert S.dtypes["release_time"] == np.dtype("M8[s]")
     assert all(S.release_time == np.array([], np.datetime64))
 
 

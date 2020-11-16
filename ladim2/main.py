@@ -32,7 +32,7 @@ def main(configuration_file: Union[Path, str]) -> None:
     grid = makegrid(**config["grid"])
     force = Forcing(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
-    release = ParticleReleaser(timer=timer, **config["release"])
+    release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
     output = Output(
         timer=timer, num_particles=release.total_particle_count, **config["output"]
     )
@@ -80,5 +80,5 @@ def main(configuration_file: Union[Path, str]) -> None:
     # --------------
 
     print("Cleaning up")
-    output.write_particle_variables(state)
-    output.close()
+    # output.write_particle_variables(state)
+    # output.close()

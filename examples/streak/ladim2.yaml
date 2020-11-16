@@ -26,11 +26,9 @@ release:
     names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
     continuous: True
     release_frequency: 3600
-    particle_variables: [release_time]
-
 
 state:
-    particle_variables: {release_time: "M8"}
+    particle_variables: {release_time: time}
 
 # particle_release:
 #     # type = continuous or discrete [default]
@@ -65,7 +63,10 @@ output:
     particle_variables:
         release_time:
             encoding: {datatype: f8}
-            attributes: {unit: seconds since reference_time}
+            attributes:
+                long_name: particle release time
+                units: seconds since reference_time
+
 
 
 

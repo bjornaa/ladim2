@@ -14,9 +14,9 @@
 from collections.abc import Iterator
 from pathlib import Path
 import logging
-from typing import List, Optional, Union, Dict
+from typing import List, Optional, Union, Dict, Any
 
-import numpy as np    # type: ignore
+import numpy as np  # type: ignore
 import pandas as pd
 
 from .timekeeper import TimeKeeper, normalize_period
@@ -32,21 +32,23 @@ class ParticleReleaser(Iterator):
         self,
         release_file: Union[Path, str],
         timer: TimeKeeper,
-        grid: Optional[Grid] = None,
+        datatypes: Dict[str, Any],
         names: Optional[List[str]] = None,
-        dtype: Dict = None,
+        grid: Optional[Grid] = None,
+        # dtype: Dict = None,
         continuous: bool = False,
         release_frequency: int = 0,  # frequnency in seconds
         # warm_start=False,
         **args,
     ) -> None:
 
+
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
 
         # # logging.info("Initializing the particle releaser")
 
-        self._df = self.read_release_file(release_file, names, dtype)
+        self._df = self.read_release_file(release_file, datatypes, names)
 
         # If no mult column, add a column of ones
         if "mult" not in self._df.columns:
@@ -72,6 +74,10 @@ class ParticleReleaser(Iterator):
         if len(self._df) == 0:  # All release before start
             logging.critical("All particles released before simulation start")
             raise SystemExit(3)
+
+        # Add a release_time column if requested by the datatypes
+        if "release_time" in datatypes.keys():
+            self._df["release_time"] = self._df.index
 
         # # Optionally, remove everything outside a subgrid
         # try:
@@ -196,28 +202,30 @@ class ParticleReleaser(Iterator):
     @staticmethod
     def read_release_file(
         rls_file: Union[Path, str],
+        datatypes: Dict[str, Any],
         names: Optional[List[str]] = None,
-        dtype: Optional[Dict] = None,
     ) -> pd.DataFrame:
         """Read the release file into a pandas DataFrame"""
 
-        datatype = dtype if dtype else dict()
-        # Add in default dtypes
-        dtype0 = dict(mult=int, X=float, Y=float, Z=float, lon=float, lat=float)
-        # Add dtype arguments, may override the defaults
-        datatype = dict(dtype0, **datatype)
+        # Handle time separately
+        time_vars = ["release_time"]
+        dtypes = dict()
+        for var, dtype in datatypes.items():
+            if dtype in ["M8[s]", np.dtype("M8[s]"), np.dtype("M8[ns]")]:
+                time_vars.append(var)
+            else:
+                dtypes[var] = dtype
 
-        # print("release: names =", names)
-        # print("release: datatype =", datatype)
-
-        return pd.read_csv(
+        df = pd.read_csv(
             rls_file,
-            parse_dates=["release_time"],
+            parse_dates=list(set(time_vars)),
             names=names,
-            dtype=datatype,
+            dtype=dtypes,
             delim_whitespace=True,
             index_col="release_time",
         )
+
+        return df
 
     def clean_position(self, grid: Optional[Grid] = None) -> None:
         """Make sure the release data have mult, X, and Y columns
@@ -237,7 +245,7 @@ class ParticleReleaser(Iterator):
                 raise SystemExit(3)
 
             try:
-                X, Y = grid.ll2xy(df["lon"], df["lat"])   # type: ignore
+                X, Y = grid.ll2xy(df["lon"], df["lat"])  # type: ignore
             except AttributeError:
                 print("""Can not convert from lon/lat to grid coordinates""")
                 raise SystemExit(3)

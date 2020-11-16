@@ -35,14 +35,6 @@ tracker:
 
 release:
     release_file : line.rls
-    # Sjekk hvordan pandas gir tilsvarende info:
-    # variables: {release_time: time,
-    #             X: float,
-    #             Y: float,
-    #             Z: float}
-    # # Time-independent variables,
-    # # particle_variables: [release_time]
-
 
 output:
     # module: output

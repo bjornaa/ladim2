@@ -3,7 +3,7 @@ import subprocess
 
 import numpy as np
 from netCDF4 import Dataset
-# import pytest
+import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
@@ -132,14 +132,14 @@ def test_reference_time():
 
 def test_write():
     """Write a sequence of states"""
-    state = State()
+    state = State(particle_variables={"X0": float})
     out = Output(**config0)
 
     assert out.record_count == 0
     assert out.instance_count == 0
 
     # Initially one particle
-    state.append(X=100, Y=10, Z=5)
+    state.append(X=100, Y=10, Z=5, X0=100)
     out.write(state)
     assert out.record_count == 1
     assert out.instance_count == 1
@@ -152,7 +152,9 @@ def test_write():
 
     # Update first particle and add two new particles
     state["X"] += 1
-    state.append(X=np.array([200, 300]), Y=np.array([20, 30]), Z=5)
+    state.append(
+        X=np.array([200, 300]), Y=np.array([20, 30]), Z=5, X0=np.array([200, 300])
+    )
     out.write(state)
     assert out.record_count == 3
     assert out.instance_count == 5
@@ -171,25 +173,37 @@ def test_write():
     assert out.record_count == 5
     assert out.instance_count == 9
 
+    # Write particle variable
+    # out.write_particle_variables(state)
+    # out.close()
+
+    # The netcdf file is already closed  (done by last write)
+    with pytest.raises(RuntimeError):
+        out.close()
+
     # Check some of the content
     h = 3600
     with Dataset(NCFILE) as nc:
         assert all(nc.variables["time"][:] == [i * 12 * h for i in range(5)])
         assert all(nc.variables["particle_count"][:] == [1, 1, 3, 2, 2])
+        # Instance variables
         assert all(nc.variables["pid"][:] == [0, 0, 0, 1, 2, 1, 2, 1, 2])
         assert all(
             nc.variables["X"][:] == [100, 101, 102, 200, 300, 201, 301, 202, 302]
         )
+        # The particle variable has been written (by last write)
+        assert all(nc.variables["X0"][:] == [100, 200, 300])
 
     NCFILE.unlink()
 
 
 def test_multifile():
     """Test the multifile functionality"""
+    # Missing: Test with particle variables (when implemented)
 
     h = 3600
 
-    config = dict(config0, filename="a.nc", numrec=2)
+    config = dict(config0, filename="a.nc", numrec=2, particle_variables=dict())
     out = Output(**config)
     state = State()
 

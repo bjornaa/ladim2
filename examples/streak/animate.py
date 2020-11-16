@@ -32,16 +32,20 @@ Ycell = np.arange(j0, j1)
 Xb = np.arange(i0 - 0.5, i1)
 Yb = np.arange(j0 - 0.5, j1)
 
-
-def age(t):
-    """Return age in days of the particles with time index t"""
-    day = np.timedelta64(1, "D")
-    return (pf.time[t] - pf.release_time[pf.pid[t]]) / day
-
-
 # particle_file
 pf = ParticleFile(particle_file)
 num_times = pf.num_times
+
+day = np.timedelta64(1, "D")
+
+
+def age(t):
+    """Return age in days of the particles with time index t"""
+    return (pf.time[t] - pf.release_time[pf.pid[t]]) / day
+
+
+total_age = (pf.time[-1] - pf.time[0]) / day
+
 
 # Set up the plot area
 fig = plt.figure(figsize=(12, 10))
@@ -50,6 +54,9 @@ ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
 # Background bathymetry
 cmap = plt.get_cmap("Blues")
 ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.3)
+
+
+
 
 # Lon/lat lines
 ax.contour(Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":")
@@ -65,25 +72,26 @@ X, Y = pf.position(0)
 pids = pf["pid"][0]
 
 
-# C = age(0)
-C = 5
-# vmax = pf.num_times / 6  # Maximum particle age in days
-# pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
-pdistr, = ax.plot(X, Y, 'ro')
-# cb = plt.colorbar(pdistr)
-# cb.set_label("Particle age [days]", fontsize=14)
+C = age(0)
+# C = 5
+vmax = total_age  # Maximum particle age in days
+pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
+#pdistr, = ax.plot(X, Y, 'ro')
+cb = plt.colorbar(pdistr)
+cb.set_label("Particle age [days]", fontsize=14)
 timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     X, Y = pf.position(t)
-    # pdistr.set_offsets(np.vstack((X, Y)).T)
-    pdistr.set_data(X, Y)
+    pdistr.set_offsets(np.vstack((X, Y)).T)
+    # pdistr.set_data(X, Y)
 
     # Particle age in days
-    # C = age(t)
-    # pdistr.set_array(C)
+    C = age(t)
+    print(C[0])
+    pdistr.set_array(C)
     timestamp.set_text(pf.time(t))
     return pdistr, timestamp
 

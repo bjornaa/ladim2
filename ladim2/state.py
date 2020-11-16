@@ -91,6 +91,10 @@ class State(Sized):
 
         # Raises TypeError if overlap
         self.dtypes = dict(**ivar, **pvar)
+        # expand aliases (presently only "time")
+        for var in self.dtypes:
+            if self.dtypes[var] == "time":
+                self.dtypes[var] = np.dtype("M8[s]")   # datetime64("s")
 
         # Data storage (initally empty)
         self.variables = {
