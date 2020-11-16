@@ -65,6 +65,9 @@ def main(configuration_file: Union[Path, str]) -> None:
     while step < timer.Nsteps:
 
         # Update
+        # --- Update forcing ---  (forcing først)
+        force.update(step)
+
         tracker.update(state, grid=grid, force=force)
         step += 1
 

@@ -9,7 +9,7 @@ time:
     # Start and stop of simulation
     start: 1989-05-24 12:00:00
     stop:  1989-06-15 12:00:00
-    dt: [30, "m"]
+    dt: 300
 
 grid:
     module: grid_ROMS
@@ -30,14 +30,6 @@ release:
 state:
     particle_variables: {release_time: time}
 
-# particle_release:
-#     # type = continuous or discrete [default]
-#     release_type: 'continuous'
-#     release_frequency: [1800, s]
-#     variables: [release_time, X, Y, Z]
-#     # Data type [int, float, time], default = float
-#     release_time: time
-#     particle_variables: [release_time]
 
 output:
     filename: out.nc
