@@ -9,6 +9,7 @@ from .tracker import Tracker
 from .release import ParticleReleaser
 from .output import Output
 from .configure import configure
+from .ibm import initIBM
 
 # Limitation, presently only instantaneous particle release
 
@@ -36,6 +37,8 @@ def main(configuration_file: Union[Path, str]) -> None:
     output = Output(
         timer=timer, num_particles=release.total_particle_count, **config["output"]
     )
+    if config["ibm"]:
+        ibm = initIBM(**config["ibm"])
 
     # --------------------------
     # Initial particle release
@@ -67,8 +70,14 @@ def main(configuration_file: Union[Path, str]) -> None:
         # Update
         # --- Update forcing ---  (forcing først)
         force.update(step)
+        #if config["ibm"]:
+        #    ibm.update(grid, state, force)
 
         tracker.update(state, grid=grid, force=force)
+        if config["ibm"]:
+            ibm.update(grid, state, force)
+            state.compactify()
+
         step += 1
 
         # --- Particle release and output

@@ -88,6 +88,7 @@ class Tracker:
         X1[I] = X[I]
         Y1[I] = Y[I]
         # Kill particles trying to move out of the grid
+
         state.alive[I] = False
         state.active[I] = False  # Not necessary if they are removed
 
