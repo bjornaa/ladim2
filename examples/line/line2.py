@@ -1,64 +1,67 @@
-from ladim2.configure import configure
+#from pathlib import Path
+#from typing import Union
+
 from ladim2.state import State
-from ladim2.grid_ROMS import makegrid
-from ladim2.timekeeper import timer
-from ladim2.forcing_ROMS import Forcing
+from ladim2.grid import makegrid
+from ladim2.timekeeper import TimeKeeper
+from ladim2.forcing import Forcing
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from ladim2.output import Output
+from ladim2.configure import configure
 
-# from output import Output
-# from configure import configure
 
 # ----------------
 # Configuration
 # ----------------
 
-config = configure("ladim2.yaml")
+
+configuration_file = "ladim2.yaml"
+config = configure(configuration_file)
 
 # -------------------
 # Initialization
 # -------------------
 
+print("Initiating")
 state = State(**config["state"])
-timer = timer(**config["time"])
+timer = TimeKeeper(**config["time"])
 grid = makegrid(**config["grid"])
 force = Forcing(grid=grid, timer=timer, **config["forcing"])
-# tracker = Tracker(dt=timer.dt, **config["tracker"])
 tracker = Tracker(**config["tracker"])
-release = ParticleReleaser(timer=timer, **config["release"])
+release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
 output = Output(
     timer=timer, num_particles=release.total_particle_count, **config["output"]
 )
 
-# --------------------------
-# Initial particle release
-# --------------------------
-
-# Skal automatisere tilpasning til state-variablene
-# Også initiering av variable som ikke er i release-filen
-# X0 er et eksempel.
-print("Initial particle release")
-V = next(release)
-# TODO: Simplify release
-## next provides pid, this is handled by state itself
-# V = V.drop(columns='pid')
-state.append(**V)
 
 # --------------
 # Time loop
 # --------------
 
+# Number of time steps between output (have that computed in output.py)
+output_period_step = output.output_period / timer._dt
+
+# Initial particle release and output
+step = 0
+if 0 in release.steps:
+    V = next(release)
+    state.append(**V)
+output.write(state)
+
 print("Time loop")
-for step in range(timer.Nsteps + 1):
+while step < timer.Nsteps:
+
+    # Update, forcing first, then state  (correct?)
+    # --- Update forcing ---
+    force.update(step)
     tracker.update(state, grid=grid, force=force)
-    if step % output.output_period_steps == 0:
+
+    step += 1
+
+    # --- Particle release and output
+    if step in release.steps:
+        V = next(release)
+        state.append(**V)
+    if step % output_period_step == 0:
         output.write(state)
-
-# --------------
-# Finalisation
-# --------------
-
-print("Cleaning up")
-# output.save_particle_variables()
-# output.close()

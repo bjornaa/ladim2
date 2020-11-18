@@ -1,18 +1,25 @@
-Remake of the old ladim line example
+Line source example
+===================
 
-Have two versions:
+A line of particles is released instantaneously across the North Sea.
 
-1) line.py
-A script that calls the necessary modules with configuration
-by arguments in the script.
+This can be run in several ways, with varying degrees of control.
 
-2) line2.py
+1) ladim2
 
-A general ladim script, configured by a yaml file.
-Presently: only instantaneous particle release at
-start of simulation.
+Uses configuration in ladim2.yaml and release file line.rls and runs the LADiM
+application.
 
-Some of the modules are in this directory as they are not
-general enough to be part of the main ladim2 package.
+2) python line2.py
 
-Perhaps also a third version, as a jupyter notebook
+A separate python script, using ladim2.yaml and line.rls.
+This is a slightly modified version of ladim2/main.py and can be used as a starting point
+for more customization than allowed with the yaml configuration.
+
+3) python line.py
+
+This is a more stand-alone script. It does *not* use ladim2.yaml and line.rls.
+Instead these functions are handled internally. Uses the API of LADiM2, in particular
+the state, grid, timer, force, tracker, and output modules.
+
+4) A jupyter notebook example (not implemented yet)
