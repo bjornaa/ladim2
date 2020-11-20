@@ -2,6 +2,7 @@
 *.pyc
 build/
 .mypy
+__pycache__/
 
 # Hidden directories
 .*/
