@@ -10,28 +10,41 @@ Grid and Forcing for LADiM for the Regional Ocean Model System (ROMS)
 # 2017-03-01
 # -----------------------------------
 
-import glob
+from pathlib import Path
 import logging
+from typing import Union, Optional, List
+
 import numpy as np
 from netCDF4 import Dataset, num2date
 
-from ladim2.sample import sample2D, bilin_inv
+from ladim2.grid import Grid
+from ladim2.timekeeper import TimeKeeper
+from ladim2.forcing import Forcing
 
 
-class Forcing:
+def init_forcing(**args) -> Forcing:
+    return Forcing_ROMS(**args)
+
+
+class Forcing_ROMS(Forcing):
     """
     Class for ROMS forcing
 
     """
 
-    def __init__(self, grid, timer, filename, **kwargs):
+    def __init__(
+        self,
+        grid: Grid,
+        timer: TimeKeeper,
+        filename: Union[Path, str],
+        ibm_forcing: Optional[List[str]] = None,
+    ):
 
         logging.info("Initiating forcing")
         print("Forcing.__init__")
 
         self.grid = grid  # Get the grid objec.
-        # self.config = config["gridforce"]
-        # self.ibm_forcing = config["ibm_forcing"]
+        self.ibm_forcing = ibm_forcing if ibm_forcing else []
 
         self.timer = timer
 
@@ -122,10 +135,11 @@ class Forcing:
 
     # ===================================================
     @staticmethod
-    def find_files(input_file, **args):
+    def find_files(input_file: Union[Path, str], **args) -> List[Path]:
         """Find (and sort) the forcing file(s)"""
-        files = glob.glob(input_file)
-        files.sort()
+        datadir = Path(input_file).parent
+        fname = Path(input_file).name
+        files = sorted(datadir.glob(fname))
         ffile = args.get("first_file", None)
         if ffile:
             files = [f for f in files if f >= ffile]
@@ -227,7 +241,7 @@ class Forcing:
             self.U = self.Unew
             self.V = self.Vnew
             # for name in self.ibm_forcing:
-            #    self[name] = self[name + "new"]
+            #   self[name] = self[name + "new"]
         else:
             if t - 1 in self.steps:  # Need new fields
                 stepdiff = self.stepdiff[self.steps.index(t - 1)]
@@ -263,8 +277,8 @@ class Forcing:
         self.add_offset = dict()
 
         # Åpne for alias til navn
-        # forcing_variables = ["u", "v"] + self.ibm_forcing
-        forcing_variables = ["u", "v"]
+        forcing_variables = ["u", "v"] + self.ibm_forcing
+        # forcing_variables = ["u", "v"]
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True

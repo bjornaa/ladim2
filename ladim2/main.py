@@ -4,7 +4,7 @@ from typing import Union
 from .state import State
 from .grid import makegrid
 from .timekeeper import TimeKeeper
-from .forcing import Forcing
+from .forcing import init_forcing
 from .tracker import Tracker
 from .release import ParticleReleaser
 from .output import Output
@@ -31,14 +31,14 @@ def main(configuration_file: Union[Path, str]) -> None:
     state = State(**config["state"])
     timer = TimeKeeper(**config["time"])
     grid = makegrid(**config["grid"])
-    force = Forcing(grid=grid, timer=timer, **config["forcing"])
+    force = init_forcing(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
     release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
     output = Output(
         timer=timer, num_particles=release.total_particle_count, **config["output"]
     )
     if config["ibm"]:
-        ibm = initIBM(**config["ibm"])
+        ibm = initIBM(timer=timer, **config["ibm"])
 
     # --------------------------
     # Initial particle release
@@ -70,8 +70,6 @@ def main(configuration_file: Union[Path, str]) -> None:
         # Update
         # --- Update forcing ---  (forcing først)
         force.update(step)
-        #if config["ibm"]:
-        #    ibm.update(grid, state, force)
 
         tracker.update(state, grid=grid, force=force)
         if config["ibm"]:

@@ -163,7 +163,6 @@ class Output:
 
         for var in self.instance_variables:
             self.nc.variables[var][start:end] = getattr(state, var)
-
         # Flush to file
         self.nc.sync()
 
