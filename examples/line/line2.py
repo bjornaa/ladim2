@@ -4,7 +4,7 @@
 from ladim2.state import State
 from ladim2.grid import makegrid
 from ladim2.timekeeper import TimeKeeper
-from ladim2.forcing import Forcing
+from ladim2.forcing import init_forcing
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from ladim2.output import Output
@@ -27,7 +27,7 @@ print("Initiating")
 state = State(**config["state"])
 timer = TimeKeeper(**config["time"])
 grid = makegrid(**config["grid"])
-force = Forcing(grid=grid, timer=timer, **config["forcing"])
+force = init_forcing(grid=grid, timer=timer, **config["forcing"])
 tracker = Tracker(**config["tracker"])
 release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
 output = Output(

@@ -30,5 +30,5 @@ def makegrid(**args) -> Grid:
     sys.path.insert(0, os.getcwd())
 
     # Import correct module
-    gmod = importlib.import_module(module)
-    return gmod.makegrid(**args)    # type: ignore
+    grid_module = importlib.import_module(module)
+    return grid_module.makegrid(**args)    # type: ignore

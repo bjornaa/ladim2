@@ -5,6 +5,7 @@ import yaml
 
 from .timekeeper import normalize_period
 
+
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     with open(config_file) as fid:
         config: Dict[str, Any] = yaml.safe_load(fid)
@@ -21,13 +22,13 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
 
     # If no grid file use the forcing file
     # Is this correct, should "file" be "filename"?
-    if "file" not in config["grid"]:
+    if "filename" not in config["grid"]:
         config["grid"]["filename"] = config["forcing"]["filename"]
 
     # Use time step from time_control
     config["tracker"]["dt"] = config["time"]["dt"]
 
-    if config["ibm"]:
-        config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
+    #if config["ibm"]:
+    #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
 
     return config
