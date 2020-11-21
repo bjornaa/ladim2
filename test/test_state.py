@@ -168,20 +168,28 @@ def test_not_append_pid():
 # ----------------
 
 
+def test_variable_update():
+    """Update a variable, low level"""
+    S = State()
+    S.append(X=[100, 110], Y=[200, 210], Z=5)
+    S.variables["X"] += 1
+    assert all(S.variables["X"] == [101, 111])
+
+
 def test_update_item():
+    """Item style variable update is OK"""
     S = State()
     S.append(X=[100, 110], Y=[200, 210], Z=5)
     S["X"] += 1
     assert all(S.variables["X"] == [101, 111])
 
 
-# Perhaps disallow
 def test_update_attr():
+    """Attribute style assignment to variables is not allowed"""
     S = State()
     S.append(X=[100, 110], Y=[200, 210], Z=5)
-    S.X += 1
-    assert all(S.X == [101, 111])
-    assert all(S.variables["X"] == [101, 111])
+    with pytest.raises(AttributeError):
+        S.X += 1
 
 
 def test_update_error_not_variable():

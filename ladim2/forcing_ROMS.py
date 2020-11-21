@@ -38,7 +38,7 @@ class Forcing_ROMS(Forcing):
         timer: TimeKeeper,
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,
-    ):
+    ) -> None:
 
         logging.info("Initiating forcing")
         print("Forcing.__init__")
@@ -135,17 +135,22 @@ class Forcing_ROMS(Forcing):
 
     # ===================================================
     @staticmethod
-    def find_files(input_file: Union[Path, str], **args) -> List[Path]:
+    def find_files(
+        input_file: Union[Path, str],
+        first_file: Union[Path, str, None] = None,
+        last_file: Union[Path, str, None] = None,
+    ) -> List[Path]:
+        # def find_files(input_file: Union[Path, str], **args) -> List[Path]:
         """Find (and sort) the forcing file(s)"""
         datadir = Path(input_file).parent
         fname = Path(input_file).name
         files = sorted(datadir.glob(fname))
-        ffile = args.get("first_file", None)
-        if ffile:
-            files = [f for f in files if f >= ffile]
-        lfile = args.get("last_file", None)
-        if lfile:
-            files = [f for f in files if f <= lfile]
+        # ffile = args.get("first_file", None)
+        if first_file is not None:
+            files = [f for f in files if f >= Path(first_file)]
+        # lfile = args.get("last_file", None)
+        if last_file is not None:
+            files = [f for f in files if f <= Path(last_file)]
         return files
 
     @staticmethod

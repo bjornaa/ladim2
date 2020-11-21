@@ -10,7 +10,7 @@ Class for the state of the model
 
 from numbers import Number
 from collections.abc import Sized
-from typing import Dict, Union, Sequence, Optional
+from typing import Dict, Union, Sequence, Optional, Any
 
 import numpy as np  # type: ignore
 
@@ -56,6 +56,15 @@ class State(Sized):
     # The length of the state should only be allowed to change by
     # append and compactify (rename the last to kill?)
 
+    __slots__ = [
+        "variables",
+        "instance_variables",
+        "particle_variables",
+        "default_values",
+        "dtypes",
+        "npid",
+    ]
+
     def __init__(
         self,
         instance_variables: Optional[Dict[str, type]] = None,
@@ -94,7 +103,7 @@ class State(Sized):
         # expand aliases (presently only "time")
         for var in self.dtypes:
             if self.dtypes[var] == "time":
-                self.dtypes[var] = np.dtype("M8[s]")   # datetime64("s")
+                self.dtypes[var] = np.dtype("M8[s]")  # datetime64("s")
 
         # Data storage (initally empty)
         self.variables = {
@@ -175,20 +184,28 @@ class State(Sized):
 
     # Allow item notation, state[var]
     def __getitem__(self, var: str) -> np.ndarray:
+        """Allow item style write access to variables"""
         return self.variables[var]
 
     def __setitem__(self, var: str, item: Arraylike) -> None:
+        """Allow item style read access to variables"""
         value = np.array(item, dtype=self.dtypes[var])
         # The size of item should be unchanged
         if np.size(value) != len(self.variables[var]):
             raise KeyError("Size of data should be unchanged")
         self.variables[var] = value
 
-    # Allow attribute notation, (should be read-only?)
     def __getattr__(self, var: str) -> np.ndarray:
+        """Allow read access in attribute style"""
         return self.variables[var]
 
-    # Disallow
-    # def __setattr__(self, var: str, item: Arraylike) -> None:
-    # self.__setitem__(var, item)
-    # self.variables[var] = np.array(item, dtype=self.dtypes[var])
+    def __setattr__(self, var: str, value: Any) -> None:
+        """Follow pandas and xarray and disallow attribute assignment"""
+        # Method taken from xarray
+        try:   # allow asigning attributes in __slots__
+            object.__setattr__(self, var, value)
+        except AttributeError as e:
+            raise AttributeError(
+                f"Cannot assign attribute {var} on a State instance.\n"
+                + f'Use state["{var}"] = ...  instead.'
+            ) from e

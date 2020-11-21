@@ -4,7 +4,7 @@ from ladim2.ibm import IBM
 from ladim2.timekeeper import TimeKeeper
 
 
-def initIBM(**args):
+def initIBM(**args) -> IBM:
     return lakselus_IBM(**args)
 
 
@@ -27,8 +27,6 @@ class lakselus_IBM(IBM):
 
         self.timer = timer
         self.dt = timer.dt
-        print(mortality)
-        print(self.dt)
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
         # salinity_model = config["ibm"].get('salinity_model', 'new')
@@ -74,11 +72,11 @@ class lakselus_IBM(IBM):
             W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
-        #state["Z"] += W * self.dt
-        #state["Z"][state.Z < 0] *= -1
+        state["Z"] += W * self.dt
+        state["Z"][state.Z < 0] *= -1
 
         # For z-version, do not go below 20 m
-        #state.["Z"][state.Z >= 20.0] = 19.0
+        state["Z"][state.Z >= 20.0] = 19.0
 
         # Mark particles older than 200 degree days as dead
         state["alive"] = state.alive & (state.age < 200)
