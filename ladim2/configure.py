@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union, Dict, Any
 import yaml
 
-from .timekeeper import normalize_period
+# from .timekeeper import normalize_period
 
 
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
@@ -28,7 +28,7 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     # Use time step from time_control
     config["tracker"]["dt"] = config["time"]["dt"]
 
-    #if config["ibm"]:
+    # if config["ibm"]:
     #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
 
     return config

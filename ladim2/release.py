@@ -42,7 +42,6 @@ class ParticleReleaser(Iterator):
         **args,
     ) -> None:
 
-
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
 

@@ -9,29 +9,26 @@
 # ------------------------------------
 
 # import logging
-from typing import Any, Tuple, Dict
+from typing import Tuple
 import numpy as np
 from .state import State
 from .timekeeper import normalize_period
 
-#from numba import njit
+# from numba import njit
 
 Velocity = Tuple[np.ndarray, np.ndarray]
-# State = Any  # Could not find any better
 
 
 class Tracker:
     """The physical particle tracking kernel"""
 
-    # def __init__(self, config: Dict[str, Any]) -> None:
-    # def __init__(self, **config) -> None:
     # logging.info("Initiating the particle tracking")
 
     def __init__(self, dt, advection, diffusion=0.0):
 
         print("Tracker.__init__")
 
-        self.dt = normalize_period(dt).astype("int")   # integer, unit = seconds
+        self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
         self.diffusion = diffusion
 

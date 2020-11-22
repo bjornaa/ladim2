@@ -6,8 +6,9 @@ from ladim2 import main
 
 
 parser = argparse.ArgumentParser(
-    description='LADiM 2.0 — Lagrangian Advection and Diffusion Model')
-parser.add_argument('config_file', nargs='?', default='ladim2.yaml')
+    description="LADiM 2.0 — Lagrangian Advection and Diffusion Model"
+)
+parser.add_argument("config_file", nargs="?", default="ladim2.yaml")
 
 args = parser.parse_args()
 

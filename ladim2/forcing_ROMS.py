@@ -12,7 +12,7 @@ Grid and Forcing for LADiM for the Regional Ocean Model System (ROMS)
 
 from pathlib import Path
 import logging
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Tuple
 
 import numpy as np
 from netCDF4 import Dataset, num2date
@@ -198,7 +198,7 @@ class Forcing_ROMS(Forcing):
         logging.info(f"Last forcing time = {time1}")
         # start_time = self.start_time)
         # stop_time = self.stop_time)
-        dt = np.timedelta64(self.timer.dt, "s")
+        # dt = np.timedelta64(self.timer.dt, "s")
 
         # Check that forcing period covers the simulation period
         # ------------------------------------------------------
@@ -234,23 +234,23 @@ class Forcing_ROMS(Forcing):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, t):
-        """Update the fields to time step t"""
+    def update(self, step: int) -> None:
+        """Update the fields to given time step t"""
 
         # Read from config?
         interpolate_velocity_in_time = True
-        interpolate_ibm_forcing_in_time = False
+        # interpolate_ibm_forcing_in_time = False
 
-        logging.debug("Updating forcing, time step = {}".format(t))
-        if t in self.steps:  # No time interpolation
+        logging.debug("Updating forcing, time step = {}".format(step))
+        if step in self.steps:  # No time interpolation
             self.U = self.Unew
             self.V = self.Vnew
             # for name in self.ibm_forcing:
             #   self[name] = self[name + "new"]
         else:
-            if t - 1 in self.steps:  # Need new fields
-                stepdiff = self.stepdiff[self.steps.index(t - 1)]
-                nextstep = t - 1 + stepdiff
+            if step - 1 in self.steps:  # Need new fields
+                stepdiff = self.stepdiff[self.steps.index(step - 1)]
+                nextstep = step - 1 + stepdiff
                 self.Unew, self.Vnew = self._read_velocity(nextstep)
                 # for name in self.ibm_forcing:
                 #    self[name + "new"] = self._read_field(name, nextstep)
@@ -271,7 +271,7 @@ class Forcing_ROMS(Forcing):
 
     # --------------
 
-    def open_forcing_file(self, n):
+    def open_forcing_file(self, n: int) -> None:
         """Open forcing file at time step = n"""
         nc = self._nc
         nc = Dataset(self.file_idx[n])
@@ -294,7 +294,7 @@ class Forcing_ROMS(Forcing):
 
         self._nc = nc
 
-    def _read_velocity(self, n):
+    def _read_velocity(self, n: int) -> Tuple[np.ndarray, np.ndarray]:
         """Read fields at time step = n"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
@@ -347,11 +347,18 @@ class Forcing_ROMS(Forcing):
 
     # ------------------
 
-    def close(self):
+    def close(self) -> None:
 
         self._nc.close()
 
-    def velocity(self, X, Y, Z, tstep=0, method="bilinear"):
+    def velocity(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        Z: np.ndarray,
+        tstep: int = 0,
+        method: str = "bilinear",
+    ) -> Tuple[np.ndarray, np.ndarray]:
 
         i0 = self.grid.i0
         j0 = self.grid.j0
@@ -365,7 +372,9 @@ class Forcing_ROMS(Forcing):
         return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
     # Simplify to grid cell
-    def field(self, X, Y, Z, name):
+    def field(
+        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, name: str
+    ) -> np.ndarray:
         # should not be necessary to repeat
         i0 = self.grid.i0
         j0 = self.grid.j0
@@ -379,7 +388,9 @@ class Forcing_ROMS(Forcing):
 # ------------------------
 
 
-def z2s(z_rho, X, Y, Z):
+def z2s(
+    z_rho: np.ndarray, X: np.ndarray, Y: np.ndarray, Z: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Find s-level and coefficients for vertical interpolation
 
@@ -426,7 +437,14 @@ def z2s(z_rho, X, Y, Z):
     return K, A
 
 
-def sample3D(F, X, Y, K, A, method="bilinear"):
+def sample3D(
+    F: np.ndarray,
+    X: np.ndarray,
+    Y: np.ndarray,
+    K: np.ndarray,
+    A: np.ndarray,
+    method: str = "bilinear",
+) -> np.ndarray:
     """
     Sample a 3D field on the (sub)grid
 
@@ -478,7 +496,15 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
     return F[K, J, I]
 
 
-def sample3DUV(U, V, X, Y, K, A, method="bilinear"):
+def sample3DUV(
+    U: np.ndarray,
+    V: np.ndarray,
+    X: np.ndarray,
+    Y: np.ndarray,
+    K: np.ndarray,
+    A: np.ndarray,
+    method="bilinear",
+) -> Tuple[np.ndarray, np.ndarray]:
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),
         sample3D(V, X, Y + 0.5, K, A, method=method),

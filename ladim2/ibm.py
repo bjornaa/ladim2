@@ -10,7 +10,7 @@ import importlib
 class IBM(ABC):
 
     @abstractmethod
-    def update(grid, state, forcing) -> None:
+    def update(self, grid, state, forcing) -> None:
         pass
 
 

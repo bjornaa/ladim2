@@ -1,3 +1,11 @@
+"""Abstract base class for LADiM forcing"""
+
+# ----------------------------------
+# Bjørn Ådlandsvik <bjorn@imr.no>
+# Institute of Marine Research
+# November 2020
+# ----------------------------------
+
 import sys
 import os
 import importlib
@@ -6,9 +14,10 @@ from abc import ABC, abstractmethod
 
 
 class Forcing(ABC):
+    """Abstract base class for LADiM forcing"""
 
     @abstractmethod
-    def update(self, t: int) -> None:
+    def update(self, step: int) -> None:
         pass
 
 
