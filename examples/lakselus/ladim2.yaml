@@ -47,8 +47,9 @@ ibm:
     vertical_mixing: 0.001  # [m^2/s]
 
 tracker:
-    advection: EF
-    #diffusion: 1.0  # Horizontal diffusion [m*2/s], not implemented yet
+    #advection: EF
+    advection: RK4
+    diffusion: 0.1  # Horizontal diffusion [m*2/s], not implemented yet
 
 release:
     release_file : salmon_lice.rls

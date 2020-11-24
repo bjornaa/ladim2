@@ -9,12 +9,21 @@ import numpy as np  # type: ignore
 
 class Grid(ABC):
 
+    xmin: float = 4
+    xmax: float
+    ymin: float
+    ymax: float
+
     @abstractmethod
     def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def atsea(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         pass
 
 

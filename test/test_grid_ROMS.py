@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 from netCDF4 import Dataset
 import pytest
@@ -5,7 +6,9 @@ import pytest
 # import ladim2
 from ladim2.grid_ROMS import makegrid
 
-grid_file = "../examples/data/ocean_avg_0014.nc"
+#grid_file = "../examples/data/ocean_avg_0014.nc"
+ladim2_root = Path(__file__).parent.parent
+grid_file = ladim2_root / "examples/data/ocean_avg_0014.nc"
 
 
 def test_ok():

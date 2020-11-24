@@ -1,7 +1,7 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from netCDF4 import Dataset
+import numpy as np         # type: ignore
+import matplotlib.pyplot as plt    # type: ignore
+from matplotlib.animation import FuncAnimation   # type: ignore
+from netCDF4 import Dataset        # type: ignore
 from postladim import ParticleFile
 
 # ---------------

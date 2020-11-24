@@ -17,7 +17,7 @@ from typing import Union, Optional, List, Tuple
 import numpy as np
 from netCDF4 import Dataset, num2date
 
-from ladim2.grid import Grid
+from ladim2.grid_ROMS import Grid_ROMS
 from ladim2.timekeeper import TimeKeeper
 from ladim2.forcing import Forcing
 
@@ -34,7 +34,7 @@ class Forcing_ROMS(Forcing):
 
     def __init__(
         self,
-        grid: Grid,
+        grid: Grid_ROMS,
         timer: TimeKeeper,
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,
@@ -271,19 +271,18 @@ class Forcing_ROMS(Forcing):
 
     # --------------
 
-    def open_forcing_file(self, n: int) -> None:
-        """Open forcing file at time step = n"""
-        nc = self._nc
-        nc = Dataset(self.file_idx[n])
+    def open_forcing_file(self, time_step: int) -> None:
+        """Open forcing file and get scaling info given time step"""
+        # Open the correct forcing file
+        nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
+        self._nc = nc
 
+        # Get scaling info per variable
         self.scaled = dict()
         self.scale_factor = dict()
         self.add_offset = dict()
-
-        # Åpne for alias til navn
         forcing_variables = ["u", "v"] + self.ibm_forcing
-        # forcing_variables = ["u", "v"]
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True
@@ -292,25 +291,23 @@ class Forcing_ROMS(Forcing):
             else:
                 self.scaled[key] = False
 
-        self._nc = nc
-
-    def _read_velocity(self, n: int) -> Tuple[np.ndarray, np.ndarray]:
-        """Read fields at time step = n"""
+    def _read_velocity(self, time_step: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Read fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logging.info("Reading velocity for time step = {}".format(n))
+        logging.info("Reading velocity for time step = {}".format(time_step))
 
         # If finished a file or first read (self._nc == "")
-        if not self._nc:  # First read
-            self.open_forcing_file(n)
-        elif self.frame_idx[n] == 0:  # Just finished a forcing file
+        if self._nc is None:  # First read
+            self.open_forcing_file(time_step)
+        elif self.frame_idx[time_step] == 0:  # Just finished a forcing file
             self._nc.close()
-            self.open_forcing_file(n)
+            self.open_forcing_file(time_step)
 
-        frame = self.frame_idx[n]
+        frame = self.frame_idx[time_step]
 
         # Read the velocity
         U = self._nc.variables["u"][frame, :, self.grid.Ju, self.grid.Iu]
@@ -356,19 +353,19 @@ class Forcing_ROMS(Forcing):
         X: np.ndarray,
         Y: np.ndarray,
         Z: np.ndarray,
-        tstep: int = 0,
+        fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         i0 = self.grid.i0
         j0 = self.grid.j0
         K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
-        if tstep < 0.001:
+        if fractional_step < 0.001:
             U = self.U
             V = self.V
         else:
-            U = self.U + tstep * self.dU
-            V = self.V + tstep * self.dV
+            U = self.U + fractional_step * self.dU
+            V = self.V + fractional_step * self.dV
         return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
     # Simplify to grid cell

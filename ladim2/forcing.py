@@ -11,6 +11,8 @@ import os
 import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Tuple
+import numpy as np
 
 
 class Forcing(ABC):
@@ -18,6 +20,17 @@ class Forcing(ABC):
 
     @abstractmethod
     def update(self, step: int) -> None:
+        pass
+
+    @abstractmethod
+    def velocity(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        Z: np.ndarray,
+        fractional_step: float = 0,
+        method: str = "bilinear",
+    ) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
 
@@ -34,4 +47,4 @@ def init_forcing(**args) -> Forcing:
 
     # Import correct module
     forcing_module = importlib.import_module(module)
-    return forcing_module.init_forcing(**args)    # type: ignore
+    return forcing_module.init_forcing(**args)  # type: ignore

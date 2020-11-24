@@ -18,7 +18,8 @@ for line in f0:
     super_ = float(w[4])
     timestamp = w[5]
     f1.write(
-        f"{mult:4d}  {timestamp:s} {x:6.1f} {y:6.1f} {z:6.1f}   {farmid:5d} {super_:7.1f}\n"
+        f"{mult:4d}  {timestamp:s} {x:6.1f} {y:6.1f} "
+        f"{z:6.1f}   {farmid:5d} {super_:7.1f}\n"
     )
 
 f1.close()
