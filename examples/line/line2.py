@@ -2,9 +2,9 @@
 #from typing import Union
 
 from ladim2.state import State
-from ladim2.grid import makegrid
+from ladim2.grid import init_grid
 from ladim2.timekeeper import TimeKeeper
-from ladim2.forcing import init_forcing
+from ladim2.forcing import init_force
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from ladim2.output import Output
@@ -26,8 +26,8 @@ config = configure(configuration_file)
 print("Initiating")
 state = State(**config["state"])
 timer = TimeKeeper(**config["time"])
-grid = makegrid(**config["grid"])
-force = init_forcing(grid=grid, timer=timer, **config["forcing"])
+grid = init_grid(**config["grid"])
+force = init_force(grid=grid, timer=timer, **config["forcing"])
 tracker = Tracker(**config["tracker"])
 release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
 output = Output(

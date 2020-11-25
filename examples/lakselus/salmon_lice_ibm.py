@@ -1,14 +1,14 @@
 import numpy as np
 from ladim.ibms import light
-from ladim2.ibm import IBM
+from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
 
 
-def initIBM(**args) -> IBM:
-    return lakselus_IBM(**args)
+def init_IBM(**args) -> BaseIBM:
+    return IBM(**args)
 
 
-class lakselus_IBM(IBM):
+class IBM(BaseIBM):
     def __init__(
         self, timer: TimeKeeper, vertical_mixing: float = 0, salinity_model: str = "new"
     ):

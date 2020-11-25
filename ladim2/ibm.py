@@ -4,17 +4,15 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib
 
-# import numpy as np  # type: ignore
 
-
-class IBM(ABC):
+class BaseIBM(ABC):
 
     @abstractmethod
     def update(self, grid, state, forcing) -> None:
         pass
 
 
-def initIBM(**args) -> IBM:
+def init_IBM(**args) -> BaseIBM:
 
     args = args.copy()
     module = args.pop("module")
@@ -27,4 +25,4 @@ def initIBM(**args) -> IBM:
 
     # Import correct module
     ibm_mod = importlib.import_module(module)
-    return ibm_mod.initIBM(**args)    # type: ignore
+    return ibm_mod.init_IBM(**args)    # type: ignore

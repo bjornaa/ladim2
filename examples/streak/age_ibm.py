@@ -1,16 +1,17 @@
 # Minimal IBM to track particle age
 
-from ladim2.ibm import IBM
+from ladim2.ibm import BaseIBM
+from ladim2.timekeeper import TimeKeeper
 
 
-def initIBM(**args) -> IBM:
+def init_IBM(**args) -> BaseIBM:
     return AgeIBM(**args)
 
 
-class AgeIBM(IBM):
-    def __init__(self, dt) -> None:
+class AgeIBM(BaseIBM):
+    def __init__(self, timer: TimeKeeper) -> None:
         print("Initializing age IBM")
-        self.dt = dt.astype(int)
+        self.dt = timer.dt
 
     def update(self, grid, state, forcing):
 

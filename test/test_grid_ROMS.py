@@ -4,7 +4,7 @@ from netCDF4 import Dataset
 import pytest
 
 # import ladim2
-from ladim2.grid_ROMS import makegrid
+from ladim2.grid_ROMS import init_grid
 
 #grid_file = "../examples/data/ocean_avg_0014.nc"
 ladim2_root = Path(__file__).parent.parent
@@ -13,7 +13,7 @@ grid_file = ladim2_root / "examples/data/ocean_avg_0014.nc"
 
 def test_ok():
     """Test minimal correct configuration"""
-    g = makegrid(filename=grid_file)
+    g = init_grid(filename=grid_file)
     assert g.xmin == 1.0
     assert g.xmax == 180.0
     assert g.ymin == 1.0
@@ -25,13 +25,13 @@ def test_ok():
 def test_nofile():
     """Capture wrong file name"""
     with pytest.raises(SystemExit):
-        g = makegrid(filename="does_not_exist.nc")
+        g = init_grid(filename="does_not_exist.nc")
 
 
 def test_subgrid():
     """Test subgrid specification"""
     i0, i1, j0, j1 = 20, 150, 30, 170
-    g = makegrid(filename=grid_file, subgrid=(i0, i1, j0, j1))
+    g = init_grid(filename=grid_file, subgrid=(i0, i1, j0, j1))
     assert g.xmin == i0
     assert g.xmax == i1 - 1
     assert g.ymin == j0
@@ -47,6 +47,6 @@ def test_subgrid():
 def test_subgrid_error():
     """Capture errors in the subgrid specification"""
     with pytest.raises(SystemExit):  # j0 outside grid
-        g = makegrid(filename=grid_file, subgrid=(20, 150, 30, 222))
+        g = init_grid(filename=grid_file, subgrid=(20, 150, 30, 222))
     with pytest.raises(SystemExit):  # i0 > i1, i0
-        g = makegrid(filename=grid_file, subgrid=(50, 20, 30, 170))
+        g = init_grid(filename=grid_file, subgrid=(50, 20, 30, 170))

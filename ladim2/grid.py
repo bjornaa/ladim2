@@ -7,7 +7,7 @@ import importlib
 import numpy as np  # type: ignore
 
 
-class Grid(ABC):
+class BaseGrid(ABC):
 
     xmin: float = 4
     xmax: float
@@ -27,7 +27,7 @@ class Grid(ABC):
         pass
 
 
-def makegrid(**args) -> Grid:
+def init_grid(**args) -> BaseGrid:
 
     args = args.copy()
     module = args.pop("module")
@@ -40,4 +40,4 @@ def makegrid(**args) -> Grid:
 
     # Import correct module
     grid_module = importlib.import_module(module)
-    return grid_module.makegrid(**args)    # type: ignore
+    return grid_module.init_grid(**args)    # type: ignore

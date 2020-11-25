@@ -19,15 +19,15 @@ from typing import Union, Optional, Tuple
 import numpy as np
 from netCDF4 import Dataset
 
-from ladim2.grid import Grid
+from ladim2.grid import BaseGrid
 from ladim2.sample import sample2D, bilin_inv
 
 
-def makegrid(**args) -> Grid:
-    return Grid_ROMS(**args)
+def init_grid(**args) -> BaseGrid:
+    return Grid(**args)
 
 
-class Grid_ROMS(Grid):
+class Grid(BaseGrid):
     """Simple ROMS grid object
 
     Possible grid arguments:

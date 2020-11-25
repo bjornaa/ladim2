@@ -13,8 +13,8 @@ from typing import Tuple
 import numpy as np
 from .state import State
 from .timekeeper import normalize_period
-from .forcing import Forcing
-from .grid import Grid
+from .forcing import BaseForce
+from .grid import BaseGrid
 
 # from numba import njit
 
@@ -42,7 +42,7 @@ class Tracker:
         self.diffusion = bool(diffusion)
         self.D = diffusion
 
-    def update(self, state: State, grid: Grid, force: Forcing) -> None:
+    def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
         """Move the particles"""
 
         X, Y, Z = state.X, state.Y, state.Z
@@ -98,7 +98,7 @@ class Tracker:
 
     # @njit
     def EF(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: Forcing
+        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
         """Euler-Forward advective velocity"""
 
@@ -123,7 +123,7 @@ class Tracker:
     #     return U, V
 
     def RK2b(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: Forcing
+        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
 
         # def RK2b(self, forcing: Forcing, state: State) -> Velocity:
@@ -172,7 +172,7 @@ class Tracker:
     #     return U, V
 
     def RK4(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: Forcing
+        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
         """Runge-Kutta fourth order advection
 

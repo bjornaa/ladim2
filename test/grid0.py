@@ -1,13 +1,13 @@
-from ladim2.grid import Grid
+from ladim2.grid import BaseGrid
 
 import numpy as np
 
 
-def makegrid(**args) -> Grid:
+def init_grid(**args) -> BaseGrid:
     return TestGrid(**args)
 
 
-class TestGrid(Grid):
+class TestGrid(BaseGrid):
     def __init__(self, **args):
         pass
 

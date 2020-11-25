@@ -15,7 +15,7 @@ from typing import Tuple
 import numpy as np
 
 
-class Forcing(ABC):
+class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
 
     @abstractmethod
@@ -34,7 +34,7 @@ class Forcing(ABC):
         pass
 
 
-def init_forcing(**args) -> Forcing:
+def init_force(**args) -> BaseForce:
 
     args = args.copy()
     module = args.pop("module")
@@ -47,4 +47,4 @@ def init_forcing(**args) -> Forcing:
 
     # Import correct module
     forcing_module = importlib.import_module(module)
-    return forcing_module.init_forcing(**args)  # type: ignore
+    return forcing_module.init_force(**args)  # type: ignore

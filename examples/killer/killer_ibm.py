@@ -1,18 +1,16 @@
 # Minimal IBM to kill old particles
 
-import numpy as np
-
-from ladim2.ibm import IBM
+from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
 
 DAY = 24 * 60 * 60  # Number of seconds in a day
 
 
-def initIBM(**args) -> IBM:
+def init_IBM(**args) -> BaseIBM:
     return KillerIBM(**args)
 
 
-class KillerIBM(IBM):
+class KillerIBM(BaseIBM):
     def __init__(self, timer: TimeKeeper, lifetime: float) -> None:
         print("Initializing killer feature")
         self.lifetime = lifetime

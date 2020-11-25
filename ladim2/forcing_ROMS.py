@@ -1,5 +1,5 @@
 """
-Grid and Forcing for LADiM for the Regional Ocean Model System (ROMS)
+Forcing for LADiM from the Regional Ocean Model System (ROMS)
 
 """
 
@@ -17,16 +17,16 @@ from typing import Union, Optional, List, Tuple
 import numpy as np
 from netCDF4 import Dataset, num2date
 
-from ladim2.grid_ROMS import Grid_ROMS
+from ladim2.grid_ROMS import Grid
 from ladim2.timekeeper import TimeKeeper
-from ladim2.forcing import Forcing
+from ladim2.forcing import BaseForce
 
 
-def init_forcing(**args) -> Forcing:
-    return Forcing_ROMS(**args)
+def init_force(**args) -> BaseForce:
+    return Force_ROMS(**args)
 
 
-class Forcing_ROMS(Forcing):
+class Force_ROMS(BaseForce):
     """
     Class for ROMS forcing
 
@@ -34,7 +34,7 @@ class Forcing_ROMS(Forcing):
 
     def __init__(
         self,
-        grid: Grid_ROMS,
+        grid: Grid,
         timer: TimeKeeper,
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,

@@ -20,7 +20,7 @@ import numpy as np  # type: ignore
 import pandas as pd
 
 from .timekeeper import TimeKeeper, normalize_period
-from .grid import Grid
+from .grid import BaseGrid
 
 # from .utilities import ingrid
 
@@ -34,7 +34,7 @@ class ParticleReleaser(Iterator):
         timer: TimeKeeper,
         datatypes: Dict[str, Any],
         names: Optional[List[str]] = None,
-        grid: Optional[Grid] = None,
+        grid: Optional[BaseGrid] = None,
         # dtype: Dict = None,
         continuous: bool = False,
         release_frequency: int = 0,  # frequnency in seconds
@@ -226,7 +226,7 @@ class ParticleReleaser(Iterator):
 
         return df
 
-    def clean_position(self, grid: Optional[Grid] = None) -> None:
+    def clean_position(self, grid: Optional[BaseGrid] = None) -> None:
         """Make sure the release data have mult, X, and Y columns
 
         X and Y may be inferred from lon and lat using grid.ll2xy

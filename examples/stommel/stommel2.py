@@ -31,16 +31,17 @@ def main():
 
 class Grid:
     def __init__(self):
-        km = 1000.0  #                                             [m]
-        D = 200.0  #            Depth                              [m]
-        lambda_ = 10000 * km  # West-east extent of domain         [m]
-        b = 6300 * km  #        South-north extent of domain       [m]
-        day = 24 * 3600  #                                         [s]
-        dt = day  #                                                [s]
+        km = 1000.0  # Kilometer                             [m]
+        D = 200.0  # Depth                                   [m]
+        lambda_ = 10000 * km  # West-east extent of domain   [m]
+        b = 6300 * km  # South-north extent of domain        [m]
+        dt = 24 * 3600  # Day                                [s]
 
         # Selfify: v -> self.v
         for v in "D lambda_ b dt".split():
             setattr(self, v, locals()[v])
+
+        self.xmin, self.xmax, self.ymin, self.ymax = 0, lambda_, 0, b
 
     @staticmethod
     def metric(X, Y):
