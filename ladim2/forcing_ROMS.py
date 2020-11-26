@@ -12,11 +12,12 @@ Forcing for LADiM from the Regional Ocean Model System (ROMS)
 
 from pathlib import Path
 import logging
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Dict
 
 import numpy as np
 from netCDF4 import Dataset, num2date
 
+# from ladim2.state import State
 from ladim2.grid_ROMS import Grid
 from ladim2.timekeeper import TimeKeeper
 from ladim2.forcing import BaseForce
@@ -29,6 +30,20 @@ def init_force(**args) -> BaseForce:
 class Force_ROMS(BaseForce):
     """
     Class for ROMS forcing
+
+    Public methods:
+        __init__
+        update
+        velocity
+        force_particles (bedre interpolate2particles)
+
+    Public attributes:
+        ibm_forcing
+        variables
+        steps
+        # Legg til ny = fields, fields["u"] = 3D field
+
+
 
     """
 
@@ -43,40 +58,37 @@ class Force_ROMS(BaseForce):
         logging.info("Initiating forcing")
         print("Forcing.__init__")
 
-        self.grid = grid  # Get the grid objec.
+        self.grid = grid  # Get the grid object.
+        # self.timer = timer
+
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
 
-        self.timer = timer
+        # 3D forcing fields
+        self.fields = {
+            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+        }
+        # Forcing interpolated to particle positions
+        self.variables = {
+            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+        }
 
-        files = self.find_files(filename)
-        # print("files = ", files)
+        # Input files and times
+
+        files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
             logging.error("No input file: {}".format(filename))
             raise SystemExit(3)
         logging.info("Number of forcing files = {}".format(numfiles))
 
-        # self.start_time = .start_time)
-        # self.stop_time = np.datetime64(t.stop_time)
-
-        # ---------------------------
-        # Overview of all the files
-        # ---------------------------
-
-        all_frames, num_frames = self.scan_file_times(files)
-
         self.files = files
 
-        steps, file_idx, frame_idx = self.forcing_steps(all_frames, num_frames)
-
-        # print("all_frames = ", all_frames)
-        # print("num_frames = ", num_frames)
-
-        # self.stepdiff = stepdiff
+        steps, file_idx, frame_idx = forcing_steps(files, timer)
         self.stepdiff = np.diff(steps)
         self.file_idx = file_idx
         self.frame_idx = frame_idx
-        self._nc = None
+        self._first_read = True  # True until first file is opened
+        # self._nc = None  # Not opened yet
 
         # Read old input
         # requires at least one input before start
@@ -90,36 +102,36 @@ class Force_ROMS(BaseForce):
             prestep = max(V)
             stepdiff = self.stepdiff[steps.index(prestep)]
             nextstep = prestep + stepdiff
-            self.U, self.V = self._read_velocity(prestep)
-            self.Unew, self.Vnew = self._read_velocity(nextstep)
-            self.dU = (self.Unew - self.U) / stepdiff
-            self.dV = (self.Vnew - self.V) / stepdiff
+            self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
+            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
+            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff
+            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff
             # Interpolate to time step = -1
-            self.U = self.U - (prestep + 1) * self.dU
-            self.V = self.V - (prestep + 1) * self.dV
+            self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
+            self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
             # Other forcing
             for name in self.ibm_forcing:
-                self[name] = self._read_field(name, prestep)
-                self[name + "new"] = self._read_field(name, nextstep)
-                self["d" + name] = (self[name + "new"] - self[name]) / prestep
-                self[name] = self[name] - (prestep + 1) * self["d" + name]
+                self.fields[name] = self._read_field(name, prestep)
+                # self[name + "new"] = self._read_field(name, nextstep)
+                # self["d" + name] = (self[name + "new"] - self[name]) / prestep
+                # self[name] = self[name] - (prestep + 1) * self["d" + name]
 
         elif steps[0] == 0:
             # Simulation start at first forcing time
             # Runge-Kutta needs dU and dV in this case as well
-            self.U, self.V = self._read_velocity(0)
-            self.Unew, self.Vnew = self._read_velocity(steps[1])
-            self.dU = (self.Unew - self.U) / steps[1]
-            self.dV = (self.Vnew - self.V) / steps[1]
+            self.fields["u"], self.fields["v"] = self._read_velocity(0)
+            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(steps[1])
+            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / steps[1]
+            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / steps[1]
             # Synchronize with start time
-            self.Unew = self.U
-            self.Vnew = self.V
+            self.fields["u_new"] = self.fields["u"]
+            self.fields["v_new"] = self.fields["v"]
             # Extrapolate to time step = -1
-            self.U = self.U - self.dU
-            self.V = self.V - self.dV
+            self.fields["u"] = self.fields["u"] - self.fields["dU"]
+            self.fields["v"] = self.fields["v"] - self.fields["dV"]
             # Other forcing:
-            # for name in self.ibm_forcing:
-            #     self[name] = self._read_field(name, 0)
+            for name in self.ibm_forcing:
+                self[name] = self._read_field(name, 0)
             #     self[name + "new"] = self._read_field(name, steps[1])
             #     self["d" + name] = (self[name + "new"] - self[name]) / steps[1]
             #     self[name] = self[name] - self["d" + name]
@@ -134,107 +146,10 @@ class Force_ROMS(BaseForce):
         # print("Init: finished")
 
     # ===================================================
-    @staticmethod
-    def find_files(
-        input_file: Union[Path, str],
-        first_file: Union[Path, str, None] = None,
-        last_file: Union[Path, str, None] = None,
-    ) -> List[Path]:
-        # def find_files(input_file: Union[Path, str], **args) -> List[Path]:
-        """Find (and sort) the forcing file(s)"""
-        datadir = Path(input_file).parent
-        fname = Path(input_file).name
-        files = sorted(datadir.glob(fname))
-        # ffile = args.get("first_file", None)
-        if first_file is not None:
-            files = [f for f in files if f >= Path(first_file)]
-        # lfile = args.get("last_file", None)
-        if last_file is not None:
-            files = [f for f in files if f <= Path(last_file)]
-        return files
-
-    @staticmethod
-    def scan_file_times(files):
-        """Check files and scan the times
-
-        Returns:
-          all_frames: List of all time frames
-          num_frames: Mapping: filename -> number of time frames in file
-
-        """
-        # print("scan starting")
-        all_frames = []  # All time frames
-        num_frames = {}  # Number of time frames in each file
-        for fname in files:
-            with Dataset(fname) as nc:
-                new_times = nc.variables["ocean_time"][:]
-                num_frames[fname] = len(new_times)
-                units = nc.variables["ocean_time"].units
-                new_frames = num2date(new_times, units)
-                all_frames.extend(new_frames)
-
-        # Check that time frames are strictly sorted
-        # all_frames = np.array(all_frames, dtype=np.datetime64)
-        all_frames = np.array([np.datetime64(tf) for tf in all_frames])
-        I = all_frames[1:] <= all_frames[:-1]
-        if np.any(I):
-            i = I.nonzero()[0][0] + 1  # Index of first out-of-order frame
-            oooframe = str(all_frames[i]).split(".")[0]  # Remove microseconds
-            logging.info(f"Time frame {i} = {oooframe} out of order")
-            logging.critical("Forcing time frames not strictly sorted")
-            raise SystemExit(4)
-
-        logging.info(f"Number of available forcing times = {len(all_frames)}")
-        # print("scan finished")
-        return all_frames, num_frames
-
-    # -----------------------------------------
-
-    def forcing_steps(self, all_frames, num_frames):
-
-        time0 = all_frames[0]
-        time1 = all_frames[-1]
-        logging.info(f"First forcing time = {time0}")
-        logging.info(f"Last forcing time = {time1}")
-        # start_time = self.start_time)
-        # stop_time = self.stop_time)
-        # dt = np.timedelta64(self.timer.dt, "s")
-
-        # Check that forcing period covers the simulation period
-        # ------------------------------------------------------
-
-        if time0 > self.timer.start_time:
-            logging.error("No forcing at start time")
-            raise SystemExit(3)
-        if time1 < self.timer.stop_time:
-            logging.error("No forcing at stop time")
-            raise SystemExit(3)
-
-        # Make a list steps of the forcing time steps
-        # --------------------------------------------
-        steps = []  # Model time step of forcing
-        for t in all_frames:
-            # dtime = np.timedelta64(t - self.start_time, "s")
-            # steps.append(int(dtime / dt))
-            steps.append(self.timer.time2step(t))
-
-        file_idx = dict()  # Dårlig navn
-        frame_idx = dict()
-        step_counter = -1
-        # for i, fname in enumerate(files):
-        for fname in self.files:
-            for i in range(num_frames[fname]):
-                step_counter += 1
-                step = steps[step_counter]
-                file_idx[step] = fname
-                frame_idx[step] = i
-        return steps, file_idx, frame_idx
-
-    # ==============================================
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int) -> None:
+    def update(self, step: int, X: float, Y: float, Z: float) -> None:
         """Update the fields to given time step t"""
 
         # Read from config?
@@ -243,35 +158,91 @@ class Force_ROMS(BaseForce):
 
         logging.debug("Updating forcing, time step = {}".format(step))
         if step in self.steps:  # No time interpolation
-            self.U = self.Unew
-            self.V = self.Vnew
+            self.fields["u"] = self.fields["u_new"]
+            self.fields["v"] = self.fields["v_new"]
             # for name in self.ibm_forcing:
             #   self[name] = self[name + "new"]
         else:
             if step - 1 in self.steps:  # Need new fields
                 stepdiff = self.stepdiff[self.steps.index(step - 1)]
                 nextstep = step - 1 + stepdiff
-                self.Unew, self.Vnew = self._read_velocity(nextstep)
+                self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
+                    nextstep
+                )
                 # for name in self.ibm_forcing:
                 #    self[name + "new"] = self._read_field(name, nextstep)
                 if interpolate_velocity_in_time:
-                    self.dU = (self.Unew - self.U) / stepdiff
-                    self.dV = (self.Vnew - self.V) / stepdiff
+                    self.fields["dU"] = (
+                        self.fields["u_new"] - self.fields["u"]
+                    ) / stepdiff
+                    self.fields["dV"] = (
+                        self.fields["v_new"] - self.fields["v"]
+                    ) / stepdiff
                 # if interpolate_ibm_forcing_in_time:
                 #    for name in self.ibm_forcing:
                 #        self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
-                self.U += self.dU
-                self.V += self.dV
+                self.fields["u"] += self.fields["dU"]
+                self.fields["v"] += self.fields["dV"]
             # if interpolate_ibm_forcing_in_time:
             #    for name in self.ibm_forcing:
             #        self[name] += self["d" + name]
 
+        # Update forcing values at particles
+        self.force_particles(X, Y, Z)
+
     # --------------
 
+    # -----------------------------------------
+
+    # def forcing_steps(self, all_frames, num_frames):
+    # def forcing_steps(self):
+    #     """Return time step numbers of the forcing and pointers to the data"""
+
+    #     all_frames, num_frames = scan_file_times(self.files)
+
+    #     time0 = all_frames[0]
+    #     time1 = all_frames[-1]
+    #     logging.info(f"First forcing time = {time0}")
+    #     logging.info(f"Last forcing time = {time1}")
+    #     # start_time = self.start_time)
+    #     # stop_time = self.stop_time)
+    #     # dt = np.timedelta64(self.timer.dt, "s")
+
+    #     # Check that forcing period covers the simulation period
+    #     # ------------------------------------------------------
+
+    #     if time0 > self.timer.start_time:
+    #         logging.error("No forcing at start time")
+    #         raise SystemExit(3)
+    #     if time1 < self.timer.stop_time:
+    #         logging.error("No forcing at stop time")
+    #         raise SystemExit(3)
+
+    #     # Make a list steps of the forcing time steps
+    #     # --------------------------------------------
+    #     steps = []  # Model time step of forcing
+    #     for t in all_frames:
+    #         steps.append(self.timer.time2step(t))
+
+    #     file_idx = dict()  # mapping step -> file name
+    #     frame_idx = dict()  # mapping step -> record number in file
+    #     step_counter = -1
+    #     # for i, fname in enumerate(files):
+    #     for fname in self.files:
+    #         for i in range(num_frames[fname]):
+    #             step_counter += 1
+    #             step = steps[step_counter]
+    #             file_idx[step] = fname
+    #             frame_idx[step] = i
+    #     return steps, file_idx, frame_idx
+
+    # ==============================================
+
     def open_forcing_file(self, time_step: int) -> None:
+
         """Open forcing file and get scaling info given time step"""
         # Open the correct forcing file
         nc = Dataset(self.file_idx[time_step])
@@ -292,7 +263,7 @@ class Force_ROMS(BaseForce):
                 self.scaled[key] = False
 
     def _read_velocity(self, time_step: int) -> Tuple[np.ndarray, np.ndarray]:
-        """Read fields at given time step"""
+        """Read velocity fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
 
@@ -300,10 +271,10 @@ class Force_ROMS(BaseForce):
         # Always read velocity before other fields
         logging.info("Reading velocity for time step = {}".format(time_step))
 
-        # If finished a file or first read (self._nc == "")
-        if self._nc is None:  # First read
-            self.open_forcing_file(time_step)
-        elif self.frame_idx[time_step] == 0:  # Just finished a forcing file
+        if self._first_read:
+            self.open_forcing_file(time_step)  # Open first file
+            self._first_read = False
+        elif self.frame_idx[time_step] == 0:  # Open next file
             self._nc.close()
             self.open_forcing_file(time_step)
 
@@ -345,8 +316,20 @@ class Force_ROMS(BaseForce):
     # ------------------
 
     def close(self) -> None:
-
         self._nc.close()
+
+    def force_particles(self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray):
+        """Interpolate forcing to particle positions"""
+        i0 = self.grid.i0
+        j0 = self.grid.j0
+        K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+        for name in self.ibm_forcing:
+            self.variables[name] = sample3D(
+                self.fields[name], X - i0, Y - j0, K, A, method="nearest"
+            )
+        self.variables["u"], self.variables["v"] = sample3DUV(
+            self.fields["u"], self.fields["v"], X - i0, Y - j0, K, A, method="bilinear",
+        )
 
     def velocity(
         self,
@@ -361,23 +344,25 @@ class Force_ROMS(BaseForce):
         j0 = self.grid.j0
         K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         if fractional_step < 0.001:
-            U = self.U
-            V = self.V
+            U = self.fields["u"]
+            V = self.fields["v"]
         else:
-            U = self.U + fractional_step * self.dU
-            V = self.V + fractional_step * self.dV
+            U = self.fields["u"] + fractional_step * self.fields["dU"]
+            V = self.fields["v"] + fractional_step * self.fields["dV"]
         return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
     # Simplify to grid cell
-    def field(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, name: str
-    ) -> np.ndarray:
-        # should not be necessary to repeat
-        i0 = self.grid.i0
-        j0 = self.grid.j0
-        K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
-        F = self[name]
-        return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
+    # def field(
+    #     self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, name: str
+    # ) -> np.ndarray:
+    #     # should not be necessary to repeat
+    #     i0 = self.grid.i0
+    #     j0 = self.grid.j0
+    #     K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+    #     F = self[name]
+    #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
+    def field(self, X, Y, Z, name):
+        return self.variables[name]
 
 
 # ------------------------
@@ -506,3 +491,106 @@ def sample3DUV(
         sample3D(U, X + 0.5, Y, K, A, method=method),
         sample3D(V, X, Y + 0.5, K, A, method=method),
     )
+
+
+# --------------------------
+# File utility functions
+# --------------------------
+
+
+def find_files(
+    file_pattern: Union[Path, str],
+    first_file: Union[Path, str, None] = None,
+    last_file: Union[Path, str, None] = None,
+) -> List[Path]:
+    """Find ordered sequence of files following a pattern
+
+    The sequence can be limited by first_file and/or last_file
+
+    """
+    directory = Path(file_pattern).parent
+    fname = Path(file_pattern).name
+    files = sorted(directory.glob(fname))
+    if first_file is not None:
+        files = [f for f in files if f >= Path(first_file)]
+    if last_file is not None:
+        files = [f for f in files if f <= Path(last_file)]
+    return files
+
+
+def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
+    """Check netcdf files and scan the times
+
+    Returns:
+    all_frames: List of all time frames
+    num_frames: Mapping: filename -> number of time frames in file
+
+    """
+    # print("scan starting")
+    all_frames = []  # All time frames
+    num_frames = {}  # Number of time frames in each file
+    for fname in files:
+        with Dataset(fname) as nc:
+            new_times = nc.variables["ocean_time"][:]
+            num_frames[fname] = len(new_times)
+            units = nc.variables["ocean_time"].units
+            new_frames = num2date(new_times, units)
+            all_frames.extend(new_frames)
+
+    # Check that time frames are strictly sorted
+    all_frames = np.array([np.datetime64(tf) for tf in all_frames])
+    I: np.ndarray = all_frames[1:] <= all_frames[:-1]
+    if np.any(I):
+        i = I.nonzero()[0][0] + 1  # Index of first out-of-order frame
+        oooframe = str(all_frames[i]).split(".")[0]  # Remove microseconds
+        logging.info(f"Time frame {i} = {oooframe} out of order")
+        logging.critical("Forcing time frames not strictly sorted")
+        raise SystemExit(4)
+
+    logging.info(f"Number of available forcing times = {len(all_frames)}")
+    # print("scan finished")
+    return all_frames, num_frames
+
+
+def forcing_steps(
+    files: List[Path], timer: TimeKeeper
+) -> Tuple[List[int], Dict[int, Path], Dict[int, int]]:
+    """Return time step numbers of the forcing and pointers to the data"""
+
+    all_frames, num_frames = scan_file_times(files)
+
+    time0 = all_frames[0]
+    time1 = all_frames[-1]
+    logging.info(f"First forcing time = {time0}")
+    logging.info(f"Last forcing time = {time1}")
+    # start_time = self.start_time)
+    # stop_time = self.stop_time)
+    # dt = np.timedelta64(self.timer.dt, "s")
+
+    # Check that forcing period covers the simulation period
+    # ------------------------------------------------------
+
+    if time0 > timer.start_time:
+        logging.error("No forcing at start time")
+        raise SystemExit(3)
+    if time1 < timer.stop_time:
+        logging.error("No forcing at stop time")
+        raise SystemExit(3)
+
+    # Make a list steps of the forcing time steps
+    # --------------------------------------------
+    steps = []  # Model time step of forcing
+    for t in all_frames:
+        steps.append(timer.time2step(t))
+
+    file_idx = dict()  # mapping step -> file name
+    frame_idx = dict()  # mapping step -> record number in file
+    step_counter = -1
+    # for i, fname in enumerate(files):
+    for fname in files:
+        for i in range(num_frames[fname]):
+            step_counter += 1
+            step = steps[step_counter]
+            file_idx[step] = fname
+            frame_idx[step] = i
+    return steps, file_idx, frame_idx

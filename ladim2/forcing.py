@@ -19,7 +19,7 @@ class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
 
     @abstractmethod
-    def update(self, step: int) -> None:
+    def update(self, step: int, X: float, Y: float, Z: float) -> None:
         pass
 
     @abstractmethod

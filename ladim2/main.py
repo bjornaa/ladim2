@@ -67,7 +67,7 @@ def main(configuration_file: Union[Path, str]) -> None:
 
         # Update
         # --- Update forcing ---  (forcing først)
-        force.update(step)
+        force.update(step, state.X, state.Y, state.Z)
 
         tracker.update(state, grid=grid, force=force)
         if config["ibm"]:

@@ -38,7 +38,11 @@ class IBM(BaseIBM):
         state["super"] *= self.mortality_factor
 
         # Update forcing
-        state["temp"] = forcing.field(state.X, state.Y, state.Z, "temp")
+        forcing.force_particles(state.X, state.Y, state.Z)
+        state["temp"] = forcing.variables["temp"]
+        # print(len(state["temp"]))
+        # print(len(forcing.variables["temp"]))
+        # state["temp"] = forcing.field(state.X, state.Y, state.Z, "temp")
         state["salt"] = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
