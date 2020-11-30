@@ -24,7 +24,10 @@ class TimeKeeper:
     attributes:
         start_time: start time of simulation
         stop_time: stop time for simulation
+        time_reversal: flag for time reversal
+        initial_time: usually start_time, stop_time if time_reversal
         reference_time: reference time for cf-standard output
+        time_reversed: switch for time reversal
         dt: seconds, model time step
         Nsteps: Total number of time steps in simulation
 
@@ -39,7 +42,12 @@ class TimeKeeper:
     unit_table = dict(s="seconds", m="minutes", h="hours", d="days")
 
     def __init__(
-        self, start: Time, stop: Time, dt: TimeDelta, reference: Optional[Time] = None
+        self,
+        start: Time,
+        stop: Time,
+        dt: TimeDelta,
+        reference: Optional[Time] = None,
+        time_reversal: bool = False,
     ) -> None:
         """
         start      start time
@@ -56,15 +64,30 @@ class TimeKeeper:
 
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
+        self.time_reversal = time_reversal
+
+        # Quality control
+        duration = self.stop_time - self.start_time
+        if time_reversal != (duration < np.timedelta64(0)):
+            if time_reversal:
+                print("ERROR: Backwards time and start before stop")
+            else:
+                print("ERROR: Forward time and stop before start")
+            raise SystemExit(3)
+
+        self.min_time = min(self.start_time, self.stop_time)
+        self.max_time = max(self.start_time, self.stop_time)
+
         if reference:
             self.reference_time = np.datetime64(reference, "s")
         else:
-            self.reference_time = self.start_time
-        self._dt = normalize_period(dt)  # np.datetime64(-,"s")
+            self.reference_time = self.min_time
+
+        self._dt = normalize_period(dt)   # np.timedelta64(-,"s")
         self.dt = self._dt.astype("int")  # seconds
 
         # Number of time steps (excluding initial)
-        self.Nsteps = (self.stop_time - self.start_time) // self._dt
+        self.Nsteps = abs(duration) // self._dt
         self.simulation_time = self.Nsteps * self._dt
 
     def time2step(self, time_: Time) -> int:
@@ -72,12 +95,17 @@ class TimeKeeper:
 
         time can be datetime instance or an iso time string
         """
-        # Raise exception if not an integer??
-        return (np.datetime64(time_) - self.start_time) // self._dt
+        if self.time_reversal:
+            return (self.start_time - np.datetime64(time_)) // self._dt
+        else:
+            return (np.datetime64(time_) - self.start_time) // self._dt
 
     def step2isotime(self, stepnr: int) -> str:
         """Return time in iso 8601 format from a time step number"""
-        return str(self.start_time + stepnr * self._dt)
+        if self.time_reversal:
+            return str(self.start_time - stepnr * self._dt)
+        else:
+            return str(self.start_time + stepnr * self._dt)
 
     def step2nctime(self, stepnr: int, unit: str = "s") -> float:
         """
@@ -85,7 +113,10 @@ class TimeKeeper:
 
         unit should be a single character, "s", "m", or "h", default = "s"
         """
-        delta = self.start_time + stepnr * self._dt - self.reference_time
+        if self.time_reversal:
+            delta = self.start_time - stepnr * self._dt - self.reference_time
+        else:
+            delta = self.start_time + stepnr * self._dt - self.reference_time
         value = delta / np.timedelta64(1, unit)
         return value
 
@@ -132,29 +163,3 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
 
     # None of the above
     raise ValueError(f"{per} is not a valid time period")
-
-
-# def parse_isoperiod(s: str) -> np.timedelta64:
-#     """Parse an ISO 8601 time period
-
-#     Valid input format examples:
-#         PT3H:     3 hours
-#         PT30M:    30 minutes
-#         PT600S:   600 seconds = 10 minutes
-#         PT16M40S: 1000 seconds
-
-#     """
-
-#     pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"
-#     m = re.match(pattern, s)
-#     if m is None:
-#         raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
-#     td = np.timedelta64(0, "s")
-#     if not any(m.groups()):
-#         raise ValueError(f"{s} is not recognized as an ISO 8601 time period")
-#     for item in m.groups():
-#         if item:
-#             value = int(item[:-1])
-#             unit = item[-1].lower()
-#             td = td + np.timedelta64(value, unit)
-#     return td

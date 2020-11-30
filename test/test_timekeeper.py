@@ -115,6 +115,34 @@ def test_step2nctime():
     assert t.step2nctime(10) == 43200 + 10 * 3600
 
 
+# Testing time_reversal
+def test_reverse_init():
+    """Check that initalization works as expected"""
+    start_time = np.datetime64("2020-04-05 12")
+    stop_time = "2020-04-04 12"
+    dt = 3600
+
+    # Default reference_time
+    t = TimeKeeper(start=start_time, stop=stop_time, dt=dt, time_reversal=True)
+    assert str(t.start_time) == "2020-04-05T12:00:00"
+    assert str(t.stop_time) == "2020-04-04T12:00:00"
+    assert str(t.min_time) == "2020-04-04T12:00:00"
+    assert t.dt == dt
+    assert t.reference_time == t.stop_time
+    assert t.Nsteps == 24
+
+
+def test_date_error():
+    time0 = np.datetime64("2020-04-04 12")
+    time1 = "2020-04-05 12"
+    # Not reversed and stop < start
+    with pytest.raises(SystemExit):
+        TimeKeeper(start=time1, stop=time0, dt=3600)
+    # Reversed and start < stop
+    with pytest.raises(SystemExit):
+        TimeKeeper(start=time0, stop=time1, dt=3600, time_reversal=True)
+
+
 def test_normalize_period():
 
     assert normalize_period(1800) == np.timedelta64(30, "m")

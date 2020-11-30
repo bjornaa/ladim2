@@ -24,6 +24,8 @@ from .grid import BaseGrid
 
 # from .utilities import ingrid
 
+DEBUG = False
+
 
 class ParticleReleaser(Iterator):
     """Particle Release Class"""
@@ -44,6 +46,7 @@ class ParticleReleaser(Iterator):
 
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
+        self.time_reversal = timer.time_reversal
 
         # # logging.info("Initializing the particle releaser")
 
@@ -56,7 +59,10 @@ class ParticleReleaser(Iterator):
         self.clean_position(grid)
 
         # Remove everything after simulation stop time
-        self._df = self._df[self._df.index <= self.stop_time]  # Use < ?
+        if timer.time_reversal:
+            self._df = self._df[self._df.index >= self.stop_time]  # Use < ?
+        else:
+            self._df = self._df[self._df.index <= self.stop_time]  # Use < ?
         if len(self._df) == 0:  # All release after simulation time
             logging.critical("All particles released after similation stop")
             raise SystemExit(3)
@@ -69,7 +75,11 @@ class ParticleReleaser(Iterator):
             self.discretize()
 
         # Now discrete, remove everything before start
-        self._df = self._df[self._df.index >= self.start_time]
+        if timer.time_reversal:
+            self._df = self._df[self._df.index <= self.start_time]
+        else:
+            self._df = self._df[self._df.index >= self.start_time]
+
         if len(self._df) == 0:  # All release before start
             logging.critical("All particles released before simulation start")
             raise SystemExit(3)
@@ -169,6 +179,9 @@ class ParticleReleaser(Iterator):
 
         """
 
+        if DEBUG:
+            print("particle release")
+
         # This should not happen
         if self._index >= len(self.times):
             raise StopIteration
@@ -195,6 +208,8 @@ class ParticleReleaser(Iterator):
         # Update the counters
         self._index += 1
         self._particle_count += len(V)
+
+        # print(V)
 
         return V
 
@@ -261,23 +276,32 @@ class ParticleReleaser(Iterator):
         df = self._df
 
         # Find last release time <= start_time
-        n = np.sum(df.index <= self.start_time)
+        if not self.time_reversal:
+            n = np.sum(df.index <= self.start_time)
+        else:
+            n = np.sum(df.index >= self.start_time)
+
         if n == 0:
-            logging.warning("No particles released at simulation    start")
+            logging.warning("No particles released at simulation start")
             n = 1  # Use first release entry
         release_time0 = df.index[n - 1]
+        if DEBUG:
+            print("release_time0 =", release_time0)
         # Remove the early entries
         # NOTE: Makes a new DataFrame
-        df = df[df.index >= release_time0]
+        if not self.time_reversal:
+            df = df[df.index >= release_time0]
+        else:
+            df = df[df.index <= release_time0]
 
         # Find first effective release time
         # i.e. the last time <= start_time
         #   and remove too early releases
         # Can be moved out of if-block?
-        n = np.sum(df.index <= self.start_time)
-        if n == 0:
-            logging.warning("No particles released at simulation start")
-            n = 1
+        # n = np.sum(df.index <= self.start_time)
+        # if n == 0:
+        #    logging.warning("No particles released at simulation start")
+        #    n = 1
 
         file_times = df.index.unique()
 
@@ -285,12 +309,15 @@ class ParticleReleaser(Iterator):
         # time1 = stop_time
         # times = np.arange(time0, time1, release_frequency)
 
-        times = np.arange(
-            file_times[0], self.stop_time, np.timedelta64(self.release_frequency, "s")
-        )
+        if not self.time_reversal:
+            freq = self.release_frequency
+        else:
+            freq = -self.release_frequency
+
+        times = np.arange(file_times[0], self.stop_time, np.timedelta64(freq, "s"))
 
         # Reindex the index
-        J = pd.Series(file_times, index=file_times).reindex(times, method="pad")
+        J = pd.Series(file_times, index=file_times).reindex(times, method="ffill")
         num_entries_per_time = {i: mylen(df.loc[i]) for i in file_times}
         df = df.loc[J]
 

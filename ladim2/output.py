@@ -69,8 +69,12 @@ class Output:
 
         self.output_period = normalize_period(output_period)
         self.output_period_steps = self.output_period // timer._dt
+        if timer.time_reversal:
+            self.output_period = - self.output_period
 
-        self.num_records = (timer.stop_time - timer.start_time) // self.output_period
+        self.num_records = abs(
+            (timer.stop_time - timer.start_time) // self.output_period
+        )
         if not skip_initial:  # Add an initial record
             self.num_records += 1
 
@@ -105,7 +109,6 @@ class Output:
         # self.offset = self.record_count  # record_count at start of file
 
         # Number of records in the file (last file may be smaller)
-        int(self.numrec)
         self.local_num_records = min(self.numrec, self.num_records - self.record_count)
 
         nc.createDimension("time", self.local_num_records)

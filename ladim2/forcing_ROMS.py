@@ -23,6 +23,9 @@ from ladim2.timekeeper import TimeKeeper
 from ladim2.forcing import BaseForce
 
 
+DEBUG = False
+
+
 def init_force(**args) -> BaseForce:
     return Force_ROMS(**args)
 
@@ -59,7 +62,7 @@ class Force_ROMS(BaseForce):
         print("Forcing.__init__")
 
         self.grid = grid  # Get the grid object.
-        # self.timer = timer
+        self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
 
@@ -83,12 +86,14 @@ class Force_ROMS(BaseForce):
 
         self.files = files
 
+        self.time_reversal = timer.time_reversal
         steps, file_idx, frame_idx = forcing_steps(files, timer)
-        self.stepdiff = np.diff(steps)
+        # self.stepdiff = np.diff(steps)
         self.file_idx = file_idx
         self.frame_idx = frame_idx
         self._first_read = True  # True until first file is opened
         # self._nc = None  # Not opened yet
+        self.steps = steps
 
         # Read old input
         # requires at least one input before start
@@ -98,52 +103,23 @@ class Force_ROMS(BaseForce):
         #
 
         V = [step for step in steps if step < 0]
-        if V:  # Forcing available before start time
-            prestep = max(V)
-            stepdiff = self.stepdiff[steps.index(prestep)]
-            nextstep = prestep + stepdiff
-            self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
-            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
-            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff
-            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff
-            # Interpolate to time step = -1
-            self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
-            self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
-            # Other forcing
-            for name in self.ibm_forcing:
-                self.fields[name] = self._read_field(name, prestep)
-                # self[name + "new"] = self._read_field(name, nextstep)
-                # self["d" + name] = (self[name + "new"] - self[name]) / prestep
-                # self[name] = self[name] - (prestep + 1) * self["d" + name]
+        prestep = max(V) if V else 0
+        i = steps.index(prestep)
+        nextstep = steps[i - 1] if timer.time_reversal else steps[i + 1]
+        stepdiff0 = nextstep - prestep
 
-        elif steps[0] == 0:
-            # Simulation start at first forcing time
-            # Runge-Kutta needs dU and dV in this case as well
-            self.fields["u"], self.fields["v"] = self._read_velocity(0)
-            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(steps[1])
-            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / steps[1]
-            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / steps[1]
-            # Synchronize with start time
-            self.fields["u_new"] = self.fields["u"]
-            self.fields["v_new"] = self.fields["v"]
-            # Extrapolate to time step = -1
-            self.fields["u"] = self.fields["u"] - self.fields["dU"]
-            self.fields["v"] = self.fields["v"] - self.fields["dV"]
-            # Other forcing:
-            for name in self.ibm_forcing:
-                self[name] = self._read_field(name, 0)
-            #     self[name + "new"] = self._read_field(name, steps[1])
-            #     self["d" + name] = (self[name + "new"] - self[name]) / steps[1]
-            #     self[name] = self[name] - self["d" + name]
+        self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
+        self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
+        self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
+        self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
 
-        else:
-            # No forcing at start, should already be excluded
-            raise SystemExit(3)
+        # Interpolate to time step = -1
+        self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
+        self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
 
-        self.steps = steps
-        # self.files = files
-
-        # print("Init: finished")
+        # Other forcing
+        for name in self.ibm_forcing:
+            self.fields[name] = self._read_field(name, prestep)
 
     # ===================================================
 
@@ -160,17 +136,21 @@ class Force_ROMS(BaseForce):
         if step in self.steps:  # No time interpolation
             self.fields["u"] = self.fields["u_new"]
             self.fields["v"] = self.fields["v_new"]
-            # for name in self.ibm_forcing:
-            #   self[name] = self[name + "new"]
+            # Read other fields
+            for name in self.ibm_forcing:
+                self.fields[name] = self._read_field(name, step)
+
         else:
             if step - 1 in self.steps:  # Need new fields
-                stepdiff = self.stepdiff[self.steps.index(step - 1)]
-                nextstep = step - 1 + stepdiff
+                i = self.steps.index(step - 1)
+                nextstep = (
+                    self.steps[i - 1] if self.time_reversal else self.steps[i + 1]
+                )
+                stepdiff = nextstep - step
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
-                # for name in self.ibm_forcing:
-                #    self[name + "new"] = self._read_field(name, nextstep)
+
                 if interpolate_velocity_in_time:
                     self.fields["dU"] = (
                         self.fields["u_new"] - self.fields["u"]
@@ -178,66 +158,14 @@ class Force_ROMS(BaseForce):
                     self.fields["dV"] = (
                         self.fields["v_new"] - self.fields["v"]
                     ) / stepdiff
-                # if interpolate_ibm_forcing_in_time:
-                #    for name in self.ibm_forcing:
-                #        self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
                 self.fields["u"] += self.fields["dU"]
                 self.fields["v"] += self.fields["dV"]
-            # if interpolate_ibm_forcing_in_time:
-            #    for name in self.ibm_forcing:
-            #        self[name] += self["d" + name]
 
         # Update forcing values at particles
         self.force_particles(X, Y, Z)
-
-    # --------------
-
-    # -----------------------------------------
-
-    # def forcing_steps(self, all_frames, num_frames):
-    # def forcing_steps(self):
-    #     """Return time step numbers of the forcing and pointers to the data"""
-
-    #     all_frames, num_frames = scan_file_times(self.files)
-
-    #     time0 = all_frames[0]
-    #     time1 = all_frames[-1]
-    #     logging.info(f"First forcing time = {time0}")
-    #     logging.info(f"Last forcing time = {time1}")
-    #     # start_time = self.start_time)
-    #     # stop_time = self.stop_time)
-    #     # dt = np.timedelta64(self.timer.dt, "s")
-
-    #     # Check that forcing period covers the simulation period
-    #     # ------------------------------------------------------
-
-    #     if time0 > self.timer.start_time:
-    #         logging.error("No forcing at start time")
-    #         raise SystemExit(3)
-    #     if time1 < self.timer.stop_time:
-    #         logging.error("No forcing at stop time")
-    #         raise SystemExit(3)
-
-    #     # Make a list steps of the forcing time steps
-    #     # --------------------------------------------
-    #     steps = []  # Model time step of forcing
-    #     for t in all_frames:
-    #         steps.append(self.timer.time2step(t))
-
-    #     file_idx = dict()  # mapping step -> file name
-    #     frame_idx = dict()  # mapping step -> record number in file
-    #     step_counter = -1
-    #     # for i, fname in enumerate(files):
-    #     for fname in self.files:
-    #         for i in range(num_frames[fname]):
-    #             step_counter += 1
-    #             step = steps[step_counter]
-    #             file_idx[step] = fname
-    #             frame_idx[step] = i
-    #     return steps, file_idx, frame_idx
 
     # ==============================================
 
@@ -245,6 +173,8 @@ class Force_ROMS(BaseForce):
 
         """Open forcing file and get scaling info given time step"""
         # Open the correct forcing file
+        if DEBUG:
+            print("Opening forcing file: ", self.file_idx[time_step])
         nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
         self._nc = nc
@@ -274,11 +204,25 @@ class Force_ROMS(BaseForce):
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
             self._first_read = False
-        elif self.frame_idx[time_step] == 0:  # Open next file
+        elif (not self.time_reversal and self.frame_idx[time_step] == 0) or (
+            self.time_reversal
+            and self.frame_idx[time_step] == len(self._nc.dimensions["ocean_time"]) - 1
+        ):
+
             self._nc.close()
             self.open_forcing_file(time_step)
 
         frame = self.frame_idx[time_step]
+
+        if DEBUG:
+            print("_read_velocity")
+            print("   model time step =", time_step)
+            timevar = self._nc.variables["ocean_time"]
+            time_origin = np.datetime64(timevar.units.split("since")[1])
+            data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
+            print("   data file:   ", self.file_idx[time_step])
+            print("   data record: ", frame)
+            print("   data time:   ", data_time)
 
         # Read the velocity
         U = self._nc.variables["u"][frame, :, self.grid.Ju, self.grid.Iu]
@@ -318,7 +262,9 @@ class Force_ROMS(BaseForce):
     def close(self) -> None:
         self._nc.close()
 
-    def force_particles(self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray):
+    def force_particles(
+        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
+    ):
         """Interpolate forcing to particle positions"""
         i0 = self.grid.i0
         j0 = self.grid.j0
@@ -330,6 +276,9 @@ class Force_ROMS(BaseForce):
         self.variables["u"], self.variables["v"] = sample3DUV(
             self.fields["u"], self.fields["v"], X - i0, Y - j0, K, A, method="bilinear",
         )
+        if self.time_reversal:
+            self.variables["u"] = -self.variables["u"]
+            self.variables["v"] = -self.variables["v"]
 
     def velocity(
         self,
@@ -349,7 +298,10 @@ class Force_ROMS(BaseForce):
         else:
             U = self.fields["u"] + fractional_step * self.fields["dU"]
             V = self.fields["v"] + fractional_step * self.fields["dV"]
-        return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
+        if self.time_reversal:
+            return sample3DUV(-U, -V, X - i0, Y - j0, K, A, method=method)
+        else:
+            return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
     # Simplify to grid cell
     # def field(
@@ -570,12 +522,14 @@ def forcing_steps(
     # Check that forcing period covers the simulation period
     # ------------------------------------------------------
 
-    if time0 > timer.start_time:
-        logging.error("No forcing at start time")
-        raise SystemExit(3)
-    if time1 < timer.stop_time:
-        logging.error("No forcing at stop time")
-        raise SystemExit(3)
+    if time0 > timer.min_time:
+        error_string = "No forcing at minimum time"
+        # logging.error(error_string)
+        raise SystemExit(error_string)
+    if time1 < timer.max_time:
+        error_string = "No forcing at maximum time"
+        # logging.error(error_string)
+        raise SystemExit(error_string)
 
     # Make a list steps of the forcing time steps
     # --------------------------------------------

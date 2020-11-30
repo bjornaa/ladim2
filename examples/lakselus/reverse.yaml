@@ -2,12 +2,12 @@ version: 2.0
 
 time:
     # Start and stop of simulation
-    start     : 2015-03-30 15:00:00
-    #stop      : 2015-04-10 23:00:00
-    stop    : 2015-04-01 10:00:00
+    start  : 2015-04-01 10:00:00
+    stop     : 2015-03-30 15:00:00
     # reference_time is optional. default = start_time
     reference : 2015-01-01
     dt        : [10, m]
+    time_reversal: True
 
 grid:
     module: grid_ROMS
@@ -52,7 +52,7 @@ tracker:
     diffusion: 0.1  # Horizontal diffusion [m*2/s]
 
 release:
-    release_file : salmon_lice.rls
+    release_file : reverse.rls
     continuous: True
     release_frequency: [1, h]
     # names:
