@@ -14,8 +14,8 @@ from pathlib import Path
 import logging
 from typing import Union, Optional, List, Tuple, Dict
 
-import numpy as np
-from netCDF4 import Dataset, num2date
+import numpy as np        # type: ignore
+from netCDF4 import Dataset, num2date   # type: ignore
 
 # from ladim2.state import State
 from ladim2.grid_ROMS import Grid
@@ -87,10 +87,10 @@ class Force_ROMS(BaseForce):
         self.files = files
 
         self.time_reversal = timer.time_reversal
-        steps, file_idx, frame_idx = forcing_steps(files, timer)
+        steps, file_at_step, recordnr_at_step = forcing_steps(files, timer)
         # self.stepdiff = np.diff(steps)
-        self.file_idx = file_idx
-        self.frame_idx = frame_idx
+        self.file_at_step = file_at_step
+        self.recordnr_at_step = recordnr_at_step
         self._first_read = True  # True until first file is opened
         # self._nc = None  # Not opened yet
         self.steps = steps
@@ -174,8 +174,8 @@ class Force_ROMS(BaseForce):
         """Open forcing file and get scaling info given time step"""
         # Open the correct forcing file
         if DEBUG:
-            print("Opening forcing file: ", self.file_idx[time_step])
-        nc = Dataset(self.file_idx[time_step])
+            print("Opening forcing file: ", self.file_at_step[time_step])
+        nc = Dataset(self.file_at_step[time_step])
         nc.set_auto_maskandscale(False)
         self._nc = nc
 
@@ -204,15 +204,12 @@ class Force_ROMS(BaseForce):
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
             self._first_read = False
-        elif (not self.time_reversal and self.frame_idx[time_step] == 0) or (
-            self.time_reversal
-            and self.frame_idx[time_step] == len(self._nc.dimensions["ocean_time"]) - 1
-        ):
-
+        elif str(self.file_at_step[time_step]) != self._nc.filepath():
+            # self._nc out of sync, open next file
             self._nc.close()
             self.open_forcing_file(time_step)
 
-        frame = self.frame_idx[time_step]
+        frame = self.recordnr_at_step[time_step]
 
         if DEBUG:
             print("_read_velocity")
@@ -220,7 +217,7 @@ class Force_ROMS(BaseForce):
             timevar = self._nc.variables["ocean_time"]
             time_origin = np.datetime64(timevar.units.split("since")[1])
             data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
-            print("   data file:   ", self.file_idx[time_step])
+            print("   data file:   ", self.file_at_step[time_step])
             print("   data record: ", frame)
             print("   data time:   ", data_time)
 
@@ -244,7 +241,7 @@ class Force_ROMS(BaseForce):
 
     def _read_field(self, name, n):
         """Read a 3D field"""
-        frame = self.frame_idx[n]
+        frame = self.recordnr_at_step[n]
         F = self._nc.variables[name][frame, :, self.grid.J, self.grid.I]
         if self.scaled[name]:
             F = self.add_offset[name] + self.scale_factor[name] * F
@@ -300,20 +297,10 @@ class Force_ROMS(BaseForce):
             V = self.fields["v"] + fractional_step * self.fields["dV"]
         if self.time_reversal:
             return sample3DUV(-U, -V, X - i0, Y - j0, K, A, method=method)
-        else:
-            return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
+        return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
-    # Simplify to grid cell
-    # def field(
-    #     self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, name: str
-    # ) -> np.ndarray:
-    #     # should not be necessary to repeat
-    #     i0 = self.grid.i0
-    #     j0 = self.grid.j0
-    #     K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
-    #     F = self[name]
-    #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
     def field(self, X, Y, Z, name):
+        """A do-nothing function for backwards compability for IBMs"""
         return self.variables[name]
 
 
@@ -537,14 +524,14 @@ def forcing_steps(
     for t in all_frames:
         steps.append(timer.time2step(t))
 
-    file_idx = dict()  # mapping step -> file name
-    frame_idx = dict()  # mapping step -> record number in file
+    file_at_step = dict()  # mapping step -> file name
+    recordnr_at_step = dict()  # mapping step -> record number in file
     step_counter = -1
     # for i, fname in enumerate(files):
     for fname in files:
         for i in range(num_frames[fname]):
             step_counter += 1
             step = steps[step_counter]
-            file_idx[step] = fname
-            frame_idx[step] = i
-    return steps, file_idx, frame_idx
+            file_at_step[step] = fname
+            recordnr_at_step[step] = i
+    return steps, file_at_step, recordnr_at_step

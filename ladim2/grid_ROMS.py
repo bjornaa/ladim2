@@ -85,6 +85,7 @@ class Grid(BaseGrid):
         if limits[2] < 1 or limits[2] > limits[3] or limits[3] > jmax - 1:
             raise SystemExit("Illegal subgrid specification")
         # Allow None if no imposed limitation
+        limits = list(limits)
         for ind, val in enumerate(limits):
             if val is None:
                 limits[ind] = whole_grid[ind]
@@ -180,7 +181,7 @@ class Grid(BaseGrid):
         # Close the file(s)
         ncid.close()
 
-    def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
