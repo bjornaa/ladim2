@@ -1,4 +1,5 @@
 from pathlib import Path
+# from pprint import pprint
 
 from typing import Union, Dict, Any
 import yaml
@@ -12,6 +13,7 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
 
     if "version" not in config:
         config = configure_v1(config)
+        # pprint(config)
 
     # Some sections may be missing
     if "state" not in config:
@@ -70,6 +72,23 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
             conf["grid"]["filename"] = config["files"]["gridfile"]
         conf["forcing"]["module"] = "ladim2.forcing_ROMS"
         conf["forcing"]["filename"] = config["gridforce"]["input_file"]
+    if "ibm_forcing" in config["gridforce"]:
+        conf["forcing"]["ibm_forcing"] = config["gridforce"]["ibm_forcing"]
+
+    conf["state"] = dict()
+    if "ibm" in config and "variables" in config["ibm"]:
+        conf["state"]["instance_variables"] = dict()
+        for var in config["ibm"]["variables"]:
+            conf["state"]["instance_variables"][var] = float
+        conf["state"]["particle_variables"] = dict()
+        for var in config["particle_release"]["particle_variables"]:
+            conf["state"]["particle_variables"][var] = config["particle_release"].get(
+                var, float
+            )
+        # More particle variables
+        conf["state"]["default_values"] = dict()
+        for var in conf["state"]["instance_variables"]:
+            conf["state"]["default_values"][var] = 0
 
     conf["tracker"] = dict(advection=config["numerics"]["advection"])
     # mangler diffusjon
@@ -78,6 +97,12 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
         release_file=config["files"]["particle_release_file"],
         names=config["particle_release"]["variables"],
     )
+
+    if "ibm" in config:
+        conf["ibm"] = dict()
+        for var in config["ibm"]:
+            if var != "variables":
+                conf["ibm"][var] = config["ibm"][var]
 
     conf["output"] = dict(
         filename=config["files"]["output_file"],
