@@ -111,9 +111,8 @@ output:
         salt:
             encoding: {datatype: f4, zlib=True}
             attributes:
-                long_name: temperature
-                standard_name: salinity
-                units: Celcius
+                long_name: salinity
+                standard_name: sea_water_salinity
         super:
             encoding: {datatype: f4, zlib=True}
             attributes:
@@ -140,10 +139,3 @@ output:
             attributes:
                 long_name: particle release time
                 units: seconds since reference_time
-
-
-# numerics:
-#     # Model time step, [value, unit]
-#     dt: [600, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
-#     advection: RK4  # either EF, RK2 or RK4 (recommended)
-#

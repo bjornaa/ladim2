@@ -1,16 +1,35 @@
+""""
+
+Configuration reader for LADiM version 2
+with compability wrapper for LADiM version 1 configuration
+
+"""
+
+# -----------------------------------
+# Bjørn Ådlandsvik <bjorn@hi.no>
+# Institute of Marine Research
+# December 2020
+# -----------------------------------
+
 from pathlib import Path
-# from pprint import pprint
+from pprint import pprint
 
 from typing import Union, Dict, Any
 import yaml
 
 # from .timekeeper import normalize_period
 
+DEBUG = False
+
 
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
+    """Main configuration function"""
+
     with open(config_file) as fid:
         config: Dict[str, Any] = yaml.safe_load(fid)
 
+    # Assume version >= 2 has explicit version tag
+    # Consider alternative: using ladim2 -v1 xxx.yaml
     if "version" not in config:
         config = configure_v1(config)
         # pprint(config)
@@ -25,35 +44,44 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
 
     # Handle non-orthogonality
 
-    # If no grid file use the forcing file
-    # Is this correct, should "file" be "filename"?
-    # if "filename" not in config["grid"]:
-    #     config["grid"]["filename"] = config["forcing"]["filename"]
-    #     print(config["output"])
-
-    # Use time step from time_control
+    # Use time step from time
     config["tracker"]["dt"] = config["time"]["dt"]
+    # if config["ibm"]:
+    #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
 
-    # Missing grid.filename
+    # If missing grid["filename"] use forcing["filename"]
     if "filename" not in config["grid"]:
         filename = Path(config["forcing"]["filename"])
-        # glob if necessary
+        # glob if necessary and use first file
         if ("*" in str(filename)) or ("?" in str(filename)):
             directory = filename.parent
             filename = sorted(directory.glob(filename.name))[0]
         config["grid"]["filename"] = filename
 
-    # if config["ibm"]:
-    #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
+    # Possible improvement: write a yaml-file
+    if DEBUG:
+        pprint(config)
 
     return config
 
 
+# --------------------------------------------------------------------
+
+
 def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle version 1 configuration file"""
-    conf: Dict[str, Any] = dict()  # version 2 configuration
+    """Convert version 1 configuration file
+
+    It is possible to have configuration files that works with both ladim1 and ladim2.
+    Unfortunately, it is also possible to have configuration files that works with
+    ladim1 and not ladim2.
+    Ordinary use cases at IMR should work
+
+    """
+
+    conf: Dict[str, Any] = dict()  # output version 2 configuration
     # conf["version"] = 1.0
 
+    # time
     conf["time"] = dict(
         start=config["time_control"]["start_time"],
         stop=config["time_control"]["stop_time"],
@@ -62,6 +90,7 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
     if "reference_time" in config["time_control"]:
         conf["time"]["reference"] = config["time_control"]["reference_time"]
 
+    # grid and forcing
     conf["grid"] = dict()
     conf["forcing"] = dict()
     if "ladim.gridforce.ROMS" in config["gridforce"]["module"]:
@@ -72,38 +101,56 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
             conf["grid"]["filename"] = config["files"]["gridfile"]
         conf["forcing"]["module"] = "ladim2.forcing_ROMS"
         conf["forcing"]["filename"] = config["gridforce"]["input_file"]
+    if "subgrid" in config["gridforce"]:
+        conf["grid"]["subgrid"] = config["gridforce"]["subgrid"]
     if "ibm_forcing" in config["gridforce"]:
         conf["forcing"]["ibm_forcing"] = config["gridforce"]["ibm_forcing"]
 
+    # state
     conf["state"] = dict()
+    instance_variables = dict()
+    particle_variables = dict()
     if "ibm" in config and "variables" in config["ibm"]:
-        conf["state"]["instance_variables"] = dict()
         for var in config["ibm"]["variables"]:
-            conf["state"]["instance_variables"][var] = float
-        conf["state"]["particle_variables"] = dict()
-        for var in config["particle_release"]["particle_variables"]:
-            conf["state"]["particle_variables"][var] = config["particle_release"].get(
-                var, float
-            )
-        # More particle variables
-        conf["state"]["default_values"] = dict()
-        for var in conf["state"]["instance_variables"]:
-            conf["state"]["default_values"][var] = 0
+            instance_variables[var] = "float"
+    for var in config["particle_release"]:
+        if var in ["mult", "X", "Y" "Z"]:  # Ignore
+            continue
+        if (
+            "particle_variables" in config["particle_release"]
+            and var in config["particle_release"]["particle_variables"]
+        ):
+            particle_variables[var] = config["particle_release"].get(var, "float")
+    conf["state"]["instance_variables"] = instance_variables
+    conf["state"]["particle_variables"] = particle_variables
+    conf["state"]["default_values"] = dict()
+    for var in conf["state"]["instance_variables"]:
+        conf["state"]["default_values"][var] = 0
 
+    # tracker
     conf["tracker"] = dict(advection=config["numerics"]["advection"])
-    # mangler diffusjon
+    if config["numerics"]["diffusion"]:
+        conf["tracker"]["diffusion"] = config["numerics"]["diffusion"]
 
+    # release
     conf["release"] = dict(
         release_file=config["files"]["particle_release_file"],
         names=config["particle_release"]["variables"],
     )
-
+    if "release_type" in config["particle_release"]:
+        if config["particle_release"]["release_type"] == "continuous":
+            conf["release"]["continuous"] = True
+            conf["release"]["release_frequency"] = config["particle_release"][
+                "release_frequency"
+            ]
+    # ibm
     if "ibm" in config:
         conf["ibm"] = dict()
         for var in config["ibm"]:
             if var != "variables":
                 conf["ibm"][var] = config["ibm"][var]
 
+    # output
     conf["output"] = dict(
         filename=config["files"]["output_file"],
         output_period=config["output_variables"]["outper"],
@@ -120,5 +167,12 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
             datatype=D.pop("ncformat")
         )
         conf["output"]["instance_variables"][var]["attributes"] = D
+    for var in config["output_variables"]["particle"]:
+        conf["output"]["particle_variables"][var] = dict()
+        D = config["output_variables"][var].copy()
+        conf["output"]["particle_variables"][var]["encoding"] = dict(
+            datatype=D.pop("ncformat")
+        )
+        conf["output"]["particle_variables"][var]["attributes"] = D
 
     return conf
