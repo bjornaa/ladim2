@@ -147,6 +147,9 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
     if "ibm" in config:
         conf["ibm"] = dict()
         for var in config["ibm"]:
+            if var == "ibm_module":
+                conf["ibm"]["module"] = config["ibm"][var]
+                continue
             if var != "variables":
                 conf["ibm"][var] = config["ibm"][var]
 
