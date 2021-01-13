@@ -1,17 +1,29 @@
 import numpy as np
+
 from ladim.ibms import light
+
 from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
-
-
-def init_IBM(**args) -> BaseIBM:
-    return IBM(**args)
+from ladim2.state import State
+from ladim2.forcing import BaseForce
+from ladim2.grid import BaseGrid
 
 
 class IBM(BaseIBM):
     def __init__(
-        self, timer: TimeKeeper, vertical_mixing: float = 0, salinity_model: str = "new"
+        self,
+        timer: TimeKeeper,
+        state: State,
+        forcing: BaseForce,
+        grid: BaseGrid,
+        vertical_mixing: float = 0,
+        salinity_model: str = "new",
     ):
+
+        self.timer = timer
+        self.state = state
+        self.forcing = forcing
+        self.grid = grid
 
         # Constants
         mortality = 0.17  # [days-1]
@@ -33,15 +45,17 @@ class IBM(BaseIBM):
         # self.new_salinity_model = (salinity_model == 'new')
         self.new_salinity_model = salinity_model == "new"
 
-    def update(self, grid, state, forcing):
+    def update(self):
+
+        state = self.state
+        forcing = self.forcing
+
         # Mortality
         state["super"] *= self.mortality_factor
 
         # Update forcing
         forcing.force_particles(state.X, state.Y, state.Z)
         state["temp"] = forcing.variables["temp"]
-        # print(len(state["temp"]))
-        # print(len(forcing.variables["temp"]))
         # state["temp"] = forcing.field(state.X, state.Y, state.Z, "temp")
         state["salt"] = forcing.field(state.X, state.Y, state.Z, "salt")
 
@@ -50,10 +64,10 @@ class IBM(BaseIBM):
         state["days"] += 1.0 * (self.dt / 86400)
 
         # Light at depth
-        # lon, lat = grid.lonlat(state.X, state.Y)
-        # light0 = light.surface_light(state.timestamp, lon, lat)
-        # Eb = light0 * np.exp(-self.k * state.Z)
-        Eb = 0.3
+        lon, lat = self.grid.lonlat(state.X, state.Y)
+        light0 = light.surface_light(self.timer.time, lon, lat)
+        Eb = light0 * np.exp(-self.k * state.Z)
+        # Eb = 0.3
 
         # Swimming velocity
         W = np.zeros_like(state.X)

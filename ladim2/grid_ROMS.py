@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Union, Optional, Tuple
 
 # import logging
-import numpy as np
-from netCDF4 import Dataset
+import numpy as np  # type: ignore
+from netCDF4 import Dataset  # type: ignore
 
 from ladim2.grid import BaseGrid
 from ladim2.sample import sample2D, bilin_inv
@@ -71,24 +71,22 @@ class Grid(BaseGrid):
         # 1 <= i0 < i1 <= imax-1, default=end points
         # 1 <= j0 < j1 <= jmax-1, default=end points
         # Here, imax, jmax refers to whole grid
-        imax: int
-        jmax: int
-        jmax, imax = ncid.variables["h"].shape
-        whole_grid = (1, imax - 1, 1, jmax - 1)
-        if subgrid is None:
-            limits = whole_grid
-        else:
-            limits = subgrid
-
-        if limits[0] < 1 or limits[0] > limits[1] or limits[1] > imax - 1:
-            raise SystemExit("Illegal subgrid specification")
-        if limits[2] < 1 or limits[2] > limits[3] or limits[3] > jmax - 1:
-            raise SystemExit("Illegal subgrid specification")
-        # Allow None if no imposed limitation
-        limits = list(limits)
-        for ind, val in enumerate(limits):
-            if val is None:
-                limits[ind] = whole_grid[ind]
+        # imax: int
+        # jmax: int
+        jmax0, imax0 = ncid.variables["h"].shape
+        limits = list(subgrid) if subgrid else [1, imax0 - 1, 1, jmax0 - 1]
+        # Negative values are counting from right/upper end of model domain
+        for i in range(2):
+            if limits[i] < 0:
+                limits[i] = imax0 + limits[i]
+        for i in range(2, 4):
+            if limits[i] < 0:
+                limits[i] = jmax0 + limits[i]
+        # Sanity check
+        if (not 1 <= limits[0] < limits[1] <= imax0 - 1) or (
+            not 1 <= limits[2] < limits[3] <= jmax0 - 1
+        ):
+            raise SystemExit("Illegal subgrid specification :", limits)
 
         self.i0, self.i1, self.j0, self.j1 = limits
         self.imax = self.i1 - self.i0

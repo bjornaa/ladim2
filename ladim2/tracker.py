@@ -10,7 +10,7 @@
 
 # import logging
 from typing import Tuple
-import numpy as np
+import numpy as np  # type:ignore
 from .state import State
 from .timekeeper import normalize_period
 from .forcing import BaseForce

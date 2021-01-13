@@ -12,7 +12,8 @@ time:
 grid:
     module: grid_ROMS
     #filename: /home/bjorn/data/NK800/file_0000.nc  # Må klare dette fra forcing
-    subgrid: [300, 500, 480, 600]
+    # subgrid: [300, 500, 480, 600]
+    subgrid: [300, -1000, 480, 600]
 
 
 forcing:

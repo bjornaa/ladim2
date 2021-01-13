@@ -65,6 +65,7 @@ class TimeKeeper:
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
         self.time_reversal = time_reversal
+        self.time = self.start_time     # Running clock
 
         # Quality control
         duration = self.stop_time - self.start_time
@@ -89,6 +90,12 @@ class TimeKeeper:
         # Number of time steps (excluding initial)
         self.Nsteps = abs(duration) // self._dt
         self.simulation_time = self.Nsteps * self._dt
+
+    def update(self):
+        if self.time_reversal:
+            self.time = self.time - self._dt
+        else:
+            self.time = self.time + self._dt
 
     def time2step(self, time_: Time) -> int:
         """Timestep from time

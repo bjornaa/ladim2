@@ -17,7 +17,7 @@ import logging
 from typing import List, Optional, Union, Dict, Any
 
 import numpy as np  # type: ignore
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from .timekeeper import TimeKeeper, normalize_period
 from .grid import BaseGrid

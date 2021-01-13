@@ -36,7 +36,9 @@ def main(configuration_file: Union[Path, str]) -> None:
         timer=timer, num_particles=release.total_particle_count, **config["output"]
     )
     if config["ibm"]:
-        ibm = init_IBM(timer=timer, **config["ibm"])
+        ibm = init_IBM(
+            timer=timer, state=state, forcing=force, grid=grid, **config["ibm"]
+        )
 
     # --------------------------
     # Initial particle release
@@ -66,12 +68,16 @@ def main(configuration_file: Union[Path, str]) -> None:
     while step < timer.Nsteps:
 
         # Update
-        # --- Update forcing ---  (forcing først)
+        # -- Update clock ---
+        timer.update()
+
+        # --- Update forcing ---
         force.update(step, state.X, state.Y, state.Z)
 
         tracker.update(state, grid=grid, force=force)
         if config["ibm"]:
-            ibm.update(grid, state, force)
+            # ibm.update(state, force)
+            ibm.update()           # type: ignore
             state.compactify()
 
         step += 1

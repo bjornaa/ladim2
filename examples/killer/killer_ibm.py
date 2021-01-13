@@ -2,21 +2,29 @@
 
 from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
+from ladim2.state import State
 
 DAY = 24 * 60 * 60  # Number of seconds in a day
 
 
-def init_IBM(**args) -> BaseIBM:
-    return KillerIBM(**args)
+class IBM(BaseIBM):
+    def __init__(
+        self,
+        lifetime: float,
+        timer: TimeKeeper,
+        state: State,
+        forcing=None,    # This IBM does not use forcing
+        grid=None,       # This IBM does not use grid
+    ) -> None:
 
-
-class KillerIBM(BaseIBM):
-    def __init__(self, timer: TimeKeeper, lifetime: float) -> None:
         print("Initializing killer feature")
         self.lifetime = lifetime
+        self.state = state
         self.dt = timer.dt
 
-    def update(self, grid, state, forcing):
+    def update(self) -> None:
+
+        state = self.state
 
         # Update the particle age
         state["age"] += self.dt
