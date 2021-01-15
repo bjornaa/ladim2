@@ -255,9 +255,8 @@ class ParticleReleaser(Iterator):
         # Conversion from longitude, latitude to grid coordinates
         if "X" not in df.columns or "Y" not in df.columns:
             if "lon" not in df.columns or "lat" not in df.columns:
-                # logging.critical("Particle release must have position")
+                # logging.critical("Particle release must include a position")
                 raise SystemExit(3)
-
             try:
                 X, Y = grid.ll2xy(df["lon"], df["lat"])  # type: ignore
             except AttributeError:

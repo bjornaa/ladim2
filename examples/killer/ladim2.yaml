@@ -11,10 +11,6 @@ time:
     stop:  1989-06-15 12:00:00
     dt: [1, h]
 
-#files:
-#    particle_release_file : killer.rls
-#    output_file           : killer.nc
-
 grid:
     module: grid_ROMS
 

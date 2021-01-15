@@ -2,18 +2,19 @@
 
 from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
+from ladim2.state import State
 
 
-def init_IBM(**args) -> BaseIBM:
-    return AgeIBM(**args)
-
-
-class AgeIBM(BaseIBM):
-    def __init__(self, timer: TimeKeeper) -> None:
+class IBM(BaseIBM):
+    def __init__(
+        self, timer: TimeKeeper, state: State, forcing=None, grid=None
+    ) -> None:
         print("Initializing age IBM")
+        self.timer = timer
+        self.state = state
         self.dt = timer.dt
 
-    def update(self, grid, state, forcing):
+    def update(self):
 
         # Update the particle age
-        state["age"] += self.dt
+        self.state["age"] += self.timer.dt

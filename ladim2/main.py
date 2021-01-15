@@ -31,9 +31,14 @@ def main(configuration_file: Union[Path, str]) -> None:
     grid = init_grid(**config["grid"])
     force = init_force(grid=grid, timer=timer, **config["forcing"])
     tracker = Tracker(**config["tracker"])
-    release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
+    release = ParticleReleaser(
+        timer=timer, datatypes=state.dtypes, grid=grid, **config["release"]
+    )
     output = Output(
-        timer=timer, num_particles=release.total_particle_count, **config["output"]
+        timer=timer,
+        grid=grid,
+        num_particles=release.total_particle_count,
+        **config["output"]
     )
     if config["ibm"]:
         ibm = init_IBM(
@@ -77,7 +82,7 @@ def main(configuration_file: Union[Path, str]) -> None:
         tracker.update(state, grid=grid, force=force)
         if config["ibm"]:
             # ibm.update(state, force)
-            ibm.update()           # type: ignore
+            ibm.update()  # type: ignore
             state.compactify()
 
         step += 1

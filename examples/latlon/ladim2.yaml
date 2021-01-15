@@ -1,15 +1,21 @@
+
 # Configuration file for ladim
 #
-# Streak example, using an IBM to keep track of particle age
+# latlon examples
 #
 
 version: 2.0
 
 time:
-    # Start and stop of simulation
     start: 1989-05-24 12:00:00
-    stop:  1989-06-15 12:00:00
-    dt: 300
+    stop:  1989-06-05 12:00:00
+    dt: [1, h]
+
+state:
+    # Should perhaps not be necessary, given in release
+    instance_variables: {lon: float, lat: float}
+    # NOTE: Defaults should not be needed here
+    default_values: {lon: 5, lat: 60}
 
 grid:
     module: grid_ROMS
@@ -22,32 +28,23 @@ tracker:
     advection: EF
 
 release:
-    release_file : streak.rls
-    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
-    continuous: True
-    release_frequency: 3600
-
-state:
-   instance_variables: {age: float}
-   default_values: {age: 0}
-
-ibm:
-    module: age_ibm
+    release_file: latlon.rls
+    names: [release_time, lon, lat, Z]
 
 output:
-    filename: out_ibm.nc
+    filename: latlon.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:
         pid:
             encoding: {datatype: i4, zlib=True}
-            attributes: {long_name=: particle_identifier}
+            attributes: {long_name: particle_identifier}
         X:
             encoding: {datatype: f4, zlib=True}
-            attributes: {long_name=: particle X-coordinate}
+            attributes: {long_name: particle X-coordinate}
         Y:
             encoding: {datatype: f4, zlib=True}
-            attributes: {long_name=: particle Y-coordinate}
+            attributes: {long_name: particle Y-coordinate}
         Z:
             encoding: {datatype: f4, zlib=True}
             attributes:
@@ -55,8 +52,9 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
-        age:
+        lon:
             encoding: {datatype: f4, zlib=True}
-            attributes:
-                long_name: particle age
-                units: seconds
+            attributes: {long_name: longitude, units: degree_east}
+        lat:
+            encoding: {datatype: f4, zlib=True}
+            attributes: {long_name: latitude, units: degree_north}

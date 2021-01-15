@@ -20,6 +20,7 @@ from netCDF4 import Dataset  # type: ignore
 
 from .timekeeper import TimeKeeper, normalize_period
 from .state import State  # For typing
+from .grid import BaseGrid
 
 Variable = Dict[str, Any]
 
@@ -46,6 +47,7 @@ class Output:
         num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
+        grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
@@ -70,7 +72,7 @@ class Output:
         self.output_period = normalize_period(output_period)
         self.output_period_steps = self.output_period // timer._dt
         if timer.time_reversal:
-            self.output_period = - self.output_period
+            self.output_period = -self.output_period
 
         self.num_records = abs(
             (timer.stop_time - timer.start_time) // self.output_period
@@ -98,6 +100,16 @@ class Output:
         self.time_unit = "s"
         self.nctime = timer.step2nctime(0, "s")
         self.cf_units = timer.cf_units(self.time_unit)
+
+        if "lon" in self.instance_variables or "lat" in self.instance_variables:
+            self.lonlat = True
+        else:
+            self.lonlat = False
+        if self.lonlat:
+            try:
+                self.xy2ll = grid.xy2ll   # type: ignore
+            except AttributeError:
+                self.xy2ll = lambda x, y: (x, y)
 
     def create_netcdf(self) -> Dataset:
         """Create a LADiM output netCDF file"""
@@ -166,6 +178,13 @@ class Output:
 
         for var in self.instance_variables:
             self.nc.variables[var][start:end] = getattr(state, var)
+
+        # Compute lon, lat if needed
+        if self.lonlat:
+            lon, lat = self.xy2ll(state.X, state.Y)
+            self.nc.variables["lon"][start:end] = lon
+            self.nc.variables["lat"][start:end] = lat
+
         # Flush to file
         self.nc.sync()
 

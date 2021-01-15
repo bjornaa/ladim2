@@ -19,7 +19,7 @@ import yaml
 
 # from .timekeeper import normalize_period
 
-DEBUG = False
+DEBUG = True
 
 
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
@@ -100,7 +100,10 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
         elif "gridfile" in config["files"]:
             conf["grid"]["filename"] = config["files"]["gridfile"]
         conf["forcing"]["module"] = "ladim2.forcing_ROMS"
-        conf["forcing"]["filename"] = config["gridforce"]["input_file"]
+        if "input_file" in config["gridforce"]:
+            conf["forcing"]["filename"] = config["gridforce"]["input_file"]
+        elif "input_file" in config["files"]:
+            conf["forcing"]["filename"] = config["files"]["input_file"]
     if "subgrid" in config["gridforce"]:
         conf["grid"]["subgrid"] = config["gridforce"]["subgrid"]
     if "ibm_forcing" in config["gridforce"]:
