@@ -128,7 +128,6 @@ class State(Sized):
 
         self.npid: int = 0  # Total number of pids used
 
-        print("====", self.variables)
 
     def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""

@@ -104,15 +104,13 @@ class TimeKeeper:
         """
         if self.time_reversal:
             return (self.start_time - np.datetime64(time_)) // self._dt
-        else:
-            return (np.datetime64(time_) - self.start_time) // self._dt
+        return (np.datetime64(time_) - self.start_time) // self._dt
 
     def step2isotime(self, stepnr: int) -> str:
         """Return time in iso 8601 format from a time step number"""
         if self.time_reversal:
             return str(self.start_time - stepnr * self._dt)
-        else:
-            return str(self.start_time + stepnr * self._dt)
+        return str(self.start_time + stepnr * self._dt)
 
     def step2nctime(self, stepnr: int, unit: str = "s") -> float:
         """

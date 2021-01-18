@@ -19,7 +19,7 @@ import yaml
 
 # from .timekeeper import normalize_period
 
-DEBUG = True
+DEBUG = False
 
 
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
@@ -117,7 +117,7 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
         for var in config["ibm"]["variables"]:
             instance_variables[var] = "float"
     for var in config["particle_release"]:
-        if var in ["mult", "X", "Y" "Z"]:  # Ignore
+        if var in ["mult", "X", "Y", "Z"]:  # Ignore
             continue
         if (
             "particle_variables" in config["particle_release"]
