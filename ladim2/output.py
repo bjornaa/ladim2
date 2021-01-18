@@ -107,7 +107,7 @@ class Output:
             self.lonlat = False
         if self.lonlat:
             try:
-                self.xy2ll = grid.xy2ll   # type: ignore
+                self.xy2ll = grid.xy2ll  # type: ignore
             except AttributeError:
                 self.xy2ll = lambda x, y: (x, y)
 
@@ -145,8 +145,20 @@ class Output:
 
         if self.particle_variables is not None:
             for var, conf in self.particle_variables.items():
-                v = nc.createVariable(var, conf["encoding"]["datatype"], ("particle",))
+                # xarray requires nan as fillvalue to interpret time
+                if conf["encoding"]["datatype"] in ["f4", "f8"]:
+                    v = nc.createVariable(
+                        var,
+                        conf["encoding"]["datatype"],
+                        ("particle",),
+                        fill_value=np.nan,
+                    )
+                else:
+                    v = nc.createVariable(
+                        var, conf["encoding"]["datatype"], ("particle",),
+                    )
                 for att, value in conf["attributes"].items():
+                    # Replace string "reference_time" with actual reference time
                     if "reference_time" in value:
                         value = value.replace(
                             "reference_time", str(self.timer.reference_time)
@@ -213,13 +225,14 @@ class Output:
     #     self.nc.variables[var][:] = getattr(state, var)
 
     def write_particle_variables(self, state: State) -> None:
+        npart = state.pid.max() + 1  # Total number of particles sofar
         for var in self.particle_variables:
             if state.dtypes[var] == np.dtype("datetime64[s]"):
                 unit = self.time_unit
                 delta = getattr(state, var).astype("M8[s]") - self.timer.reference_time
-                self.nc.variables[var][:] = delta / np.timedelta64(1, unit)
+                self.nc.variables[var][:npart] = delta / np.timedelta64(1, unit)
             else:
-                self.nc.variables[var][:] = getattr(state, var)
+                self.nc.variables[var][:npart] = getattr(state, var)
 
     def close(self) -> None:
         self.nc.close()

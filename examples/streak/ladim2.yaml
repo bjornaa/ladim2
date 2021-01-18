@@ -38,13 +38,13 @@ output:
     instance_variables:
         pid:
             encoding: {datatype: i4, zlib=True}
-            attributes: {long_name=: particle_identifier}
+            attributes: {long_name: particle_identifier}
         X:
             encoding: {datatype: f4, zlib=True}
-            attributes: {long_name=: particle X-coordinate}
+            attributes: {long_name: particle X-coordinate}
         Y:
             encoding: {datatype: f4, zlib=True}
-            attributes: {long_name=: particle Y-coordinate}
+            attributes: {long_name: particle Y-coordinate}
         Z:
             encoding: {datatype: f4, zlib=True}
             attributes:
