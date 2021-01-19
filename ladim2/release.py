@@ -18,6 +18,7 @@ from typing import List, Optional, Union, Dict, Any
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+from netCDF4 import Dataset
 
 from .timekeeper import TimeKeeper, normalize_period
 from .grid import BaseGrid
@@ -38,9 +39,9 @@ class ParticleReleaser(Iterator):
         names: Optional[List[str]] = None,
         grid: Optional[BaseGrid] = None,
         # dtype: Dict = None,
-        continuous: bool = False,
-        release_frequency: int = 0,  # frequnency in seconds
-        # warm_start=False,
+        continuous: Optional[bool] = False,
+        release_frequency: Optional[int] = 0,  # frequency in seconds
+        warm_start_file: Optional[str] = None,
         **args,
     ) -> None:
 
@@ -80,7 +81,14 @@ class ParticleReleaser(Iterator):
         else:
             self._df = self._df[self._df.index >= self.start_time]
 
-        if len(self._df) == 0:  # All release before start
+        # With warm start skip release at start time (already accounted for)
+        if warm_start_file:
+            print("warm start in release")
+            self._df = self._df[self._df.index > self.start_time]
+
+        # Avoid simulations without particles
+        # Cold start and all particles released before start
+        if len(self._df) == 0 and not warm_start_file:
             logging.critical("All particles released before simulation start")
             raise SystemExit(3)
 
@@ -99,9 +107,15 @@ class ParticleReleaser(Iterator):
         #     if len(A) < lenA:
         #         logging.warning("Ignoring particle release outside subgrid")
 
-        # # If warm start, no new release at start time (already accounted for)
-        # if config["start"] == "warm":
-        #     A = A[A.index > start_time]
+        if warm_start_file:
+            # Get particle data from  warm start file
+            with Dataset(warm_start_file) as f:
+                warm_particle_count = np.max(f.variables['pid'][:]) + 1
+        #         for name in config["particle_variables"]:
+        #             pvars[name] = f.variables[name][:warm_particle_count]
+        else:  # cold start
+            warm_particle_count = 0
+
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum()
@@ -118,7 +132,8 @@ class ParticleReleaser(Iterator):
 
         # # Read the particle variables
         self._index = 0  # Index of next release
-        self._particle_count = 0  # Particle counter
+        #self._particle_count = 0  # Particle counter
+        self._particle_count = warm_particle_count
 
         # # Handle the particle variables initially
         # # TODO: Need a test to check that this iw working properly

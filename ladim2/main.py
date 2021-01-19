@@ -66,7 +66,6 @@ def main(configuration_file: Union[Path, str]) -> None:
     if 0 in release.steps:
         V = next(release)
         state.append(**V)
-    if not output.skip_initial:
         output.write(state)
 
     print("Time loop")
@@ -75,13 +74,13 @@ def main(configuration_file: Union[Path, str]) -> None:
         # Update
         # -- Update clock ---
         timer.update()
+        # print("tid = ", timer.time)
 
         # --- Update forcing ---
         force.update(step, state.X, state.Y, state.Z)
 
         tracker.update(state, grid=grid, force=force)
         if config["ibm"]:
-            # ibm.update(state, force)
             ibm.update()  # type: ignore
             state.compactify()
 

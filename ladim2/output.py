@@ -49,7 +49,7 @@ class Output:
         particle_variables: Optional[Dict[str, Variable]] = None,
         grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
-        numrec: int = 0,  # Number of records per file, no multfile if zero
+        numrec: Optional[int] = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
         global_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -61,7 +61,8 @@ class Output:
         self.num_particles = num_particles
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables if particle_variables else dict()
-        self.skip_initial = skip_initial
+
+        # self.skip_output = skip_initial
         self.numrec = numrec
         self.ncargs = ncargs if ncargs else dict()
         if "mode" not in self.ncargs:
@@ -179,13 +180,20 @@ class Output:
 
         """
 
+        # print("Write, time = ", self.timer.time)
+
+        # May skip initial output
+        # if self.skip_output:
+        #     self.skip_output = False
+        #     return
+
         count = len(state)  # Present number of particles
         start = self.local_instance_count
         end = start + count
 
         # rec_count = self.record_count % self.numrec  # record count *in* the file
 
-        self.nc.variables["time"][self.local_record_count] = self.nctime
+        self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
         self.nc.variables["particle_count"][self.local_record_count] = count
 
         for var in self.instance_variables:
@@ -216,13 +224,6 @@ class Output:
                 self.nc = self.create_netcdf()
                 self.local_instance_count = 0
                 self.local_record_count = 0
-
-    # def write_particle_variable(self, state: State, var: str) -> None:
-    #     if state.dtypes[var] == np.dtype("M8[ns]"):
-    #         unit = self.nc.variables['units'][0]  # First "s", "m", or "h"
-    #         delta = getattr(state, var) - timer.reference_time
-    #         self.nc.variables[var][:] = delta / np.timedelta64(1, unit)
-    #     self.nc.variables[var][:] = getattr(state, var)
 
     def write_particle_variables(self, state: State) -> None:
         npart = state.pid.max() + 1  # Total number of particles sofar

@@ -14,6 +14,9 @@ with compability wrapper for LADiM version 1 configuration
 from pathlib import Path
 from pprint import pprint
 
+import numpy as np
+from netCDF4 import Dataset, num2date
+
 from typing import Union, Dict, Any
 import yaml
 
@@ -41,6 +44,8 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         config["grid"] = dict()
     if "ibm" not in config:
         config["ibm"] = dict()
+    if "warm_start" not in config:
+        config["warm_start"] = dict()
 
     # Handle non-orthogonality
 
@@ -57,6 +62,27 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
             directory = filename.parent
             filename = sorted(directory.glob(filename.name))[0]
         config["grid"]["filename"] = filename
+
+    # Warm start
+    if "filename" in config["warm_start"]:
+        warm_start_file = config["warm_start"]["filename"]
+        # Warm start overrides start time
+        try:
+            nc = Dataset(warm_start_file)
+        except (FileNotFoundError, OSError):
+            # logging.error(f"Could not open warm start file,{warm_start_file}")
+            raise SystemExit(1)
+        tvar = nc.variables["time"]
+        # Use last record in restart file
+        warm_start_time = np.datetime64(num2date(tvar[-1], tvar.units))
+        warm_start_time = warm_start_time.astype("M8[s]")
+        config["time"]["start"] = warm_start_time
+        # logging.info(f"    Warm start at {warm_start_time}")
+
+        # warm start -> release
+        config["release"]["warm_start_file"] = config["warm_start"]["filename"]
+
+
 
     # Possible improvement: write a yaml-file
     if DEBUG:

@@ -1,67 +1,99 @@
-# Configuration file for ladim
-#
-# Continuous  release example
-#
+# split.yaml – configuration file for LADiM v2
+# splits output into a sequence of files
 
-time_control:
-    # Start and stop of simulation
-    start_time: 1989-05-24 12:00:00
-    stop_time:  1989-05-28 12:00:00
-    reference_time: 1989-01-01
+version: 2.0
 
-files:
-    particle_release_file : restart.rls
-    output_file           : restart_0002.nc
-    warm_start_file       : split_0001.nc
+time:
+    dt: [1, h]
+    start: 1989-05-24 12:00
+    stop: 1989-05-28 12:00
+    reference: 1989-01-01
 
-particle_release:
-    # type = continuous or discrete [default]
-    release_type: 'continuous'
-    release_frequency: [3600, s]
-    variables: [release_time, X, Y, Z]
-    # Data type [int, float, time], default = float
-    release_time: time
+warm_start:
+    filename: split_001.nc
+
+grid:
+    module: grid_ROMS
+
+forcing:
+    module: forcing_ROMS
+    filename: ../data/ocean_avg_0014.nc
+
+tracker:
+    advection: RK2
+
+release:
+    release_file : restart.rls
+    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
+    continuous: True
+    release_frequency: 3600
     particle_variables: [release_time]
 
-gridforce:
-    module: ladim.gridforce.ROMS
-    input_file            : ../data/ocean_avg_0014.nc
+state:
+    particle_variables: {release_time: time}
 
-output_variables:
-    # Skip initial field
-    skip_initial : True
-
-    # Output period, format [value, unit], unit = s, m, h, or d
-    outper: [3, h]
-    # Records per file
+output:
+    filename: restart_002.nc
+    ncargs: {data_model: NETCDF4_CLASSIC}
+    output_period: [3, h]
+    skip_initial: True     # Initial record is already on restart file
     numrec: 4
+    instance_variables:
+        pid:
+            encoding: {datatype: i4, zlib=True}
+            attributes: {long_name: particle_identifier}
+        X:
+            encoding: {datatype: f4, zlib=True}
+            attributes: {long_name: particle X-coordinate}
+        Y:
+            encoding: {datatype: f4, zlib=True}
+            attributes: {long_name: particle Y-coordinate}
+        Z:
+            encoding: {datatype: f4, zlib=True}
+            attributes:
+                long_name: particle depth
+                standard_name: depth_below_surface
+                units: m
+                positive: down
+    particle_variables:
+        release_time:
+            encoding: {datatype: f8}
+            attributes:
+                long_name: particle release time
+                units: seconds since reference_time
 
-    particle: [release_time]
-    instance: [pid, X, Y, Z]
-    # NetCDF arguments
-    release_time:
-        ncformat: f8
-        long_name: particle release time
-        units: seconds since reference_time
-    # Få til template over
-    pid: {ncformat: i4, long_name: particle identifier}
-    X: {ncformat: f4, long_name: particle X-coordinate}
-    Y: {ncformat: f4, long_name: particle Y-coordinate}
-    Z:
-        ncformat: f4
-        long_name: particle depth
-        standard_name: depth_below_surface
-        units: m
-        positive: down
 
-
-numerics:
-    # Model time step, [value, unit]
-    dt: [1, h]
-    # Advection method: options =
-    #        EF = Euler-Forward,
-    #        RK2, RK4 = Runge-Kutta 2nd or 4th order
-    advection: RK2
-    # Horizontal diffusion coefficient [m2.s-1]
-    #         zero = no diffusion
-    diffusion: 0.0
+#  'output': {'filename': 'split.nc',
+#             'instance_variables': {'X': {'attributes': {'long_name': 'particle '
+#                                                                      'X-coordinate'},
+#                                          'encoding': {'datatype': 'f4'}},
+#                                    'Y': {'attributes': {'long_name': 'particle '
+#                                                                      'Y-coordinate'},
+#                                          'encoding': {'datatype': 'f4'}},
+#                                    'Z': {'attributes': {'long_name': 'particle '
+#                                                                      'depth',
+#                                                         'positive': 'down',
+#                                                         'standard_name': 'depth_below_surface',
+#                                                         'units': 'm'},
+#                                          'encoding': {'datatype': 'f4'}},
+#                                    'pid': {'attributes': {'long_name': 'particle '
+#                                                                        'identifier'},
+#                                            'encoding': {'datatype': 'i4'}}},
+#             'ncargs': {'data_model': 'NETCDF3_CLASSIC'},
+#             'output_period': [3, 'h'],
+#             'particle_variables': {'release_time': {'attributes': {'long_name': 'particle '
+#                                                                                 'release '
+#                                                                                 'time',
+#                                                                    'units': 'seconds '
+#                                                                             'since '
+#                                                                             'reference_time'},
+#                                                     'encoding': {'datatype': 'f8'}}}},
+#  'release': {'continuous': True,
+#              'names': ['release_time', 'X', 'Y', 'Z'],
+#              'release_file': 'restart.rls',
+#              'release_frequency': [3600, 's']},
+#  'state': {'default_values': {},
+#            'instance_variables': {},
+#            'particle_variables': {'release_time': 'time'}},
+#  'time': {,
+#  'tracker': {'advection': 'RK2', 'dt': [1, 'h']}}

@@ -97,6 +97,11 @@ class TimeKeeper:
         else:
             self.time = self.time + self._dt
 
+    def nctime(self, unit: str = "s") -> float:
+        """Get float value of model time"""
+        delta = self.time - self.reference_time
+        return delta / np.timedelta64(1, unit)
+
     def time2step(self, time_: Time) -> int:
         """Timestep from time
 
