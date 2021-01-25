@@ -20,6 +20,4 @@ The script ``make_release.py`` should be run initially to make the release
 file. The example ``ladim split.yaml`` should be run before ``ladim
 restart.yaml``.
 
-The script ``plot_compare.py`` compares the results. The 9th record in
-``unsplit.nc``, the second in ``split_0002.nc`` and ``restart_0000.nc`` should
-agree.
+The script ``compare.py`` compares the results.

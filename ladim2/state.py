@@ -128,11 +128,8 @@ class State(Sized):
 
         self.npid: int = 0  # Total number of pids used
 
-
     def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""
-
-        # Howto handle particle variables?
 
         # state_vars = instance_variables (without pid)
         state_vars = set(self.variables) - {"pid"}

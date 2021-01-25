@@ -10,6 +10,7 @@ from .release import ParticleReleaser
 from .output import Output
 from .configure import configure
 from .ibm import init_IBM
+from .warm_start import warm_start
 
 
 def main(configuration_file: Union[Path, str]) -> None:
@@ -54,19 +55,23 @@ def main(configuration_file: Union[Path, str]) -> None:
     # X0 er et eksempel.
     print("Initial particle release")
 
-    # --------------
-    # Time loop
-    # --------------
-
     # Number of time steps between output (have that computed in output.py)
     output_period_step = output.output_period / timer._dt
 
     # Initial particle release and output
+    if config["warm_start"]:
+        D = config["warm_start"]
+        warm_start(D["filename"], D["variables"], state)
+
     step = 0
     if 0 in release.steps:
         V = next(release)
         state.append(**V)
         output.write(state)
+
+    # --------------
+    # Time loop
+    # --------------
 
     print("Time loop")
     while step < timer.Nsteps:

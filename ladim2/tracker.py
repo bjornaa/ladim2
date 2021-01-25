@@ -46,6 +46,7 @@ class Tracker:
         """Move the particles"""
 
         X, Y, Z = state.X, state.Y, state.Z
+
         self.dx, self.dy = grid.metric(X, Y)
         # dt = self.dt
         # self.num_particles = len(X)

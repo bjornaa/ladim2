@@ -1,16 +1,17 @@
-# split.yaml – configuration file for LADiM v2
-# splits output into a sequence of files
+# restart.yaml – configuration file for LADiM v2
+# warm start example
 
 version: 2.0
 
 time:
-    dt: [1, h]
     start: 1989-05-24 12:00
-    stop: 1989-05-28 12:00
+    stop: 1989-05-25
     reference: 1989-01-01
+    dt: [1, h]
 
 warm_start:
     filename: split_001.nc
+    variables: [release_time, X, Y, Z]   # only take variables not in release.names
 
 grid:
     module: grid_ROMS
@@ -20,7 +21,7 @@ forcing:
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
-    advection: RK2
+    advection: EF
 
 release:
     release_file : restart.rls
@@ -35,7 +36,7 @@ state:
 output:
     filename: restart_002.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
-    output_period: [3, h]
+    output_period: [1, h]
     skip_initial: True     # Initial record is already on restart file
     numrec: 4
     instance_variables:
@@ -61,39 +62,3 @@ output:
             attributes:
                 long_name: particle release time
                 units: seconds since reference_time
-
-
-#  'output': {'filename': 'split.nc',
-#             'instance_variables': {'X': {'attributes': {'long_name': 'particle '
-#                                                                      'X-coordinate'},
-#                                          'encoding': {'datatype': 'f4'}},
-#                                    'Y': {'attributes': {'long_name': 'particle '
-#                                                                      'Y-coordinate'},
-#                                          'encoding': {'datatype': 'f4'}},
-#                                    'Z': {'attributes': {'long_name': 'particle '
-#                                                                      'depth',
-#                                                         'positive': 'down',
-#                                                         'standard_name': 'depth_below_surface',
-#                                                         'units': 'm'},
-#                                          'encoding': {'datatype': 'f4'}},
-#                                    'pid': {'attributes': {'long_name': 'particle '
-#                                                                        'identifier'},
-#                                            'encoding': {'datatype': 'i4'}}},
-#             'ncargs': {'data_model': 'NETCDF3_CLASSIC'},
-#             'output_period': [3, 'h'],
-#             'particle_variables': {'release_time': {'attributes': {'long_name': 'particle '
-#                                                                                 'release '
-#                                                                                 'time',
-#                                                                    'units': 'seconds '
-#                                                                             'since '
-#                                                                             'reference_time'},
-#                                                     'encoding': {'datatype': 'f8'}}}},
-#  'release': {'continuous': True,
-#              'names': ['release_time', 'X', 'Y', 'Z'],
-#              'release_file': 'restart.rls',
-#              'release_frequency': [3600, 's']},
-#  'state': {'default_values': {},
-#            'instance_variables': {},
-#            'particle_variables': {'release_time': 'time'}},
-#  'time': {,
-#  'tracker': {'advection': 'RK2', 'dt': [1, 'h']}}

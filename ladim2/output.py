@@ -49,7 +49,7 @@ class Output:
         particle_variables: Optional[Dict[str, Variable]] = None,
         grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
-        numrec: Optional[int] = 0,  # Number of records per file, no multfile if zero
+        numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
         global_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -63,6 +63,7 @@ class Output:
         self.particle_variables = particle_variables if particle_variables else dict()
 
         # self.skip_output = skip_initial
+        # self.numrec = numrec if numrec else 0
         self.numrec = numrec
         self.ncargs = ncargs if ncargs else dict()
         if "mode" not in self.ncargs:
@@ -173,7 +174,7 @@ class Output:
         return nc
 
     def write(self, state: State) -> None:
-        """Multifile write
+        """Write output instance variables to a (multi-)file
 
         Arguments:
           state: Model state
@@ -226,14 +227,15 @@ class Output:
                 self.local_record_count = 0
 
     def write_particle_variables(self, state: State) -> None:
-        npart = state.pid.max() + 1  # Total number of particles sofar
+        """Write all output particle variables"""
+        npart = state.pid.max() + 1  # Total number of particles so far
         for var in self.particle_variables:
             if state.dtypes[var] == np.dtype("datetime64[s]"):
                 unit = self.time_unit
-                delta = getattr(state, var).astype("M8[s]") - self.timer.reference_time
-                self.nc.variables[var][:npart] = delta / np.timedelta64(1, unit)
+                delta = state[var].astype("M8[s]") - self.timer.reference_time
+                self.nc.variables[var][:npart] = delta[:npart] / np.timedelta64(1, unit)
             else:
-                self.nc.variables[var][:npart] = getattr(state, var)
+                self.nc.variables[var][:npart] = state[var][:npart]
 
     def close(self) -> None:
         self.nc.close()

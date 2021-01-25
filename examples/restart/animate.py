@@ -11,7 +11,7 @@ from postladim import ParticleFile
 
 # Files
 # particle_file = "unsplit.nc"
-particle_file = 'split_002.nc'
+particle_file = "split_002.nc"
 # particle_file = 'restart_0002.nc'
 grid_file = "../data/ocean_avg_0014.nc"
 
@@ -57,7 +57,7 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 
 # Plot initial particle distribution
 X, Y = pf.position(0)
-particle_dist, = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
+(particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
 # title = ax.set_title(pf.time(0))
 timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
 

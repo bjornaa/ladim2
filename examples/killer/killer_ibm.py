@@ -10,7 +10,7 @@ DAY = 24 * 60 * 60  # Number of seconds in a day
 class IBM(BaseIBM):
     def __init__(
         self,
-        lifetime: float,
+        lifetime: float,   # Particle life time, units=days
         timer: TimeKeeper,
         state: State,
         forcing=None,    # This IBM does not use forcing
@@ -29,5 +29,5 @@ class IBM(BaseIBM):
         # Update the particle age
         state["age"] += self.dt
 
-        # Mark particles older than 2 days as dead
+        # Mark particles older than prescribed lifetime as dead
         state["alive"] = state.age < self.lifetime * DAY
