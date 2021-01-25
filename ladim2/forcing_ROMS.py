@@ -14,8 +14,8 @@ from pathlib import Path
 import logging
 from typing import Union, Optional, List, Tuple, Dict
 
-import numpy as np        # type: ignore
-from netCDF4 import Dataset, num2date   # type: ignore
+import numpy as np  # type: ignore
+from netCDF4 import Dataset, num2date  # type: ignore
 
 # from ladim2.state import State
 from ladim2.grid_ROMS import Grid
@@ -96,28 +96,27 @@ class Force_ROMS(BaseForce):
         self.steps = steps
 
         # Read old input
-        # requires at least one input before start
-        # to get Runge-Kutta going
-        # --------------
-        # prestep = last forcing step < 0
-        #
+        # prestep is last forcing step <= 0
 
-        V = [step for step in steps if step < 0]
-        prestep = max(V) if V else 0
+        prestep = max(step for step in steps if step <= 0)
         i = steps.index(prestep)
         nextstep = steps[i - 1] if timer.time_reversal else steps[i + 1]
-        stepdiff0 = nextstep - prestep
+        stepdiff = nextstep - prestep
 
+        # Get initial "u" and "dU"
         self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
         self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
-        self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
-        self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
+        self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff
+        self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff
+        if prestep == 0:
+            self.fields["u_new"] = self.fields["u"]
+            self.fields["v_new"] = self.fields["v"]
 
         # Interpolate to time step = -1
         self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
         self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
 
-        # Other forcing
+        # Other forcing fields (no time interpolation)
         for name in self.ibm_forcing:
             self.fields[name] = self._read_field(name, prestep)
 
@@ -146,11 +145,10 @@ class Force_ROMS(BaseForce):
                 nextstep = (
                     self.steps[i - 1] if self.time_reversal else self.steps[i + 1]
                 )
-                stepdiff = nextstep - step
+                stepdiff = nextstep - step + 1
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
-
                 if interpolate_velocity_in_time:
                     self.fields["dU"] = (
                         self.fields["u_new"] - self.fields["u"]
