@@ -13,7 +13,6 @@ def warm_start(
 ) -> None:
     """Initiate the state from a warm start"""
 
-
     print("wwarm start: variables = ", warm_start_variables)
 
     wvars = warm_start_variables.copy() + ["pid"]

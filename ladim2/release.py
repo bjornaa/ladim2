@@ -110,13 +110,12 @@ class ParticleReleaser(Iterator):
         if warm_start_file:
             # Get particle data from  warm start file
             with Dataset(warm_start_file) as f:
-                warm_particle_count = np.max(f.variables['pid'][:]) + 1
+                warm_particle_count = np.max(f.variables["pid"][:]) + 1
         #         for name in config["particle_variables"]:
         #             pvars[name] = f.variables[name][:warm_particle_count]
         else:  # cold start
             warm_particle_count = 0
         print("release: warm_particle_count =", warm_particle_count)
-
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum() + warm_particle_count

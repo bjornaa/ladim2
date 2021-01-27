@@ -65,7 +65,7 @@ class TimeKeeper:
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
         self.time_reversal = time_reversal
-        self.time = self.start_time     # Running clock
+        self.time = self.start_time  # Running clock
 
         # Quality control
         duration = self.stop_time - self.start_time
@@ -84,7 +84,7 @@ class TimeKeeper:
         else:
             self.reference_time = self.min_time
 
-        self._dt = normalize_period(dt)   # np.timedelta64(-,"s")
+        self._dt = normalize_period(dt)  # np.timedelta64(-,"s")
         self.dt = self._dt.astype("int")  # seconds
 
         # Number of time steps (excluding initial)

@@ -200,7 +200,7 @@ class State(Sized):
     def __setattr__(self, var: str, value: Any) -> None:
         """Follow pandas and xarray and disallow attribute assignment"""
         # Method taken from xarray
-        try:   # allow asigning attributes in __slots__
+        try:  # allow asigning attributes in __slots__
             object.__setattr__(self, var, value)
         except AttributeError as e:
             raise AttributeError(

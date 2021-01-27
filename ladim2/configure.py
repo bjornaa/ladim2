@@ -82,8 +82,6 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         # warm start -> release
         config["release"]["warm_start_file"] = config["warm_start"]["filename"]
 
-
-
     # Possible improvement: write a yaml-file
     if DEBUG:
         pprint(config)
