@@ -1,4 +1,5 @@
-# import itertools
+"""Animate backwards particle tracking"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -68,7 +69,6 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 X, Y = np.loadtxt(forwards_release_file, skiprows=1, unpack=True, usecols=(1, 2))
 ax.plot(X, Y, ".", color="purple", markeredgewidth=0, lw=0.5)
 
-
 # Plot initial distribution of backwards particles
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
@@ -77,8 +77,7 @@ timestamp = ax.text(0.01, 0.95, pf.time(0), fontsize=15, transform=ax.transAxes)
 
 # Update function
 def animate(t):
-    X, Y = pf.position(t)
-    particle_dist.set_data(X, Y)
+    particle_dist.set_data(*pf.position(t))
     timestamp.set_text(pf.time(t))
     return particle_dist, timestamp
 
@@ -111,5 +110,5 @@ anim = FuncAnimation(
 )
 
 
-# anim.save('line.gif',  writer='imagemagick')
+# anim.save('backwards.gif',  writer='imagemagick')
 plt.show()

@@ -1,4 +1,5 @@
-# import itertools
+"""Animate particle tracking from LADiM"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -37,16 +38,26 @@ pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
 # Set up the plot area
-fig = plt.figure(figsize=(12, 10))
+fig = plt.figure(figsize=(9, 8))
 ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
 
 # Background bathymetry
 cmap = plt.get_cmap("Blues")
-ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.3)
+ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.5)
 
 # Lon/lat lines
-ax.contour(Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":")
-ax.contour(Xcell, Ycell, lon, levels=range(-4, 10, 2), colors="black", linestyles=":")
+ax.contour(
+    Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":", alpha=0.5
+)
+ax.contour(
+    Xcell,
+    Ycell,
+    lon,
+    levels=range(-4, 10, 2),
+    colors="black",
+    linestyles=":",
+    alpha=0.5,
+)
 
 # Landmask
 constmap = plt.matplotlib.colors.ListedColormap([0.2, 0.6, 0.4])
@@ -61,8 +72,7 @@ timestamp = ax.text(0.01, 0.95, pf.time(0), fontsize=15, transform=ax.transAxes)
 
 # Update function
 def animate(t):
-    X, Y = pf.position(t)
-    particle_dist.set_data(X, Y)
+    particle_dist.set_data(*pf.position(t))
     timestamp.set_text(pf.time(t))
     return particle_dist, timestamp
 
@@ -81,6 +91,8 @@ def onClick(event):
         anim_running = True
 
 
+fig.canvas.mpl_connect("button_press_event", onClick)
+
 # Do the animation
 anim = FuncAnimation(
     fig,
@@ -93,5 +105,4 @@ anim = FuncAnimation(
 )
 
 # anim.save('line.gif',  writer='imagemagick')
-fig.canvas.mpl_connect("button_press_event", onClick)
 plt.show()
