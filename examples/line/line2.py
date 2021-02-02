@@ -1,5 +1,10 @@
-#from pathlib import Path
-#from typing import Union
+"""LADiM – the line example as a scipt using the yaml configuration"""
+
+# ------------------------------------
+# Bjørn Ådlandsvik <bjorn@imr.no>
+# Institue of Marine Research
+# 2020-04-04
+# ------------------------------------
 
 from ladim2.state import State
 from ladim2.grid import init_grid
@@ -10,11 +15,9 @@ from ladim2.release import ParticleReleaser
 from ladim2.output import Output
 from ladim2.configure import configure
 
-
 # ----------------
 # Configuration
 # ----------------
-
 
 configuration_file = "ladim2.yaml"
 config = configure(configuration_file)
@@ -34,10 +37,7 @@ output = Output(
     timer=timer, num_particles=release.total_particle_count, **config["output"]
 )
 
-
-# --------------
-# Time loop
-# --------------
+# Initialize the time loop
 
 # Number of time steps between output (have that computed in output.py)
 output_period_step = output.output_period / timer._dt
@@ -49,12 +49,17 @@ if 0 in release.steps:
     state.append(**V)
 output.write(state)
 
-print("Time loop")
+# --------------
+# Time loop
+# --------------
+
 while step < timer.Nsteps:
+
+    timer.update()
 
     # Update, forcing first, then state  (correct?)
     # --- Update forcing ---
-    force.update(step)
+    force.update(step, state.X, state.Y, state.Z)
     tracker.update(state, grid=grid, force=force)
 
     step += 1

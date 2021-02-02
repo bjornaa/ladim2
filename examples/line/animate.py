@@ -15,8 +15,8 @@ particle_file = "out.nc"
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
-i0, i1 = 58, 150
-j0, j1 = 60, 140
+i0, i1 = 55, 150
+j0, j1 = 55, 145
 
 # ----------------
 
@@ -47,7 +47,7 @@ ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.5)
 
 # Lon/lat lines
 ax.contour(
-    Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":", alpha=0.5
+    Xcell, Ycell, lat, levels=range(55, 64), colors="black", linestyles=":", alpha=0.5
 )
 ax.contour(
     Xcell,
@@ -67,12 +67,15 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 # Plot initial particle distribution
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
-timestamp = ax.text(0.01, 0.95, pf.time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(
+    0.02, 0.96, pf.time(0), fontsize=15, backgroundcolor="white", transform=ax.transAxes
+)
 
 
 # Update function
 def animate(t):
-    particle_dist.set_data(*pf.position(t))
+    X, Y = pf.position(t)
+    particle_dist.set_data(X, Y)
     timestamp.set_text(pf.time(t))
     return particle_dist, timestamp
 
@@ -98,7 +101,7 @@ anim = FuncAnimation(
     fig,
     animate,
     frames=num_times,
-    interval=30,
+    interval=40,
     repeat=True,
     repeat_delay=500,
     blit=True,
