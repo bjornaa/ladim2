@@ -87,10 +87,10 @@ def test_forcing_steps(nc_files):
     assert steps == [2 * (i - 3) for i in range(len(all_frames))]
 
     for step in [-4, 0, 4, 16]:
-        nc = Dataset(file_idx[step])
-        timeval = nc.variables["ocean_time"][frame_idx[step]]
-        filetime = np.datetime64("2000-01-01") + np.timedelta64(int(timeval), "s")
-        assert filetime == timer.start_time + step * timer.dt
+        with Dataset(file_idx[step]) as nc:
+            timeval = nc.variables["ocean_time"][frame_idx[step]]
+            filetime = np.datetime64("2000-01-01") + np.timedelta64(int(timeval), "s")
+            assert filetime == timer.start_time + step * timer.dt
 
     # Reversed time
     timer = TimeKeeper(
@@ -101,7 +101,7 @@ def test_forcing_steps(nc_files):
     print(steps)
 
     for step in [-4, 0, 4, 16]:
-        nc = Dataset(file_idx[step])
-        timeval = nc.variables["ocean_time"][frame_idx[step]]
-        filetime = np.datetime64("2000-01-01") + np.timedelta64(int(timeval), "s")
-        assert filetime == timer.start_time - step * timer.dt
+        with Dataset(file_idx[step]) as nc:
+            timeval = nc.variables["ocean_time"][frame_idx[step]]
+            filetime = np.datetime64("2000-01-01") + np.timedelta64(int(timeval), "s")
+            assert filetime == timer.start_time - step * timer.dt

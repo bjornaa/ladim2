@@ -105,3 +105,16 @@ def main(configuration_file: Union[Path, str]) -> None:
     print("Cleaning up")
     # output.write_particle_variables(state)
     # output.close()
+
+
+def script():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="LADiM 2.0 — Lagrangian Advection and Diffusion Model"
+    )
+    parser.add_argument("config_file", nargs="?", default="ladim2.yaml")
+
+    args = parser.parse_args()
+
+    main(args.config_file)
