@@ -1,4 +1,4 @@
-"""Animate particle tracking from LADiM"""
+"""Animate backwards particle tracking"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,12 +11,13 @@ from postladim import ParticleFile
 # ---------------
 
 # Files
-particle_file = "out.nc"
+forwards_release_file = "../line/line.rls"
+particle_file = "backwards.nc"
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
 i0, i1 = 58, 150
-j0, j1 = 60, 140
+j0, j1 = 55, 140
 
 # ----------------
 
@@ -38,7 +39,7 @@ pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
 # Set up the plot area
-fig = plt.figure(figsize=(9, 8))
+fig = plt.figure(figsize=(8, 8))
 ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
 
 # Background bathymetry
@@ -47,7 +48,7 @@ ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.5)
 
 # Lon/lat lines
 ax.contour(
-    Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":", alpha=0.5
+    Xcell, Ycell, lat, levels=range(55, 64), colors="black", linestyles=":", alpha=0.3
 )
 ax.contour(
     Xcell,
@@ -56,7 +57,7 @@ ax.contour(
     levels=range(-4, 10, 2),
     colors="black",
     linestyles=":",
-    alpha=0.5,
+    alpha=0.3,
 )
 
 # Landmask
@@ -64,7 +65,11 @@ constmap = plt.matplotlib.colors.ListedColormap([0.2, 0.6, 0.4])
 M = np.ma.masked_where(M > 0, M)
 plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 
-# Plot initial particle distribution
+# Plot target = initial distribution of forwards particles
+X, Y = np.loadtxt(forwards_release_file, skiprows=1, unpack=True, usecols=(1, 2))
+ax.plot(X, Y, ".", color="purple", markeredgewidth=0, lw=0.5)
+
+# Plot initial distribution of backwards particles
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
 timestamp = ax.text(0.01, 0.95, pf.time(0), fontsize=15, transform=ax.transAxes)
@@ -77,7 +82,7 @@ def animate(t):
     return particle_dist, timestamp
 
 
-# Make mouse click halt the animation
+# Make mouse click pause/unpause the animation
 anim_running = True
 
 
@@ -100,9 +105,10 @@ anim = FuncAnimation(
     frames=num_times,
     interval=30,
     repeat=True,
-    repeat_delay=500,
+    repeat_delay=800,
     blit=True,
 )
 
-# anim.save('line.gif',  writer='imagemagick')
+
+# anim.save('backwards.gif',  writer='imagemagick')
 plt.show()

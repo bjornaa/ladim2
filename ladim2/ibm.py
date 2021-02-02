@@ -6,7 +6,6 @@ import importlib
 
 
 class BaseIBM(ABC):
-
     @abstractmethod
     def update(self) -> None:
         pass
@@ -25,4 +24,4 @@ def init_IBM(**args) -> BaseIBM:
 
     # Import correct module and return an instance of the IBM class
     ibm_mod = importlib.import_module(module)
-    return ibm_mod.IBM(**args)    # type: ignore
+    return ibm_mod.IBM(**args)  # type: ignore

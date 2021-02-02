@@ -40,4 +40,4 @@ def init_grid(**args) -> BaseGrid:
 
     # Import correct module
     grid_module = importlib.import_module(module)
-    return grid_module.init_grid(**args)    # type: ignore
+    return grid_module.init_grid(**args)  # type: ignore
