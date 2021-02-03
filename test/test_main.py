@@ -116,7 +116,7 @@ def make_release(t, **params_or_funcs):
               for k, p in params_or_funcs.items()}
 
     start_date = np.datetime64('2000-01-02T03')
-    minute = np.timedelta64(1, 'm')
+    minute = np.timedelta64(60, 's')
     dates = start_date + np.array(t) * minute
 
     return pd.DataFrame(
@@ -200,10 +200,8 @@ def make_conf():
 
 
 class Test_output_when_different_scenarios:
-
     def test_single_stationary_particle(self):
-        gridforce_zero = make_gridforce(
-            ufunc=lambda *_: 0, vfunc=lambda *_: 0, wfunc=lambda *_: 0)
+        gridforce_zero = make_gridforce()
         release_single = make_release(t=[0], X=[1], Y=[1], Z=[0])
         conf = make_conf()
 
@@ -214,3 +212,37 @@ class Test_output_when_different_scenarios:
                 'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
 
             assert result.X.values.tolist() == [1, 1, 1]
+
+    def test_multiple_release_times(self):
+        gridforce_zero = make_gridforce()
+        release_multiple = make_release(t=[0, 1, 2], X=1, Y=1, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gridforce_zero, release_multiple) as result:
+            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
+            assert set(result.coords) == {'time'}
+            assert set(result.data_vars) == {
+                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
+            assert result.particle_count.values.tolist() == [1, 2, 3]
+            assert result.pid.values.tolist() == [0, 0, 1, 0, 1, 2]
+            assert (
+                ((result.release_time.values - result.release_time.values[0])
+                 / np.timedelta64(1, 's')).tolist() == [0, 60, 120]
+            )
+
+    def test_multiple_initial_particles(self):
+        gridforce_zero = make_gridforce()
+        release_multiple = make_release(t=[0] * 5, X=1, Y=1, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gridforce_zero, release_multiple) as result:
+            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
+            assert set(result.coords) == {'time'}
+            assert set(result.data_vars) == {
+                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
+            assert result.particle_count.values.tolist() == [5] * 3
+            assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 3
+            assert (
+                ((result.release_time.values - result.release_time.values[0])
+                 / np.timedelta64(1, 's')).tolist() == [0] * 5
+            )
