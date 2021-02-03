@@ -71,8 +71,8 @@ def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
     vfunc = vfunc or zerofunc
     wfunc = wfunc or zerofunc
 
-    x = xr.Variable('xi_rho', np.arange(5))
-    y = xr.Variable('eta_rho', np.arange(7))
+    x = xr.Variable('xi_rho', np.arange(10))
+    y = xr.Variable('eta_rho', np.arange(15))
     x_u = xr.Variable('xi_u', np.arange(len(x) - 1))
     y_u = xr.Variable('eta_u', np.arange(len(y)))
     x_v = xr.Variable('xi_v', np.arange(len(x)))
@@ -219,10 +219,6 @@ class Test_output_when_different_scenarios:
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_multiple) as result:
-            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
-            assert set(result.coords) == {'time'}
-            assert set(result.data_vars) == {
-                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
             assert result.particle_count.values.tolist() == [1, 2, 3]
             assert result.pid.values.tolist() == [0, 0, 1, 0, 1, 2]
             assert (
@@ -236,13 +232,18 @@ class Test_output_when_different_scenarios:
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_multiple) as result:
-            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
-            assert set(result.coords) == {'time'}
-            assert set(result.data_vars) == {
-                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
             assert result.particle_count.values.tolist() == [5] * 3
             assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 3
             assert (
                 ((result.release_time.values - result.release_time.values[0])
                  / np.timedelta64(1, 's')).tolist() == [0] * 5
             )
+
+    def test_single_particle_linear_forcing(self):
+        gf = make_gridforce(ufunc=lambda *_: 1/60, vfunc=lambda *_: 2/60)
+        rls = make_release(t=[0], X=2, Y=2, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gf, rls) as result:
+            assert result.X.values.tolist() == [2, 3, 4]
+            assert result.Y.values.tolist() == [2, 4, 6]
