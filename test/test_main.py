@@ -1,7 +1,6 @@
 """Module for testing config file API"""
 
 
-import pytest
 import xarray as xr
 import pandas as pd
 
@@ -43,19 +42,16 @@ def tempfile(num=1):
 
 
 @contextlib.contextmanager
-def runladim(conf):
+def runladim(conf, gridforce, release):
     with tempfile(4) as fnames:
         conf_fname, out_fname, gridforce_fname, rls_fname = fnames
 
-        conf['grid']['filename'].to_netcdf(gridforce_fname)
+        gridforce.to_netcdf(gridforce_fname)
+        release.to_csv(rls_fname, sep='\t', index=False)
+
         conf['grid']['filename'] = gridforce_fname
-
-        conf['forcing']['filename'].to_netcdf(gridforce_fname)
         conf['forcing']['filename'] = gridforce_fname
-
-        conf['release']['release_file'].to_csv(rls_fname, sep='\t', index=False)
         conf['release']['release_file'] = rls_fname
-
         conf['output']['filename'] = out_fname
 
         with open(conf_fname, 'w', encoding='utf-8') as conf_file:
@@ -67,7 +63,14 @@ def runladim(conf):
             yield dset
 
 
-def make_gridforce():
+def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
+    def zerofunc(tt, ss, yy, xx):
+        return tt*0. + ss*0. + yy*0. + xx*0.
+
+    ufunc = ufunc or zerofunc
+    vfunc = vfunc or zerofunc
+    wfunc = wfunc or zerofunc
+
     x = xr.Variable('xi_rho', np.arange(5))
     y = xr.Variable('eta_rho', np.arange(7))
     x_u = xr.Variable('xi_u', np.arange(len(x) - 1))
@@ -94,8 +97,9 @@ def make_gridforce():
             hc=0.,
             Cs_r=1. - (s + 0.5)/len(s),
             Cs_w=1. - s_w/(len(s_w) - 1),
-            u=t*0. + s*0 + y_u + x_u,
-            v=t*0. + s*0 - y_v + x_v,
+            u=zerofunc(t, s, y_u, x_u) + ufunc(t, s, y_u, x_u),
+            v=zerofunc(t, s, y_v, x_v) + vfunc(t, s, y_v, x_v),
+            w=zerofunc(t, s_w, y, x) + wfunc(t, s_w, y, x),
         ),
         coords=dict(
             lon_rho=(x*1 + y*0),
@@ -104,56 +108,109 @@ def make_gridforce():
     )
 
 
-def make_release():
-    t = ['2000-01-02T03:00', '2000-01-02T03:01', '2000-01-02T03:02']
+def make_release(t, **params_or_funcs):
+    t = np.array(t)
+    i = np.arange(len(t))
+
+    params = {k: (p(i, t) if callable(p) else p) + np.zeros_like(t)
+              for k, p in params_or_funcs.items()}
+
+    start_date = np.datetime64('2000-01-02T03')
+    minute = np.timedelta64(1, 'm')
+    dates = start_date + np.array(t) * minute
 
     return pd.DataFrame(
-        data=dict(
-            release_time=t,
-            X=np.ones(len(t)),
-            Y=np.ones(len(t)),
-            Z=np.zeros(len(t)),
-        )
+        data={
+            **dict(release_time=dates.astype(str)),
+            **params,
+        }
     )
 
 
-class Test_minimal:
-    @pytest.fixture(scope='class')
-    def result(self):
+def make_conf():
+    return dict(
+        version=2,
 
-        gridforce = make_gridforce()
-        release = make_release()
+        time=dict(
+            dt=[30, 's'],
+            start='2000-01-02T03',
+            stop='2000-01-02T03:02',
+        ),
+        grid=dict(
+            module='ladim2.grid_ROMS',
+        ),
+        forcing=dict(
+            module='ladim2.forcing_ROMS',
+        ),
+        release=dict(),
+        state=dict(
+            particle_variables=dict(
+                release_time='time',
+                weight='float',
+            ),
+            instance_variables=dict(age='float'),
+            default_values=dict(weight=0, age=0),
+        ),
+        tracker=dict(
+            advection='EF',
+            diffusion=0,
+        ),
+        output=dict(
+            output_period=[60, 's'],
+            particle_variables=dict(
+                release_time=dict(
+                    encoding=dict(datatype='f8'),
+                    attributes=dict(
+                        long_name='particle release time',
+                        units='seconds since reference_time',
+                    ),
+                ),
+            ),
+            instance_variables=dict(
+                pid=dict(
+                    encoding=dict(datatype='i4'),
+                    attributes=dict(
+                        long_name='particle identifier',
+                    ),
+                ),
+                X=dict(
+                    encoding=dict(datatype='f4'),
+                    attributes=dict(
+                        long_name='particle X-coordinate',
+                    ),
+                ),
+                Y=dict(
+                    encoding=dict(datatype='f4'),
+                    attributes=dict(
+                        long_name='particle Y-coordinate',
+                    ),
+                ),
+                Z=dict(
+                    encoding=dict(datatype='f4'),
+                    attributes=dict(
+                        long_name='particle depth',
+                        standard_name='depth_below_surface',
+                        units='m',
+                        positive='down',
+                    ),
+                ),
+            ),
+        ),
+    )
 
-        conf = dict(
-            version=2,
 
-            time=dict(
-                dt=[30, 's'],
-                start=str(gridforce.ocean_time[0].values),
-                stop=str(gridforce.ocean_time[-1].values),
-            ),
-            grid=dict(
-                module='ladim2.grid_ROMS',
-                filename=gridforce,
-            ),
-            forcing=dict(
-                module='ladim2.forcing_ROMS',
-                filename=gridforce,
-            ),
-            release=dict(
-                release_file=release,
-            ),
-            tracker=dict(
-                advection=dict(),
-            ),
-            output=dict(
-                output_period=[30, 's'],
-                instance_variables=dict(),
-            ),
-        )
+class Test_output_when_different_scenarios:
 
-        with runladim(conf) as gridforce:
-            yield gridforce
+    def test_single_stationary_particle(self):
+        gridforce_zero = make_gridforce(
+            ufunc=lambda *_: 0, vfunc=lambda *_: 0, wfunc=lambda *_: 0)
+        release_single = make_release(t=[0], X=[1], Y=[1], Z=[0])
+        conf = make_conf()
 
-    def test_minimal(self, result):
-        assert isinstance(result, xr.Dataset)
+        with runladim(conf, gridforce_zero, release_single) as result:
+            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
+            assert set(result.coords) == {'time'}
+            assert set(result.data_vars) == {
+                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
+
+            assert result.X.values.tolist() == [1, 1, 1]
