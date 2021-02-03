@@ -91,11 +91,16 @@ class TimeKeeper:
         self.Nsteps = abs(duration) // self._dt
         self.simulation_time = self.Nsteps * self._dt
 
-    def update(self):
+    def update(self) -> None:
+        """Update the clock"""
         if self.time_reversal:
             self.time = self.time - self._dt
         else:
             self.time = self.time + self._dt
+
+    def reset(self) -> None:
+        """Reset the clock"""
+        self.time = self.start_time
 
     def nctime(self, unit: str = "s") -> float:
         """Get float value of model time"""

@@ -134,18 +134,23 @@ def test_write():
     """Write a sequence of states"""
     state = State(particle_variables={"X0": float})
     out = Output(**config0)
+    timer = out.timer
+    outper = out.output_period // timer._dt
 
     assert out.record_count == 0
     assert out.instance_count == 0
 
     # Initially one particle
     state.append(X=100, Y=10, Z=5, X0=100)
+    timer.reset()
     out.write(state)
     assert out.record_count == 1
     assert out.instance_count == 1
 
     # Update position
     state["X"] += 1
+    for i in range(outper):
+        timer.update()
     out.write(state)
     assert out.record_count == 2
     assert out.instance_count == 2
@@ -155,6 +160,8 @@ def test_write():
     state.append(
         X=np.array([200, 300]), Y=np.array([20, 30]), Z=5, X0=np.array([200, 300])
     )
+    for i in range(outper):
+        timer.update()
     out.write(state)
     assert out.record_count == 3
     assert out.instance_count == 5
@@ -163,12 +170,16 @@ def test_write():
     state["X"] = state["X"] + 1.0
     state["alive"][0] = False
     state.compactify()
+    for i in range(outper):
+        timer.update()
     out.write(state)
     assert out.record_count == 4
     assert out.instance_count == 7
 
     # Update positions
     state["X"] += 1
+    for i in range(outper):
+        timer.update()
     out.write(state)
     assert out.record_count == 5
     assert out.instance_count == 9
@@ -206,11 +217,16 @@ def test_multifile():
     config = dict(config0, filename="a.nc", numrec=2, particle_variables=dict())
     out = Output(**config)
     state = State()
+    timer = out.timer
+    outper = out.output_period // timer._dt
 
     # First file
     state.append(X=100, Y=10, Z=5)
+    timer.reset()
     out.write(state)
     state["X"] += 1
+    for i in range(outper):
+        timer.update()
     out.write(state)
     nc = Dataset("a_000.nc")
     assert all(nc.variables["time"][:] == [0, 12 * h])
@@ -221,10 +237,14 @@ def test_multifile():
     # Update first particle and add two new particles
     state["X"] += 1
     state.append(X=np.array([200, 300]), Y=np.array([20, 30]), Z=5)
+    for i in range(outper):
+        timer.update()
     out.write(state)
     state["X"] = state["X"] + 1.0
     state["alive"][0] = False
     state.compactify()
+    for i in range(outper):
+        timer.update()
     out.write(state)
     nc = Dataset("a_001.nc")
     assert all(nc.variables["time"][:] == [24 * h, 36 * h])
@@ -233,6 +253,8 @@ def test_multifile():
 
     # Third and last file
     state["X"] += 1
+    for i in range(outper):
+        timer.update()
     out.write(state)
     nc = Dataset("a_002.nc")
     assert all(nc.variables["time"][:] == [48 * h])
