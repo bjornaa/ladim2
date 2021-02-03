@@ -105,6 +105,7 @@ def main(configuration_file: Union[Path, str]) -> None:
     print("Cleaning up")
     # output.write_particle_variables(state)
     # output.close()
+    force.close()
 
 
 def script():
