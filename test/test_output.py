@@ -228,10 +228,10 @@ def test_multifile():
     for i in range(outper):
         timer.update()
     out.write(state)
-    nc = Dataset("a_000.nc")
-    assert all(nc.variables["time"][:] == [0, 12 * h])
-    assert all(nc.variables["particle_count"][:] == [1, 1])
-    assert all(nc.variables["pid"][:] == [0, 0])
+    with Dataset("a_000.nc") as nc:
+        assert all(nc.variables["time"][:] == [0, 12 * h])
+        assert all(nc.variables["particle_count"][:] == [1, 1])
+        assert all(nc.variables["pid"][:] == [0, 0])
 
     # Second file
     # Update first particle and add two new particles
@@ -246,20 +246,20 @@ def test_multifile():
     for i in range(outper):
         timer.update()
     out.write(state)
-    nc = Dataset("a_001.nc")
-    assert all(nc.variables["time"][:] == [24 * h, 36 * h])
-    assert all(nc.variables["particle_count"][:] == [3, 2])
-    assert all(nc.variables["pid"][:] == [0, 1, 2, 1, 2])
+    with Dataset("a_001.nc") as nc:
+        assert all(nc.variables["time"][:] == [24 * h, 36 * h])
+        assert all(nc.variables["particle_count"][:] == [3, 2])
+        assert all(nc.variables["pid"][:] == [0, 1, 2, 1, 2])
 
     # Third and last file
     state["X"] += 1
     for i in range(outper):
         timer.update()
     out.write(state)
-    nc = Dataset("a_002.nc")
-    assert all(nc.variables["time"][:] == [48 * h])
-    assert all(nc.variables["particle_count"][:] == [2])
-    assert all(nc.variables["pid"][:] == [1, 2])
+    with Dataset("a_002.nc") as nc:
+        assert all(nc.variables["time"][:] == [48 * h])
+        assert all(nc.variables["particle_count"][:] == [2])
+        assert all(nc.variables["pid"][:] == [1, 2])
 
     # Clean up, remove the netcdf files
     for file_ in Path(".").glob("a_0??.nc"):
