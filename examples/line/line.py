@@ -1,7 +1,10 @@
-# The line example as a scipt
+"""LADiM – the line example as a scipt including user settings"""
 
-# Bjørn Ådlandsvik
+# ------------------------------------
+# Bjørn Ådlandsvik <bjorn@imr.no>
+# Institue of Marine Research
 # 2020-04-04
+# ------------------------------------
 
 import numpy as np
 
@@ -86,7 +89,8 @@ output.write(state)
 
 print("Time loop")
 for step in range(timer.Nsteps):
-    force.update(step)
+    timer.update()
+    force.update(step, state.X, state.Y, state.Z)
     tracker.update(state, grid=grid, force=force)
     if step % output.output_period_steps == 0:
         output.write(state)

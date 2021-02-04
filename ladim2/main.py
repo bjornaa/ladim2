@@ -50,9 +50,6 @@ def main(configuration_file: Union[Path, str]) -> None:
     # Initial particle release
     # --------------------------
 
-    # Skal automatisere tilpasning til state-variablene
-    # Også initiering av variable som ikke er i release-filen
-    # X0 er et eksempel.
     print("Initial particle release")
 
     # Number of time steps between output (have that computed in output.py)
@@ -79,7 +76,6 @@ def main(configuration_file: Union[Path, str]) -> None:
         # Update
         # -- Update clock ---
         timer.update()
-        # print("tid = ", timer.time)
 
         # --- Update forcing ---
         force.update(step, state.X, state.Y, state.Z)
