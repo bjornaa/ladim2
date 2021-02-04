@@ -127,7 +127,7 @@ def make_release(t, **params_or_funcs):
     )
 
 
-def make_conf():
+def make_conf() -> dict:
     return dict(
         version=2,
 
@@ -153,7 +153,8 @@ def make_conf():
         ),
         tracker=dict(
             advection='EF',
-            diffusion=0,
+            diffusion=0.,
+            vertdiff=0.,
         ),
         output=dict(
             output_period=[60, 's'],
@@ -247,3 +248,16 @@ class Test_output_when_different_scenarios:
         with runladim(conf, gf, rls) as result:
             assert result.X.values.tolist() == [2, 3, 4]
             assert result.Y.values.tolist() == [2, 4, 6]
+
+    def test_single_particle_nonzero_vertdiff(self):
+        gf = make_gridforce()
+        rls = make_release(t=[0]*4, X=2, Y=2, Z=[0, 1, 2, 3])
+        conf = make_conf()
+        conf['tracker']['vertdiff'] = 1e-7
+
+        with runladim(conf, gf, rls) as result:
+            assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
+            assert all(result.Z.values[4:] != [0, 1, 2, 3] * 2)
+            assert all(result.Z.values[4:] > 0)
+            assert all(result.Z.values[4:] < 3)
+            assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 3) < 1)

@@ -26,7 +26,7 @@ class Tracker:
 
     # logging.info("Initiating the particle tracking")
 
-    def __init__(self, dt, advection, diffusion=0.0):
+    def __init__(self, dt, advection, diffusion=0.0, vertdiff=0.0):
 
         print("Tracker.__init__")
 
@@ -41,6 +41,8 @@ class Tracker:
 
         self.diffusion = bool(diffusion)
         self.D = diffusion
+        self.vertdiff = bool(vertdiff)
+        self.Dz = vertdiff
 
     def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
         """Move the particles"""
@@ -96,6 +98,34 @@ class Tracker:
         # Update the particle positions
         state["X"] = X1
         state["Y"] = Y1
+
+        # --- Vertical movement ---
+
+        if self.vertdiff:
+            # Sample the depth level
+            if hasattr(grid, 'sample_depth') and callable(grid.sample_depth):
+                h = grid.sample_depth(X, Y)
+            elif hasattr(grid, 'depth') and callable(grid.depth):
+                h = grid.depth(X, Y)
+            else:
+                h = None
+
+            # Diffusion
+            W = self.diffuse_vert(num_particles=len(X))
+
+            # New position
+            Z1 = Z + W * self.dt
+
+            # Reflexive boundary conditions at surface
+            Z1[Z1 < 0] *= -1
+
+            # Reflexive boundary conditions at bottom
+            if h is not None:
+                below_seabed = Z1 > h
+                Z1[below_seabed] = 2 * h[below_seabed] - Z1[below_seabed]
+
+            # Update particle positions
+            state["Z"] = Z1
 
     # @njit
     def EF(
@@ -219,3 +249,12 @@ class Tracker:
         V = stddev * np.random.normal(size=num_particles)
 
         return U, V
+
+    def diffuse_vert(self, num_particles: int):
+        """Random walk diffusion"""
+
+        # Diffusive velocity
+        stddev = (2 * self.Dz / self.dt) ** 0.5
+        W = stddev * np.random.normal(size=num_particles)
+
+        return W
