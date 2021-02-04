@@ -62,6 +62,27 @@ def test_advection():
     assert all(state.Y == [y + 6 for y in Y])
 
 
+def test_vertical_diffusion_changes_z_coordinate():
+    state = State()
+    grid = Grid()
+    timer = Timer()
+    forcing = Forcing(grid=grid, timer=timer)
+    tracker0 = Tracker(advection="EF", dt=600, vertdiff=0)
+    tracker1 = Tracker(advection="EF", dt=600, vertdiff=1e-7)
+
+    Z = [0, 5, 50] * 3
+    state.append(X=[2] * 9, Y=[2] * 9, Z=Z)
+
+    tracker0.update(state, grid, forcing)
+    assert state.Z.tolist() == Z
+
+    tracker1.update(state, grid, forcing)
+    assert all(state.Z != Z)
+    assert all(state.Z > 0)
+    assert all(state.Z < 50)
+    assert all(np.abs(state.Z - Z) < 1)
+
+
 def test_out_of_area():
     """Particles moving out of the area should be killed"""
 
