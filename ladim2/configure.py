@@ -55,6 +55,8 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
 
     # If missing grid["filename"] use forcing["filename"]
+    if "module" not in config["grid"]:
+        config["grid"]["module"] = config["forcing"]["module"]
     if "filename" not in config["grid"]:
         filename = Path(config["forcing"]["filename"])
         # glob if necessary and use first file

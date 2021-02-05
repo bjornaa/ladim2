@@ -17,12 +17,8 @@ time:
     # Time step
     dt: 3600
 
-grid:
-    module: ladim2.grid_ROMS
-    #     filename: ../data/ocean_avg_0014.nc
-
 forcing:
-    module: forcing_ROMS
+    module: ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
