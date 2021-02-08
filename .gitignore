@@ -3,6 +3,7 @@
 build/
 .mypy
 __pycache__/
+dist/
 
 # Hidden directories
 .*/

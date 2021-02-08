@@ -81,6 +81,9 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         config["time"]["start"] = warm_start_time
         # logging.info(f"    Warm start at {warm_start_time}")
 
+        if "variables" not in config["warm_start"]:
+            config["warm_start"]["variables"] = []
+
         # warm start -> release
         config["release"]["warm_start_file"] = config["warm_start"]["filename"]
 

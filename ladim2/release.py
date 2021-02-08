@@ -115,7 +115,7 @@ class ParticleReleaser(Iterator):
         #             pvars[name] = f.variables[name][:warm_particle_count]
         else:  # cold start
             warm_particle_count = 0
-        print("release: warm_particle_count =", warm_particle_count)
+        # print("release: warm_particle_count =", warm_particle_count)
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum() + warm_particle_count
@@ -126,64 +126,12 @@ class ParticleReleaser(Iterator):
         self.steps = [timer.time2step(t) for t in self.times]
         # logging.info("Number of release times = {}".format(len(self.times)))
 
-        # # Make dataframes for each timeframe
-        # # self._B = [x[1] for x in A.groupby('release_time')]
+        # Make dataframes for each timeframe
         self._B = [x[1] for x in self._df.groupby(self._df.index)]
 
         # # Read the particle variables
         self._index = 0  # Index of next release
         self._particle_count = warm_particle_count
-
-        # # Handle the particle variables initially
-        # # TODO: Need a test to check that this iw working properly
-        # pvars = dict()
-        # for name in config["particle_variables"]:
-        #     dtype = config["release_dtype"][name]
-        #     if dtype == np.datetime64:
-        #         dtype = np.float64
-        #     pvars[name] = np.array([], dtype=dtype)
-
-        # TODO: Move warm start to separate function
-        # # Get particle data from  warm start
-        # if config["start"] == "warm":
-        #     with Dataset(config["warm_start_file"]) as f:
-        #         # warm_particle_count = len(f.dimensions['particle'])
-        #         warm_particle_count = np.max(f.variables["pid"][:]) + 1
-        #         for name in config["particle_variables"]:
-        #             pvars[name] = f.variables[name][:warm_particle_count]
-        # else:
-        #     warm_particle_count = 0
-
-        # # initital number of particles
-        # if config["start"] == "warm":
-        #     particles_released = [warm_particle_count]
-        # else:
-        #     particles_released = [0]
-
-        # # Loop through the releases, collect particle variable data
-        # for t in self.times:
-        #     V = next(self)
-        #     particles_released.append(particles_released[-1] + len(V))
-        #     for name in config["particle_variables"]:
-        #         dtype = config["release_dtype"][name]
-        #         if dtype == np.datetime64:
-        #             g = np.array(V[name]).astype("M8[s]")
-        #             rtimes = g - config["reference_time"]
-        #             rtimes = rtimes.astype(np.float64)
-        #             pvars[name] = np.concatenate((pvars[name], rtimes))
-        #         else:
-        #             pvars[name] = np.concatenate((pvars[name], V[name]))
-
-        # self.total_particle_count = warm_particle_count + self._particle_count
-        # self.particle_variables = pvars
-
-        # self.particles_released = particles_released
-
-        # # Reset the counter after the particle counting
-        # self._index = 0  # Index of next release
-        # self._particle_count = warm_particle_count
-
-        # self.df = A
 
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release
@@ -262,9 +210,6 @@ class ParticleReleaser(Iterator):
         """
 
         df = self._df
-        # # If no mult column, add a column of ones
-        # if "mult" not in df.columns:
-        #     df["mult"] = 1
 
         # Conversion from longitude, latitude to grid coordinates
         if "X" not in df.columns or "Y" not in df.columns:

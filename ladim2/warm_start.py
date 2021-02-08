@@ -13,9 +13,10 @@ def warm_start(
 ) -> None:
     """Initiate the state from a warm start"""
 
-    print("wwarm start: variables = ", warm_start_variables)
+    #print("warm start: variables = ", warm_start_variables)
 
-    wvars = warm_start_variables.copy() + ["pid"]
+    # wvars = warm_start_variables.copy() + ["pid"]
+    wvars: set = {"pid", "X", "Y", "Z", "alive", "active"}.union(warm_start_variables)
 
     # Open warm start file
     try:
@@ -33,32 +34,33 @@ def warm_start(
 
     state.npid = pid_max
 
+    # Variable loop
     for var in wvars:
-        print(" -- ", var)
-        # print(var, f.variables[var].dtype)
-        ncvar = f.variables[var]
-        if var in state.instance_variables:
-            values = ncvar[pstart:pend]
-        else:  # Particle variable
-            values = ncvar[:pid_max]
-        # Check for time
-        if "units" in ncvar.ncattrs() and "since" in ncvar.units:
-            units = ncvar.units
-            reftime = np.datetime64(units.split("since")[1])
-            print(reftime)
-            print(values[0], values[-1], values.dtype)
-            print(units[0])
-            # print(np.timedelta64(values, units[0]))
-            values = reftime + values * np.timedelta64(1, units[0])
-            print(values[0], values[-1], values.dtype)
+        if var in f.variables:
+            ncvar = f.variables[var]
+            if var in state.instance_variables:
+                values = ncvar[pstart:pend]
+            else:  # Particle variable
+                values = ncvar[:pid_max]
+            # Time type variable needs special treatment
+            if "units" in ncvar.ncattrs() and "since" in ncvar.units:
+                reftime = np.datetime64(ncvar.units.split("since")[1])
+                values = reftime + values * np.timedelta64(1, ncvar.units[0])
+        # Variables not on file, but with defaults
+        elif var in state.default_values:
+            if var in state.instance_variables:
+                shape = (pcount,)
+            else:
+                shape = (pid_max,)
+            values = np.full(shape, state.default_values[var])
+        else:
+            print(f"Warm start: No value for variable {var}")
+            raise SystemExit(1)
 
-        if var in state.instance_variables:
-            state.variables[var] = values
-        else:  # particle variable
-            state.variables[var] = values
+        state.variables[var] = values
 
-        # Instance variables with default
-        if "alive" not in wvars:
-            state.variables["alive"] = np.ones(pcount).astype("bool")
-        if "active" not in wvars:
-            state.variables["active"] = np.ones(pcount).astype("bool")
+    # # Instance variables with default
+    # if "alive" not in wvars:
+    #     state.variables["alive"] = np.ones(pcount).astype("bool")
+    # if "active" not in wvars:
+    #     state.variables["active"] = np.ones(pcount).astype("bool")

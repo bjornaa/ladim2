@@ -11,7 +11,8 @@ time:
 
 warm_start:
     filename: split_001.nc
-    variables: [release_time, X, Y, Z]   # only take variables not in release.names
+    # variables: Need release_time since it is an output particle variable
+    variables: [release_time]
 
 grid:
     module: grid_ROMS
