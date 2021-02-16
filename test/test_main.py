@@ -14,16 +14,14 @@ import numpy as np
 
 
 @contextlib.contextmanager
-def tempfile(num=1):
+def tempfile(num):
+    """Creates an arbritary number of temporary files which are deleted upon exit"""
     d = Path(__file__).parent.joinpath('temp')
     d.mkdir(exist_ok=True)
     paths = [d.joinpath(uuid.uuid4().hex + '.tmp') for _ in range(num)]
 
     try:
-        if len(paths) == 1:
-            yield str(paths[0])
-        else:
-            yield [str(p) for p in paths]
+        yield [str(p) for p in paths]
 
     finally:
         for p in paths:
@@ -43,6 +41,20 @@ def tempfile(num=1):
 
 @contextlib.contextmanager
 def runladim(conf, gridforce, release):
+    """Run ladim and return result, creating temporary files as necessary.
+
+    :param conf: Ladim configuration, with certain elements left blank (these are
+                 auto-filled by the function): conf['grid']['filename'],
+                 conf['forcing']['filename'], conf['release']['release_file'],
+                 conf['output']['filename']
+    :type conf: dict
+    :param gridforce: Grid and forcing dataset
+    :type gridforce: xarray.Dataset
+    :param release: Particle release table
+    :type release: pandas.DataFrame
+    :return: Ladim output dataset
+    :rtype: xarray.Dataset
+    """
     with tempfile(4) as fnames:
         conf_fname, out_fname, gridforce_fname, rls_fname = fnames
 
@@ -64,6 +76,8 @@ def runladim(conf, gridforce, release):
 
 
 def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
+    """Create grid and forcing dataset to be used for testing"""
+
     def zerofunc(tt, ss, yy, xx):
         return tt*0. + ss*0. + yy*0. + xx*0.
 
@@ -109,6 +123,8 @@ def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
 
 
 def make_release(t, **params_or_funcs):
+    """Create particle release table to be used for testing"""
+
     t = np.array(t)
     i = np.arange(len(t))
 
@@ -128,6 +144,8 @@ def make_release(t, **params_or_funcs):
 
 
 def make_conf() -> dict:
+    """Create standard ladim configuration to be used for testing"""
+
     return dict(
         version=2,
 
