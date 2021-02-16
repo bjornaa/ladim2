@@ -13,6 +13,69 @@ import yaml
 import numpy as np
 
 
+class Test_output_when_different_scenarios:
+    def test_single_stationary_particle(self):
+        gridforce_zero = make_gridforce()
+        release_single = make_release(t=[0], X=[1], Y=[1], Z=[0])
+        conf = make_conf()
+
+        with runladim(conf, gridforce_zero, release_single) as result:
+            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
+            assert set(result.coords) == {'time'}
+            assert set(result.data_vars) == {
+                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
+
+            assert result.X.values.tolist() == [1, 1, 1]
+
+    def test_multiple_release_times(self):
+        gridforce_zero = make_gridforce()
+        release_multiple = make_release(t=[0, 1, 2], X=1, Y=1, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gridforce_zero, release_multiple) as result:
+            assert result.particle_count.values.tolist() == [1, 2, 3]
+            assert result.pid.values.tolist() == [0, 0, 1, 0, 1, 2]
+            assert (
+                ((result.release_time.values - result.release_time.values[0])
+                 / np.timedelta64(1, 's')).tolist() == [0, 60, 120]
+            )
+
+    def test_multiple_initial_particles(self):
+        gridforce_zero = make_gridforce()
+        release_multiple = make_release(t=[0] * 5, X=1, Y=1, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gridforce_zero, release_multiple) as result:
+            assert result.particle_count.values.tolist() == [5] * 3
+            assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 3
+            assert (
+                ((result.release_time.values - result.release_time.values[0])
+                 / np.timedelta64(1, 's')).tolist() == [0] * 5
+            )
+
+    def test_single_particle_linear_forcing(self):
+        gf = make_gridforce(ufunc=lambda *_: 1/60, vfunc=lambda *_: 2/60)
+        rls = make_release(t=[0], X=2, Y=2, Z=0)
+        conf = make_conf()
+
+        with runladim(conf, gf, rls) as result:
+            assert result.X.values.tolist() == [2, 3, 4]
+            assert result.Y.values.tolist() == [2, 4, 6]
+
+    def test_single_particle_nonzero_vertdiff(self):
+        gf = make_gridforce()
+        rls = make_release(t=[0]*4, X=2, Y=2, Z=[0, 1, 2, 3])
+        conf = make_conf()
+        conf['tracker']['vertdiff'] = 1e-7
+
+        with runladim(conf, gf, rls) as result:
+            assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
+            assert all(result.Z.values[4:] != [0, 1, 2, 3] * 2)
+            assert all(result.Z.values[4:] > 0)
+            assert all(result.Z.values[4:] < 3)
+            assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 3) < 1)
+
+
 @contextlib.contextmanager
 def tempfile(num):
     """Creates an arbritary number of temporary files which are deleted upon exit"""
@@ -216,66 +279,3 @@ def make_conf() -> dict:
             ),
         ),
     )
-
-
-class Test_output_when_different_scenarios:
-    def test_single_stationary_particle(self):
-        gridforce_zero = make_gridforce()
-        release_single = make_release(t=[0], X=[1], Y=[1], Z=[0])
-        conf = make_conf()
-
-        with runladim(conf, gridforce_zero, release_single) as result:
-            assert set(result.dims) == {'particle', 'particle_instance', 'time'}
-            assert set(result.coords) == {'time'}
-            assert set(result.data_vars) == {
-                'release_time', 'X', 'Z', 'Y', 'particle_count', 'pid'}
-
-            assert result.X.values.tolist() == [1, 1, 1]
-
-    def test_multiple_release_times(self):
-        gridforce_zero = make_gridforce()
-        release_multiple = make_release(t=[0, 1, 2], X=1, Y=1, Z=0)
-        conf = make_conf()
-
-        with runladim(conf, gridforce_zero, release_multiple) as result:
-            assert result.particle_count.values.tolist() == [1, 2, 3]
-            assert result.pid.values.tolist() == [0, 0, 1, 0, 1, 2]
-            assert (
-                ((result.release_time.values - result.release_time.values[0])
-                 / np.timedelta64(1, 's')).tolist() == [0, 60, 120]
-            )
-
-    def test_multiple_initial_particles(self):
-        gridforce_zero = make_gridforce()
-        release_multiple = make_release(t=[0] * 5, X=1, Y=1, Z=0)
-        conf = make_conf()
-
-        with runladim(conf, gridforce_zero, release_multiple) as result:
-            assert result.particle_count.values.tolist() == [5] * 3
-            assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 3
-            assert (
-                ((result.release_time.values - result.release_time.values[0])
-                 / np.timedelta64(1, 's')).tolist() == [0] * 5
-            )
-
-    def test_single_particle_linear_forcing(self):
-        gf = make_gridforce(ufunc=lambda *_: 1/60, vfunc=lambda *_: 2/60)
-        rls = make_release(t=[0], X=2, Y=2, Z=0)
-        conf = make_conf()
-
-        with runladim(conf, gf, rls) as result:
-            assert result.X.values.tolist() == [2, 3, 4]
-            assert result.Y.values.tolist() == [2, 4, 6]
-
-    def test_single_particle_nonzero_vertdiff(self):
-        gf = make_gridforce()
-        rls = make_release(t=[0]*4, X=2, Y=2, Z=[0, 1, 2, 3])
-        conf = make_conf()
-        conf['tracker']['vertdiff'] = 1e-7
-
-        with runladim(conf, gf, rls) as result:
-            assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
-            assert all(result.Z.values[4:] != [0, 1, 2, 3] * 2)
-            assert all(result.Z.values[4:] > 0)
-            assert all(result.Z.values[4:] < 3)
-            assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 3) < 1)
