@@ -76,17 +76,18 @@ class Test_output_when_different_scenarios:
             assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 3) < 1)
 
     def test_single_particle_nonzero_vertical_advection(self):
-        gf = make_gridforce(wfunc=lambda *args: 1e-4)
+        gf = make_gridforce(wfunc=lambda *args: 0.125 / 60)
         rls = make_release(t=[0]*4, X=2, Y=2, Z=[0, 1, 2, 3])
         conf = make_conf()
         conf['tracker']['vertical_advection'] = 'EF'
+        conf['forcing']['ibm_forcing'] = ['w']
 
         with runladim(conf, gf, rls) as result:
             assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
             assert result.Z.values.tolist() == [
                 0, 1, 2, 3,
-                0.006, 1.006, 2.006, 3,
-                0.012, 1.012, 2.012, 3,
+                0.125, 1.125, 2.125, 3,
+                0.25, 1.25, 2.25, 3,
             ]
 
 
