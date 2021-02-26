@@ -265,15 +265,25 @@ class Force_ROMS(BaseForce):
         j0 = self.grid.j0
         K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         for name in self.ibm_forcing:
-            self.variables[name] = sample3D(
-                self.fields[name], X - i0, Y - j0, K, A, method="nearest"
-            )
+            if name == 'w':
+                X_int = np.round(X - i0).astype('int')
+                Y_int = np.round(Y - j0).astype('int')
+                Kw, Aw = z2s(self.grid.z_w, X - i0, Y - j0, Z)
+                W_bot = self.fields['w'][Kw - 1, Y_int, X_int]
+                W_top = self.fields['w'][Kw, Y_int, X_int]
+                self.variables['w'] = W_bot * Aw + W_top * (1 - Aw)
+            else:
+                self.variables[name] = sample3D(
+                    self.fields[name], X - i0, Y - j0, K, A, method="nearest"
+                )
         self.variables["u"], self.variables["v"] = sample3DUV(
             self.fields["u"], self.fields["v"], X - i0, Y - j0, K, A, method="bilinear",
         )
         if self.time_reversal:
             self.variables["u"] = -self.variables["u"]
             self.variables["v"] = -self.variables["v"]
+            if 'w' in self.variables:
+                self.variables["w"] = -self.variables["w"]
 
     def velocity(
         self,
