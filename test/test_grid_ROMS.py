@@ -4,9 +4,9 @@ from netCDF4 import Dataset
 import pytest
 
 # import ladim2
-from ladim2.grid_ROMS import init_grid
+#from ladim2.grid_ROMS import init_grid
+from ladim2.ROMS import init_grid
 
-#grid_file = "../examples/data/ocean_avg_0014.nc"
 ladim2_root = Path(__file__).parent.parent
 grid_file = ladim2_root / "examples/data/ocean_avg_0014.nc"
 

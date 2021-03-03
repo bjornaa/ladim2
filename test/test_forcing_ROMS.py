@@ -4,7 +4,7 @@ from netCDF4 import Dataset
 
 import pytest
 
-import ladim2.forcing_ROMS as force
+import ladim2.ROMS as force
 from ladim2.timekeeper import TimeKeeper
 
 
