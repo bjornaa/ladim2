@@ -26,7 +26,8 @@ class Tracker:
 
     # logging.info("Initiating the particle tracking")
 
-    def __init__(self, dt, advection, diffusion=0.0, vertdiff=0.0):
+    def __init__(self, dt, advection, diffusion=0.0, vertdiff=0.0,
+                 vertical_advection=False):
 
         print("Tracker.__init__")
 
@@ -38,6 +39,8 @@ class Tracker:
         # advect = the actual method
         if self.advection:
             self.advect = getattr(self, self.advection)
+
+        self.vertical_advection = vertical_advection
 
         self.diffusion = bool(diffusion)
         self.D = diffusion
@@ -101,31 +104,34 @@ class Tracker:
 
         # --- Vertical movement ---
 
-        if self.vertdiff:
-            # Sample the depth level
+        # Sample the depth level
+        h = None
+        if self.vertdiff or self.vertical_advection:
             if hasattr(grid, 'sample_depth') and callable(grid.sample_depth):
                 h = grid.sample_depth(X, Y)
             elif hasattr(grid, 'depth') and callable(grid.depth):
                 h = grid.depth(X, Y)
-            else:
-                h = None
 
             # Diffusion
-            W = self.diffuse_vert(num_particles=len(X))
+            if self.vertdiff:
+                W = self.diffuse_vert(num_particles=len(X))
+                Z += W * self.dt
 
-            # New position
-            Z1 = Z + W * self.dt
+            # Advection
+            if self.vertical_advection:
+                W = force.variables['w']
+                Z += W * self.dt
 
             # Reflexive boundary conditions at surface
-            Z1[Z1 < 0] *= -1
+            Z[Z < 0] *= -1
 
             # Reflexive boundary conditions at bottom
             if h is not None:
-                below_seabed = Z1 > h
-                Z1[below_seabed] = 2 * h[below_seabed] - Z1[below_seabed]
+                below_seabed = Z > h
+                Z[below_seabed] = 2 * h[below_seabed] - Z[below_seabed]
 
             # Update particle positions
-            state["Z"] = Z1
+            state["Z"] = Z
 
     # @njit
     def EF(

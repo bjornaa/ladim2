@@ -12,10 +12,10 @@ time:
     dt: 300
 
 grid:
-    module: grid_ROMS
+    module: ROMS
 
 forcing:
-    module: forcing_ROMS
+    module: ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
