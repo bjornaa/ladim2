@@ -15,10 +15,10 @@ warm_start:
     variables: [release_time]
 
 grid:
-    module: grid_ROMS
+    module: ROMS
 
 forcing:
-    module: forcing_ROMS
+    module: ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:

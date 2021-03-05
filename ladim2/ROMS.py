@@ -360,10 +360,10 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
 
 
 def init_force(**args) -> BaseForce:
-    return Force_ROMS(**args)
+    return Forcing(**args)
 
 
-class Force_ROMS(BaseForce):
+class Forcing(BaseForce):
     """
     Class for ROMS forcing
 
@@ -395,7 +395,7 @@ class Force_ROMS(BaseForce):
         print("Forcing.__init__")
 
         self.grid = grid  # Get the grid object.
-        self.timer = timer
+        # self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
 
@@ -420,44 +420,87 @@ class Force_ROMS(BaseForce):
         self.files = files
 
         self.time_reversal = timer.time_reversal
-        steps, file_at_step, recordnr_at_step = forcing_steps(files, timer)
-        # self.stepdiff = np.diff(steps)
-        self.file_at_step = file_at_step
-        self.recordnr_at_step = recordnr_at_step
+        steps, file_idx, frame_idx = forcing_steps(files, timer)
+        self.stepdiff = np.diff(steps)
+        self.file_idx = file_idx
+        self.frame_idx = frame_idx
         self._first_read = True  # True until first file is opened
         # self._nc = None  # Not opened yet
-        self.steps = steps
 
         # Read old input
-        # prestep is last forcing step <= 0
+        # requires at least one input before start
+        # to get Runge-Kutta going
+        # --------------
+        # prestep = last forcing step < 0
+        #
 
-        prestep = max(step for step in steps if step <= 0)
-        i = steps.index(prestep)
-        nextstep = steps[i - 1] if timer.time_reversal else steps[i + 1]
-        stepdiff = nextstep - prestep
+        print("steps = ", steps)
+        V = [step for step in steps if step < 0]
+        prestep = max(V) if V else 0
+        # if V:  # Forcing available before start time
+        if True:
+            # prestep = max(V)
+            print("prestep", prestep)
 
-        # Get initial "u" and "dU"
-        self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
-        self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
-        self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff
-        self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff
-        if prestep == 0:
-            self.fields["u_new"] = self.fields["u"]
-            self.fields["v_new"] = self.fields["v"]
+            i = steps.index(prestep)
+            if timer.time_reversal:
+                i = i - 1
+            stepdiff0 = self.stepdiff[i]
+            nextstep = prestep + stepdiff0
+            # print("stediff, nextstep = ", stepdiff0, nextstep)
+            if timer.time_reversal:
+                nextstep = prestep - stepdiff0
+            self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
+            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
+            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
+            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
+            # Interpolate to time step = -1
+            # Skal virke i revers også
+            self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
+            self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
+            # Other forcing
+            for name in self.ibm_forcing:
+                self.fields[name] = self._read_field(name, prestep)
+                # self[name + "new"] = self._read_field(name, nextstep)
+                # self["d" + name] = (self[name + "new"] - self[name]) / prestep
+                # self[name] = self[name] - (prestep + 1) * self["d" + name]
 
-        # Interpolate to time step = -1
-        self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
-        self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
+        # elif steps[0] == 0:
+        #     # Simulation start at first forcing time
+        #     # Runge-Kutta needs dU and dV in this case as well
+        #     self.fields["u"], self.fields["v"] = self._read_velocity(0)
+        #     self.fields["u_new"], self.fields["v_new"] = self._read_velocity(steps[1])
+        #     self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / steps[1]
+        #     self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / steps[1]
+        #     # Synchronize with start time
+        #     self.fields["u_new"] = self.fields["u"]
+        #     self.fields["v_new"] = self.fields["v"]
+        #     # Extrapolate to time step = -1
+        #     self.fields["u"] = self.fields["u"] - self.fields["dU"]
+        #     self.fields["v"] = self.fields["v"] - self.fields["dV"]
+        #     # Other forcing:
+        #     for name in self.ibm_forcing:
+        #         self[name] = self._read_field(name, 0)
+        #     #     self[name + "new"] = self._read_field(name, steps[1])
+        #     #     self["d" + name] = (self[name + "new"] - self[name]) / steps[1]
+        #     #     self[name] = self[name] - self["d" + name]
 
-        # Other forcing fields (no time interpolation)
-        for name in self.ibm_forcing:
-            self.fields[name] = self._read_field(name, prestep)
+        else:
+            # No forcing at start, should already be excluded
+            raise SystemExit(3)
+
+        self.steps = steps
+        # self.files = files
+
+        # print("Init: finished")
 
     # ===================================================
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int, X: float, Y: float, Z: float) -> None:
+    def update(
+        self, step: int, X: float, Y: float, Z: float
+    ) -> None:
         """Update the fields to given time step t"""
 
         # Read from config?
@@ -468,20 +511,24 @@ class Force_ROMS(BaseForce):
         if step in self.steps:  # No time interpolation
             self.fields["u"] = self.fields["u_new"]
             self.fields["v"] = self.fields["v_new"]
-            # Read other fields
-            for name in self.ibm_forcing:
-                self.fields[name] = self._read_field(name, step)
-
+            # for name in self.ibm_forcing:
+            #   self[name] = self[name + "new"]
         else:
             if step - 1 in self.steps:  # Need new fields
                 i = self.steps.index(step - 1)
-                nextstep = (
-                    self.steps[i - 1] if self.time_reversal else self.steps[i + 1]
-                )
-                stepdiff = nextstep - step + 1
+                if self.time_reversal:
+                    i = i - 1
+                # print("i =", i)
+                stepdiff = self.stepdiff[i]
+                nextstep = step - 1 + stepdiff
+                if self.time_reversal:
+                    nextstep = step - 1 - stepdiff
+                # print("stediff, nextstep = ", stepdiff, nextstep)
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
+                # for name in self.ibm_forcing:
+                #    self[name + "new"] = self._read_field(name, nextstep)
                 if interpolate_velocity_in_time:
                     self.fields["dU"] = (
                         self.fields["u_new"] - self.fields["u"]
@@ -489,11 +536,17 @@ class Force_ROMS(BaseForce):
                     self.fields["dV"] = (
                         self.fields["v_new"] - self.fields["v"]
                     ) / stepdiff
+                # if interpolate_ibm_forcing_in_time:
+                #    for name in self.ibm_forcing:
+                #        self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
                 self.fields["u"] += self.fields["dU"]
                 self.fields["v"] += self.fields["dV"]
+            # if interpolate_ibm_forcing_in_time:
+            #    for name in self.ibm_forcing:
+            #        self[name] += self["d" + name]
 
         # Update forcing values at particles
         self.force_particles(X, Y, Z)
@@ -504,9 +557,7 @@ class Force_ROMS(BaseForce):
 
         """Open forcing file and get scaling info given time step"""
         # Open the correct forcing file
-        if DEBUG:
-            print("Opening forcing file: ", self.file_at_step[time_step])
-        nc = Dataset(self.file_at_step[time_step])
+        nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
         self._nc = nc
 
@@ -535,12 +586,11 @@ class Force_ROMS(BaseForce):
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
             self._first_read = False
-        elif str(self.file_at_step[time_step]) != self._nc.filepath():
-            # self._nc out of sync, open next file
+        elif self.frame_idx[time_step] == 0:  # Open next file
             self._nc.close()
             self.open_forcing_file(time_step)
 
-        frame = self.recordnr_at_step[time_step]
+        frame = self.frame_idx[time_step]
 
         if DEBUG:
             print("_read_velocity")
@@ -548,7 +598,7 @@ class Force_ROMS(BaseForce):
             timevar = self._nc.variables["ocean_time"]
             time_origin = np.datetime64(timevar.units.split("since")[1])
             data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
-            print("   data file:   ", self.file_at_step[time_step])
+            print("   data file:   ", self.file_idx[time_step])
             print("   data record: ", frame)
             print("   data time:   ", data_time)
 
@@ -572,7 +622,7 @@ class Force_ROMS(BaseForce):
 
     def _read_field(self, name, n):
         """Read a 3D field"""
-        frame = self.recordnr_at_step[n]
+        frame = self.frame_idx[n]
         F = self._nc.variables[name][frame, :, self.grid.J, self.grid.I]
         if self.scaled[name]:
             F = self.add_offset[name] + self.scale_factor[name] * F
@@ -628,10 +678,20 @@ class Force_ROMS(BaseForce):
             V = self.fields["v"] + fractional_step * self.fields["dV"]
         if self.time_reversal:
             return sample3DUV(-U, -V, X - i0, Y - j0, K, A, method=method)
-        return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
+        else:
+            return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
 
+    # Simplify to grid cell
+    # def field(
+    #     self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, name: str
+    # ) -> np.ndarray:
+    #     # should not be necessary to repeat
+    #     i0 = self.grid.i0
+    #     j0 = self.grid.j0
+    #     K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+    #     F = self[name]
+    #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
     def field(self, X, Y, Z, name):
-        """A do-nothing function for backwards compability for IBMs"""
         return self.variables[name]
 
 
@@ -855,14 +915,14 @@ def forcing_steps(
     for t in all_frames:
         steps.append(timer.time2step(t))
 
-    file_at_step = dict()  # mapping step -> file name
-    recordnr_at_step = dict()  # mapping step -> record number in file
+    file_idx = dict()  # mapping step -> file name
+    frame_idx = dict()  # mapping step -> record number in file
     step_counter = -1
     # for i, fname in enumerate(files):
     for fname in files:
         for i in range(num_frames[fname]):
             step_counter += 1
             step = steps[step_counter]
-            file_at_step[step] = fname
-            recordnr_at_step[step] = i
-    return steps, file_at_step, recordnr_at_step
+            file_idx[step] = fname
+            frame_idx[step] = i
+    return steps, file_idx, frame_idx

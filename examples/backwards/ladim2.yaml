@@ -15,11 +15,10 @@ time:
     time_reversal: True
 
 grid:
-    module: ladim2.grid_ROMS
-    #     filename: ../data/ocean_avg_0014.nc
+    module: ROMS
 
 forcing:
-    module: forcing_ROMS
+    module: ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
