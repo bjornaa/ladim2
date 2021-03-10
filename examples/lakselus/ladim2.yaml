@@ -10,14 +10,14 @@ time:
     dt        : [10, m]
 
 grid:
-    module: grid_ROMS
+    module: ROMS
     #filename: /home/bjorn/data/NK800/file_0000.nc  # Må klare dette fra forcing
     # subgrid: [300, 500, 480, 600]
     subgrid: [300, -1000, 480, 600]
 
 
 forcing:
-    module: forcing_ROMS
+    module: ROMS
     #filename: /scratch/Data/NK800/file_*.nc
     filename: /home/bjorn/data/NK800/file_*.nc
     ibm_forcing: [temp, salt]

@@ -10,9 +10,9 @@ import numpy as np
 
 # import ladim2
 from ladim2.state import State
-from ladim2.grid_ROMS import init_grid
+from ladim2.ROMS import init_grid
 from ladim2.timekeeper import TimeKeeper
-from ladim2.forcing_ROMS import init_force
+from ladim2.ROMS import init_force
 from ladim2.tracker import Tracker
 from ladim2.output import Output
 

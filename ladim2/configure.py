@@ -123,12 +123,12 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
     conf["grid"] = dict()
     conf["forcing"] = dict()
     if "ladim.gridforce.ROMS" in config["gridforce"]["module"]:
-        conf["grid"]["module"] = "ladim2.grid_ROMS"
+        conf["grid"]["module"] = "ladim2.ROMS"
         if "gridfile" in config["gridforce"]:
             conf["grid"]["filename"] = config["gridforce"]["gridfile"]
         elif "gridfile" in config["files"]:
             conf["grid"]["filename"] = config["files"]["gridfile"]
-        conf["forcing"]["module"] = "ladim2.forcing_ROMS"
+        conf["forcing"]["module"] = "ladim2.ROMS"
         if "input_file" in config["gridforce"]:
             conf["forcing"]["filename"] = config["gridforce"]["input_file"]
         elif "input_file" in config["files"]:
