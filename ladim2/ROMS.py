@@ -16,6 +16,8 @@ from typing import Union, Optional, List, Tuple, Dict
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
+import numba
+
 
 from ladim2.grid import BaseGrid
 from ladim2.forcing import BaseForce
@@ -23,6 +25,7 @@ from ladim2.sample import sample2D, bilin_inv
 from ladim2.timekeeper import TimeKeeper
 
 DEBUG = False
+parallel = True
 
 # ---------------------------
 # Grid class
@@ -465,8 +468,6 @@ class Forcing(BaseForce):
                 # self["d" + name] = (self[name + "new"] - self[name]) / prestep
                 # self[name] = self[name] - (prestep + 1) * self["d" + name]
 
-
-
         else:
             # No forcing at start, should already be excluded
             raise SystemExit(3)
@@ -480,11 +481,8 @@ class Forcing(BaseForce):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(
-        self, step: int, X: float, Y: float, Z: float
-    ) -> None:
+    def update(self, step: int, X: float, Y: float, Z: float) -> None:
         """Update the fields to given time step t"""
-
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
@@ -638,7 +636,13 @@ class Forcing(BaseForce):
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )
         self.variables["u"], self.variables["v"] = sample3DUV(
-            self.fields["u"], self.fields["v"], X - i0, Y - j0, self.K, self.A, method="bilinear",
+            self.fields["u"],
+            self.fields["v"],
+            X - i0,
+            Y - j0,
+            self.K,
+            self.A,
+            method="bilinear",
         )
         if self.time_reversal:
             self.variables["u"] = -self.variables["u"]
@@ -648,15 +652,15 @@ class Forcing(BaseForce):
         self,
         X: np.ndarray,
         Y: np.ndarray,
-        #K: np.ndarray,
-        #A: np.ndarray,
+        # K: np.ndarray,
+        # A: np.ndarray,
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         i0 = self.grid.i0
         j0 = self.grid.j0
-        #K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+        # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         if fractional_step < 0.001:
             U = self.fields["u"]
             V = self.fields["v"]
@@ -722,20 +726,32 @@ def z2s(
 
     # print("--- z2s")
 
-    kmax = z_rho.shape[0]  # Number of vertical levels
 
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
     J = np.around(Y).astype("int")
+    return z2s_kernel(I, J, Z, z_rho)
 
-    # Vectorized searchsorted
-    K = np.sum(z_rho[:, J, I] < -Z, axis=0)
-    K = K.clip(1, kmax - 1)
 
-    A = (z_rho[K, J, I] + Z) / (z_rho[K, J, I] - z_rho[K - 1, J, I])
-    A = A.clip(0, 1)  # Extend constantly
-
+@numba.njit(parallel=parallel)
+def z2s_kernel(I, J, Z, z_rho):
+    N = len(I)
+    K = np.ones(N, dtype=np.int64)
+    A = np.ones(N, dtype=np.float64)
+    for n in numba.prange(N):
+        zr = z_rho[:, J[n], I[n]]
+        k = np.searchsorted(zr, -Z[n])
+        if k == zr.size:
+            K[n] = k - 1
+            A[n] = 0
+        elif k > 0:
+            K[n] = k
+            A[n] = (zr[k] + Z[n]) / (zr[k] - zr[k - 1])
+        # if k = 0, k = a = 1 by declaration
     return K, A
+
+
+
 
 
 def sample3D(
@@ -767,34 +783,56 @@ def sample3D(
 
     if method == "bilinear":
         # Find rho-point as lower left corner
-        I = X.astype("int")
-        J = Y.astype("int")
-        P = X - I
-        Q = Y - J
-        W000 = (1 - P) * (1 - Q) * (1 - A)
-        W010 = (1 - P) * Q * (1 - A)
-        W100 = P * (1 - Q) * (1 - A)
-        W110 = P * Q * (1 - A)
-        W001 = (1 - P) * (1 - Q) * A
-        W011 = (1 - P) * Q * A
-        W101 = P * (1 - Q) * A
-        W111 = P * Q * A
+        # I = X.astype("int")
+        # J = Y.astype("int")
+        # P = X - I
+        # Q = Y - J
+        # W000 = (1 - P) * (1 - Q) * (1 - A)
+        # W010 = (1 - P) * Q * (1 - A)
+        # W100 = P * (1 - Q) * (1 - A)
+        # W110 = P * Q * (1 - A)
+        # W001 = (1 - P) * (1 - Q) * A
+        # W011 = (1 - P) * Q * A
+        # W101 = P * (1 - Q) * A
+        # W111 = P * Q * A
 
-        return (
-            W000 * F[K, J, I]
-            + W010 * F[K, J + 1, I]
-            + W100 * F[K, J, I + 1]
-            + W110 * F[K, J + 1, I + 1]
-            + W001 * F[K - 1, J, I]
-            + W011 * F[K - 1, J + 1, I]
-            + W101 * F[K - 1, J, I + 1]
-            + W111 * F[K - 1, J + 1, I + 1]
-        )
+        # return (
+        #     W000 * F[K, J, I]
+        #     + W010 * F[K, J + 1, I]
+        #     + W100 * F[K, J, I + 1]
+        #     + W110 * F[K, J + 1, I + 1]
+        #     + W001 * F[K - 1, J, I]
+        #     + W011 * F[K - 1, J + 1, I]
+        #     + W101 * F[K - 1, J, I + 1]
+        #     + W111 * F[K - 1, J + 1, I + 1]
+        # )
+        return trilinear(F, X, Y, K, A)
 
     # else:  method == 'nearest'
     I = X.round().astype("int")
     J = Y.round().astype("int")
     return F[K, J, I]
+
+
+@numba.njit(parallel=parallel)
+def trilinear(F, X, Y, K, A):
+    N = len(X)
+    R = np.empty(N, dtype=np.float64)
+    for n in numba.prange(N):
+        i, j = int(X[n]), int(Y[n])
+        p, q = X[n] - i, Y[n] - j
+        k, a = K[n], A[n]
+        f00 = a * F[k - 1, j, i] + (1 - a) * F[k, j, i]
+        f01 = a * F[k - 1, j + 1, i] + (1 - a) * F[k, j + 1, i]
+        f10 = a * F[k - 1, j, i + 1] + (1 - a) * F[k, j, i + 1]
+        f11 = a * F[k - 1, j + 1, i + 1] + (1 - a) * F[k, j + 1, i + 1]
+        R[n] = (
+            (1 - p) * (1 - q) * f00
+            + p * (1 - q) * f10
+            + (1 - p) * q * f01
+            + p * q * f11
+        )
+    return R
 
 
 def sample3DUV(
