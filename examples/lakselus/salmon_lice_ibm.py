@@ -54,10 +54,11 @@ class IBM(BaseIBM):
         state["super"] *= self.mortality_factor
 
         # Update forcing
-        forcing.force_particles(state.X, state.Y, state.Z)
+        forcing.force_particles(state.X, state.Y)
         state["temp"] = forcing.variables["temp"]
+        state["salt"] = forcing.variables["salt"]
         # state["temp"] = forcing.field(state.X, state.Y, state.Z, "temp")
-        state["salt"] = forcing.field(state.X, state.Y, state.Z, "salt")
+        #state["salt"] = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
         state["age"] += state.temp * self.dt / 86400

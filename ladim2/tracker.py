@@ -10,13 +10,14 @@
 
 # import logging
 from typing import Tuple
+
 import numpy as np  # type:ignore
+
 from .state import State
 from .timekeeper import normalize_period
 from .forcing import BaseForce
 from .grid import BaseGrid
 
-# from numba import njit
 
 Velocity = Tuple[np.ndarray, np.ndarray]
 
@@ -26,8 +27,9 @@ class Tracker:
 
     # logging.info("Initiating the particle tracking")
 
-    def __init__(self, dt, advection, diffusion=0.0, vertdiff=0.0,
-                 vertical_advection=False):
+    def __init__(
+        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False
+    ):
 
         print("Tracker.__init__")
 
@@ -107,9 +109,9 @@ class Tracker:
         # Sample the depth level
         h = None
         if self.vertdiff or self.vertical_advection:
-            if hasattr(grid, 'sample_depth') and callable(grid.sample_depth):
+            if hasattr(grid, "sample_depth") and callable(grid.sample_depth):
                 h = grid.sample_depth(X, Y)
-            elif hasattr(grid, 'depth') and callable(grid.depth):
+            elif hasattr(grid, "depth") and callable(grid.depth):
                 h = grid.depth(X, Y)
 
             # Diffusion
@@ -119,7 +121,7 @@ class Tracker:
 
             # Advection
             if self.vertical_advection:
-                W = force.variables['w']
+                W = force.variables["w"]
                 Z += W * self.dt
 
             # Reflexive boundary conditions at surface
@@ -133,7 +135,6 @@ class Tracker:
             # Update particle positions
             state["Z"] = Z
 
-    # @njit
     def EF(
         self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
@@ -172,13 +173,13 @@ class Tracker:
         # X, Y, Z = state["X"], state["Y"], state["Z"]
         dt = self.dt
 
-        U, V = force.velocity(X, Y, Z)
+        U, V = force.velocity(X, Y)
         X1 = X + 0.5 * U * dt / self.dx
         Y1 = Y + 0.5 * V * dt / self.dy
         X1.clip(self.xmin, self.xmax, out=X1)
         Y1.clip(self.ymin, self.ymax, out=Y1)
 
-        U, V = force.velocity(X1, Y1, Z, fractional_step=0.5)
+        U, V = force.velocity(X1, Y1, fractional_step=0.5)
         return U, V
 
     RK2 = RK2b
@@ -219,30 +220,39 @@ class Tracker:
 
         dt = self.dt
         dx, dy = self.dx, self.dy
+        dtdx = dt / dx
+        dtdy = dt / dy
         xmin, xmax, ymin, ymax = self.xmin, self.xmax, self.ymin, self.ymax
 
         U1, V1 = force.velocity(X, Y, Z, fractional_step=0.0)
-        X1 = X + 0.5 * U1 * dt / dx
-        Y1 = Y + 0.5 * V1 * dt / dy
-        X1.clip(xmin, xmax, out=X1)
-        Y1.clip(ymin, ymax, out=Y1)
+        X1, Y1 = RKstep(X, Y, U1, V1, 0.5, dtdx, dtdy)
+
+        # X1 = X + 0.5 * U1 * dt / dx
+        # Y1 = Y + 0.5 * V1 * dt / dy
+        # X1.clip(xmin, xmax, out=X1)
+        # Y1.clip(ymin, ymax, out=Y1)
 
         U2, V2 = force.velocity(X1, Y1, Z, fractional_step=0.5)
-        X2 = X + 0.5 * U2 * dt / dx
-        Y2 = Y + 0.5 * V2 * dt / dy
-        X2.clip(xmin, xmax, out=X2)
-        Y2.clip(ymin, ymax, out=Y2)
+        X2, Y2 = RKstep(X, Y, U2, V2, 0.5, dtdx, dtdy)
+
+        # X2 = X + 0.5 * U2 * dt / dx
+        # Y2 = Y + 0.5 * V2 * dt / dy
+        # X2.clip(xmin, xmax, out=X2)
+        # Y2.clip(ymin, ymax, out=Y2)
 
         U3, V3 = force.velocity(X2, Y2, Z, fractional_step=0.5)
-        X3 = X + U3 * dt / dx
-        Y3 = Y + V3 * dt / dy
-        X3.clip(xmin, xmax, out=X3)
-        Y3.clip(ymin, ymax, out=Y3)
+        X3, Y3 = RKstep(X, Y, U3, V3, 1.0, dtdx, dtdy)
+        # X3 = X + U3 * dt / dx
+        # Y3 = Y + V3 * dt / dy
+        # X3.clip(xmin, xmax, out=X3)
+        # Y3.clip(ymin, ymax, out=Y3)
 
         U4, V4 = force.velocity(X3, Y3, Z, fractional_step=1.0)
 
-        U = (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
-        V = (V1 + 2 * V2 + 2 * V3 + V4) / 6.0
+        # U = (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
+        # V = (V1 + 2 * V2 + 2 * V3 + V4) / 6.0
+        U = RK4avg(U1, U2, U3, U4)
+        V = RK4avg(V1, V2, V3, V4)
 
         return U, V
 
@@ -264,3 +274,13 @@ class Tracker:
         W = stddev * np.random.normal(size=num_particles)
 
         return W
+
+
+def RKstep(X, Y, U, V, frac, dtdx, dtdy):
+    Xp = X + frac * U * dtdx
+    Yp = Y + frac * V * dtdy
+    return Xp, Yp
+
+
+def RK4avg(U1, U2, U3, U4):
+    return (U1 + 2 * U2 + 2 * U3 + U4) / 6.0

@@ -465,25 +465,7 @@ class Forcing(BaseForce):
                 # self["d" + name] = (self[name + "new"] - self[name]) / prestep
                 # self[name] = self[name] - (prestep + 1) * self["d" + name]
 
-        # elif steps[0] == 0:
-        #     # Simulation start at first forcing time
-        #     # Runge-Kutta needs dU and dV in this case as well
-        #     self.fields["u"], self.fields["v"] = self._read_velocity(0)
-        #     self.fields["u_new"], self.fields["v_new"] = self._read_velocity(steps[1])
-        #     self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / steps[1]
-        #     self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / steps[1]
-        #     # Synchronize with start time
-        #     self.fields["u_new"] = self.fields["u"]
-        #     self.fields["v_new"] = self.fields["v"]
-        #     # Extrapolate to time step = -1
-        #     self.fields["u"] = self.fields["u"] - self.fields["dU"]
-        #     self.fields["v"] = self.fields["v"] - self.fields["dV"]
-        #     # Other forcing:
-        #     for name in self.ibm_forcing:
-        #         self[name] = self._read_field(name, 0)
-        #     #     self[name + "new"] = self._read_field(name, steps[1])
-        #     #     self["d" + name] = (self[name + "new"] - self[name]) / steps[1]
-        #     #     self[name] = self[name] - self["d" + name]
+
 
         else:
             # No forcing at start, should already be excluded
@@ -502,6 +484,9 @@ class Forcing(BaseForce):
         self, step: int, X: float, Y: float, Z: float
     ) -> None:
         """Update the fields to given time step t"""
+
+
+        self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
         # Read from config?
         interpolate_velocity_in_time = True
@@ -524,6 +509,7 @@ class Forcing(BaseForce):
                 if self.time_reversal:
                     nextstep = step - 1 - stepdiff
                 # print("stediff, nextstep = ", stepdiff, nextstep)
+
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
@@ -549,7 +535,7 @@ class Forcing(BaseForce):
             #        self[name] += self["d" + name]
 
         # Update forcing values at particles
-        self.force_particles(X, Y, Z)
+        self.force_particles(X, Y)
 
     # ==============================================
 
@@ -641,18 +627,18 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
+        self, X: np.ndarray, Y: np.ndarray,
     ):
         """Interpolate forcing to particle positions"""
         i0 = self.grid.i0
         j0 = self.grid.j0
-        K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+        # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         for name in self.ibm_forcing:
             self.variables[name] = sample3D(
-                self.fields[name], X - i0, Y - j0, K, A, method="nearest"
+                self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )
         self.variables["u"], self.variables["v"] = sample3DUV(
-            self.fields["u"], self.fields["v"], X - i0, Y - j0, K, A, method="bilinear",
+            self.fields["u"], self.fields["v"], X - i0, Y - j0, self.K, self.A, method="bilinear",
         )
         if self.time_reversal:
             self.variables["u"] = -self.variables["u"]
@@ -662,14 +648,15 @@ class Forcing(BaseForce):
         self,
         X: np.ndarray,
         Y: np.ndarray,
-        Z: np.ndarray,
+        #K: np.ndarray,
+        #A: np.ndarray,
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         i0 = self.grid.i0
         j0 = self.grid.j0
-        K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
+        #K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         if fractional_step < 0.001:
             U = self.fields["u"]
             V = self.fields["v"]
@@ -677,9 +664,9 @@ class Forcing(BaseForce):
             U = self.fields["u"] + fractional_step * self.fields["dU"]
             V = self.fields["v"] + fractional_step * self.fields["dV"]
         if self.time_reversal:
-            return sample3DUV(-U, -V, X - i0, Y - j0, K, A, method=method)
+            return sample3DUV(-U, -V, X - i0, Y - j0, self.K, self.A, method=method)
         else:
-            return sample3DUV(U, V, X - i0, Y - j0, K, A, method=method)
+            return sample3DUV(U, V, X - i0, Y - j0, self.K, self.A, method=method)
 
     # Simplify to grid cell
     # def field(
@@ -732,6 +719,8 @@ def z2s(
             for -Z > z_rho[-1]  (K=kmax-1, A=0)
 
     """
+
+    # print("--- z2s")
 
     kmax = z_rho.shape[0]  # Number of vertical levels
 

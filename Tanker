@@ -15,10 +15,11 @@ gjøres i dag med eventuelt små endringer.
 
 Begrunnelse for 2) er økt fleksibilitet.
 
-Eksempel: Dersom man i dag ønsker å testehorisontalt varierende diffusjonskoeff.
-så må man først bestemme seg for hvordan det skal spesifiseres i yaml-filen, deretter
-modifisere config-prosesseringsmodulen (som begynner å bli komplisert pga. baklengs kompabilitet) og deretter endre tracker-modulen. Alternativt hacke rundt i koden.
-Med en fornuftig API kan en lage et hoveprogram som bruker de komponentene som trengs.
+Eksempel: Dersom man i dag ønsker å testehorisontalt varierende diffusjonskoeff. så må
+man først bestemme seg for hvordan det skal spesifiseres i yaml-filen, deretter
+modifisere config-prosesseringsmodulen (som begynner å bli komplisert pga. baklengs
+kompabilitet) og deretter endre tracker-modulen. Alternativt hacke rundt i koden. Med en
+fornuftig API kan en lage et hoveprogram som bruker de komponentene som trengs.
 
 Eksempel: Kobling av lakselusdrift og populasjonsdynamisk anleggsmodell. Kunne kanskje
 teoretisk gjøres med anleggsmodell i en ibm med inaktive partikler, men tilbakekobling
@@ -28,7 +29,8 @@ API-versjon vil kunne brukes av et hovedprogram som kobler LADiM og en
 dynamisk.
 
 Mange andre muligheter, f.eks. bruke LADiM til å generere strømlinjer eller "moving
-vectors" eller annen fancy visualisering av strømfelt. Simuleringer med flere typer partikler (t.d. fiskelarver og olje) med ulike IBM-er.
+vectors" eller annen fancy visualisering av strømfelt. Simuleringer med flere typer
+partikler (t.d. fiskelarver og olje) med ulike IBM-er.
 
 Hva skal inngå?
 ---------------

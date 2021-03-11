@@ -4,7 +4,7 @@ from ladim2.ibm import IBM
 
 
 def initIBM(**args):
-        return lakselus_IBM(**args)
+    return lakselus_IBM(**args)
 
 
 class lakselus_IBM(IBM):
@@ -19,26 +19,26 @@ class lakselus_IBM(IBM):
 
         self.k = 0.2  # Light extinction coefficient
         self.swim_vel = 5e-4  # m/s
-        self.D = config["ibm"].get('vertical_mixing', 1e-3)  # Vertical mixing [m*2/s]
+        self.D = config["ibm"].get("vertical_mixing", 1e-3)  # Vertical mixing [m*2/s]
         self.vertical_diffusion = self.D > 0
 
         self.dt = config["dt"]
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
-        salinity_model = config["ibm"].get('salinity_model', 'new')
-        self.new_salinity_model = (salinity_model == 'new')
+        salinity_model = config["ibm"].get("salinity_model", "new")
+        self.new_salinity_model = salinity_model == "new"
 
     def update_ibm(self, grid, state, forcing):
         # Mortality
         state.super *= self.mortality_factor
 
         # Update forcing
-        state.temp = forcing.field(state.X, state.Y, state.Z, "temp")
-        state.salt = forcing.field(state.X, state.Y, state.Z, "salt")
+        # state.temp = forcing.field(state.X, state.Y, state.Z, "temp")
+        # state.salt = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
         state.age += state.temp * state.dt / 86400
-        state.days += 1.0*(state.dt/86400)
+        state.days += 1.0 * (state.dt / 86400)
 
         # Light at depth
         lon, lat = grid.lonlat(state.X, state.Y)
