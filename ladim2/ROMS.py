@@ -654,6 +654,7 @@ class Forcing(BaseForce):
         Y: np.ndarray,
         # K: np.ndarray,
         # A: np.ndarray,
+        Z: np.ndarray,
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:

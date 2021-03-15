@@ -173,13 +173,13 @@ class Tracker:
         # X, Y, Z = state["X"], state["Y"], state["Z"]
         dt = self.dt
 
-        U, V = force.velocity(X, Y)
+        U, V = force.velocity(X, Y, Z)
         X1 = X + 0.5 * U * dt / self.dx
         Y1 = Y + 0.5 * V * dt / self.dy
         X1.clip(self.xmin, self.xmax, out=X1)
         Y1.clip(self.ymin, self.ymax, out=Y1)
 
-        U, V = force.velocity(X1, Y1, fractional_step=0.5)
+        U, V = force.velocity(X1, Y1, Z, fractional_step=0.5)
         return U, V
 
     RK2 = RK2b
