@@ -12,6 +12,7 @@
 from typing import Tuple
 
 import numpy as np  # type:ignore
+import numba
 
 from .state import State
 from .timekeeper import normalize_period
@@ -140,49 +141,32 @@ class Tracker:
     ) -> Velocity:
         """Euler-Forward advective velocity"""
 
-        # dt = self.dt
-        # pm, pn = grid.sample_metric(X, Y)
-
         U, V = force.velocity(X, Y, Z)
 
         return U, V
 
-    # def RK2a(self, forcing: Forcing, state: State) -> Velocity:
-    #     """Runge-Kutta second order = Heun scheme"""
 
-    #     X, Y, Z = state["X"], state["Y"], state["Z"]
-    #     dt = self.dt
-
-    #     U, V = forcing.velocity(X, Y, Z)
-    #     X1 = X + 0.5 * U * dt / self.dx
-    #     Y1 = Y + 0.5 * V * dt / self.dy
-
-    #     U, V = forcing.velocity(X1, Y1, Z, tstep=0.5)
-    #     return U, V
-
-    def RK2b(
+    def RK2(
         self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
 
-        # def RK2b(self, forcing: Forcing, state: State) -> Velocity:
         """Runge-Kutta second order = Heun scheme
 
         This version does not sample velocities outside the grid
         """
 
-        # X, Y, Z = state["X"], state["Y"], state["Z"]
         dt = self.dt
+        dtdx = dt / self.dx
+        dtdy = dt / self.dy
 
         U, V = force.velocity(X, Y, Z)
-        X1 = X + 0.5 * U * dt / self.dx
-        Y1 = Y + 0.5 * V * dt / self.dy
+        X1, Y1 = RKstep(X, Y, U, V, 0.5, dtdx, dtdy)
         X1.clip(self.xmin, self.xmax, out=X1)
         Y1.clip(self.ymin, self.ymax, out=Y1)
 
-        U, V = force.velocity(X1, Y1, Z, fractional_step=0.5)
-        return U, V
+        return force.velocity(X1, Y1, Z, fractional_step=0.5)
 
-    RK2 = RK2b
+
 
     #     """Runge-Kutta fourth order advection"""
 
@@ -275,11 +259,25 @@ class Tracker:
 
         return W
 
-
-def RKstep(X, Y, U, V, frac, dtdx, dtdy):
+@numba.njit(parallel=True)
+def RKstep0(X, Y, U, V, frac, dtdx, dtdy):
     Xp = X + frac * U * dtdx
     Yp = Y + frac * V * dtdy
     return Xp, Yp
+
+@numba.njit(parallel=False)
+def RKstep1(X, Y, U, V, frac, dtdx, dtdy):
+    N = len(X)
+    Xp = np.zeros(N)
+    Yp = np.zeros(N)
+    for i in numba.prange(N):
+        Xp[i] = X[i] + frac * U[i] * dtdx[i]
+        Yp[i] = Y[i] + frac * V[i] * dtdy[i]
+    return X, Y
+
+RKstep = RKstep1
+
+
 
 
 def RK4avg(U1, U2, U3, U4):

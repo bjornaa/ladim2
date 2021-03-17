@@ -49,5 +49,3 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
-    # particle_variables:
-    #     X0: {ncformat: f4, long_name: X-coordinate of particle release}

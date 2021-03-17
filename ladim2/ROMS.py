@@ -25,7 +25,7 @@ from ladim2.sample import sample2D, bilin_inv
 from ladim2.timekeeper import TimeKeeper
 
 DEBUG = False
-parallel = True
+parallel = False
 
 # ---------------------------
 # Grid class
