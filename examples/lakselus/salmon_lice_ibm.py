@@ -54,6 +54,7 @@ class IBM(BaseIBM):
         state["super"] *= self.mortality_factor
 
         # Update forcing
+        # forcing.force_particles(state.X, state.Y, state.Z)
         forcing.force_particles(state.X, state.Y)
         state["temp"] = forcing.variables["temp"]
         state["salt"] = forcing.variables["salt"]

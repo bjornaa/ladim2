@@ -48,8 +48,8 @@ ibm:
     #vertical_mixing: 0.001  # [m^2/s]
 
 tracker:
-    #advection: EF
-    advection: RK2
+    # advection: EF
+    advection: RK4
     # diffusion: 0.1  # Horizontal diffusion [m*2/s]
 
 release:
