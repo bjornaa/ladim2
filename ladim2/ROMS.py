@@ -457,8 +457,12 @@ class Forcing(BaseForce):
             self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
             self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
             self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
+
+            if prestep == 0:
+                self.fields["u_new"] = self.fields["u"].copy()
+                self.fields["v_new"] = self.fields["v"].copy()
+
             # Interpolate to time step = -1
-            # Skal virke i revers også
             self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
             self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
             # Other forcing
@@ -727,7 +731,6 @@ def z2s(
 
     # print("--- z2s")
 
-
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
     J = np.around(Y).astype("int")
@@ -750,9 +753,6 @@ def z2s_kernel(I, J, Z, z_rho):
             A[n] = (zr[k] + Z[n]) / (zr[k] - zr[k - 1])
         # if k = 0, k = a = 1 by declaration
     return K, A
-
-
-
 
 
 def sample3D(
