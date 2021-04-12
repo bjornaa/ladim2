@@ -488,6 +488,8 @@ class Forcing(BaseForce):
     def update(self, step: int, X: float, Y: float, Z: float) -> None:
         """Update the fields to given time step t"""
 
+        print("update, step = ", step)
+
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
         # Read from config?
@@ -498,8 +500,10 @@ class Forcing(BaseForce):
         if step in self.steps:  # No time interpolation
             self.fields["u"] = self.fields["u_new"]
             self.fields["v"] = self.fields["v_new"]
-            # for name in self.ibm_forcing:
-            #   self[name] = self[name + "new"]
+            # Read other forcing variables with no time interpolation
+            for name in self.ibm_forcing:
+                self.fields[name] = self._read_field(name, step)
+            # self.force_particles(X, Y)
         else:
             if step - 1 in self.steps:  # Need new fields
                 i = self.steps.index(step - 1)
