@@ -87,6 +87,11 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         # warm start -> release
         config["release"]["warm_start_file"] = config["warm_start"]["filename"]
 
+    # Default output = out_nc_ragged, contiguous ragged representation
+    if "output" not in config["output"]:
+        config["output"]["module"] = "out_nc_ragged"
+
+
     # Possible improvement: write a yaml-file
     if DEBUG:
         pprint(config)

@@ -7,7 +7,7 @@ from .timekeeper import TimeKeeper
 from .forcing import init_force
 from .tracker import Tracker
 from .release import ParticleReleaser
-from .output import Output
+from .output import init_output
 from .configure import configure
 from .ibm import init_IBM
 from .warm_start import warm_start
@@ -35,7 +35,7 @@ def main(configuration_file: Union[Path, str]) -> None:
     release = ParticleReleaser(
         timer=timer, datatypes=state.dtypes, grid=grid, **config["release"]
     )
-    output = Output(
+    output = init_output(
         timer=timer,
         grid=grid,
         num_particles=release.total_particle_count,

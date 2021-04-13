@@ -7,7 +7,7 @@ import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
-from ladim2.output import fname_gnrt, Output
+from ladim2.out_nc_ragged import fname_gnrt, Output
 
 NCFILE = Path("output_test.nc")
 
@@ -103,7 +103,7 @@ def test_file_creation():
         assert set(nc.variables.keys()) == {"time", "particle_count", "pid", "X", "X0"}
         assert nc.variables["pid"].dimensions == ("particle_instance",)
         assert nc.variables["X0"].dimensions == ("particle",)
-        assert set(nc.ncattrs()) == {"institution", "source"}
+        assert set(nc.ncattrs()) == {"institution", "source", "type", "history"}
         assert nc.getncattr("source") == "LADiM"
 
     NCFILE.unlink()

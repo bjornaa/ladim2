@@ -37,14 +37,11 @@ release:
     release_frequency: [1, h]
 
 output:
-    module: out_nc_ragged
-    filename: out.nc
+    module: out_nc_matrix
+    filename: out_matrix.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:
-        pid:
-            encoding: {datatype: i4, zlib=True}
-            attributes: {long_name: particle_identifier}
         X:
             encoding: {datatype: f4, zlib=True}
             attributes: {long_name: particle X-coordinate}
