@@ -60,39 +60,43 @@ def main(configuration_file: Union[Path, str]) -> None:
         D = config["warm_start"]
         warm_start(D["filename"], D["variables"], state)
 
-    step = 0
-    if 0 in release.steps:
-        V = next(release)
-        state.append(**V)
-        output.write(state)
+    # step = 0
+    # if 0 in release.steps:
+    #     V = next(release)
+    #     state.append(**V)
+    #     output.write(state)
 
     # --------------
     # Time loop
     # --------------
 
     print("Time loop")
-    while step < timer.Nsteps:
+    for step in range(timer.Nsteps + 1):
 
         # Update
         # -- Update clock ---
-        timer.update()
+        if step > 0:
+            timer.update()
+
+        # --- Particle release
+        if step in release.steps:
+            V = next(release)
+            state.append(**V)
 
         # --- Update forcing ---
         force.update(step, state.X, state.Y, state.Z)
 
-        tracker.update(state, grid=grid, force=force)
         if config["ibm"]:
             ibm.update()  # type: ignore
             state.compactify()
 
-        step += 1
-
-        # --- Particle release and output
-        if step in release.steps:
-            V = next(release)
-            state.append(**V)
+        # --- Output
         if step % output_period_step == 0:
             output.write(state)
+
+        # --- Update state to next time step
+        # Improve: no need to update after last write
+        tracker.update(state, grid=grid, force=force)
 
     # --------------
     # Finalisation

@@ -126,6 +126,10 @@ class State(Sized):
 
         self.default_values = dict(predef_default_values, **dvals)
 
+        for var in self.variables:
+            if var not in self.default_values:
+                self.default_values[var] = np.nan
+
         self.npid: int = 0  # Total number of pids used
 
     def append(self, **args: Arraylike) -> None:
@@ -142,8 +146,9 @@ class State(Sized):
         # Variables must have a value
         value_vars = dict(self.default_values, **args)
         for name in state_vars:
-            if name not in set(value_vars):
-                raise TypeError(f"Variable {name} has no value")
+            if name not in value_vars:
+                self.default_values[name] = np.nan
+        #        raise TypeError(f"Variable {name} has no value")
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible

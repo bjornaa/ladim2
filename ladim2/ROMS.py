@@ -488,7 +488,8 @@ class Forcing(BaseForce):
     def update(self, step: int, X: float, Y: float, Z: float) -> None:
         """Update the fields to given time step t"""
 
-        print("update, step = ", step)
+        if DEBUG:
+            print("update forcing, step = ", step)
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
@@ -541,6 +542,7 @@ class Forcing(BaseForce):
             #        self[name] += self["d" + name]
 
         # Update forcing values at particles
+        # print("force_particles")
         self.force_particles(X, Y)
 
     # ==============================================
@@ -636,6 +638,10 @@ class Forcing(BaseForce):
         self, X: np.ndarray, Y: np.ndarray,
     ):
         """Interpolate forcing to particle positions"""
+
+        if DEBUG:
+            print("force_particles, n = ", len(X))
+
         i0 = self.grid.i0
         j0 = self.grid.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
@@ -666,6 +672,9 @@ class Forcing(BaseForce):
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:
+
+        if DEBUG:
+            print("interpolating velocity")
 
         i0 = self.grid.i0
         j0 = self.grid.j0
@@ -733,7 +742,8 @@ def z2s(
 
     """
 
-    # print("--- z2s")
+    if DEBUG:
+        print("--- z2s")
 
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
