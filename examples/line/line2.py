@@ -12,7 +12,7 @@ from ladim2.timekeeper import TimeKeeper
 from ladim2.forcing import init_force
 from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
-from ladim2.output import Output
+from ladim2.output import init_output
 from ladim2.configure import configure
 
 # ----------------
@@ -33,7 +33,7 @@ grid = init_grid(**config["grid"])
 force = init_force(grid=grid, timer=timer, **config["forcing"])
 tracker = Tracker(**config["tracker"])
 release = ParticleReleaser(timer=timer, datatypes=state.dtypes, **config["release"])
-output = Output(
+output = init_output(
     timer=timer, num_particles=release.total_particle_count, **config["output"]
 )
 

@@ -59,7 +59,7 @@ class Output(BaseOutput):
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables if particle_variables else dict()
 
-        # self.skip_output = skip_initial
+        self.skip_initial = skip_initial
         # self.numrec = numrec if numrec else 0
         self.numrec = numrec
         self.ncargs = ncargs if ncargs else dict()
@@ -186,9 +186,9 @@ class Output(BaseOutput):
         # print("Write, time = ", self.timer.time)
 
         # May skip initial output
-        # if self.skip_output:
-        #     self.skip_output = False
-        #     return
+        if self.skip_initial:
+            self.skip_initial = False
+            return
 
         count = len(state)  # Present number of particles
         start = self.local_instance_count

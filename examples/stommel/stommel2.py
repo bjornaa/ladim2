@@ -64,13 +64,13 @@ class Forcing:
         lambda_ = grid.lambda_
         D = grid.D
 
-        r = 1.0e-6  #           Bottom friction coefficient            [s-1]
-        beta = 1.0e-11  #       Coriolis derivative                    [m-1 s-1]
-        alfa = beta / r  #                                             [m-1]
-        F = 0.1  #              Wind stress amplitude                  [N m-2]
-        rho = 1025.0  #         Density                                [kg/m3]
-        gamma = F * pi / (r * b)  #                                    [kg m2 s-1]
-        G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  #             [m2 s-1]
+        r = 1.0e-6              # Bottom friction coefficient          [s-1]
+        beta = 1.0e-11          # Coriolis derivative                  [m-1 s-1]
+        alfa = beta / r                                              # [m-1]
+        F = 0.1                 # Wind stress amplitude                [N m-2]
+        rho = 1025.0            # Density                              [kg/m3]
+        gamma = F * pi / (r * b)                                     # [kg m2 s-1]
+        G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2              # [m2 s-1]
 
         A = -0.5 * alfa + np.sqrt(0.25 * alfa ** 2 + (pi / b) ** 2)  # [m-1]
         B = -0.5 * alfa - np.sqrt(0.25 * alfa ** 2 + (pi / b) ** 2)  # [m-1]

@@ -90,7 +90,9 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     # Default output = out_nc_ragged, contiguous ragged representation
     if "output" not in config["output"]:
         config["output"]["module"] = "out_nc_ragged"
-
+    # skip_initial is default with warm start
+    if "filename" in config["warm_start"] and "skip_initial" not in config["output"]:
+        config["output"]["skip_initial"] = True
 
     # Possible improvement: write a yaml-file
     if DEBUG:

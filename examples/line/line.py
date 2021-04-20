@@ -14,7 +14,7 @@ from ladim2.ROMS import init_grid
 from ladim2.timekeeper import TimeKeeper
 from ladim2.ROMS import init_force
 from ladim2.tracker import Tracker
-from ladim2.output import Output
+from ladim2.output import init_output
 
 # --------------
 # Settings
@@ -29,6 +29,7 @@ data_file = "../data/ocean_avg_0014.nc"
 advection = "EF"
 dt = 3600  # seconds
 
+output_module = "out_nc_ragged"
 output_file = "out.nc"
 output_frequency = 3 * dt
 grid_module = "ladim2.grid_ROMS"
@@ -64,7 +65,8 @@ grid = init_grid(module=grid_module, filename=data_file)
 timer = TimeKeeper(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
 force = init_force(grid=grid, timer=timer, filename=data_file)
 tracker = Tracker(dt=dt, advection=advection)
-output = Output(
+output = init_output(
+    module=output_module,
     timer=timer,
     filename=output_file,
     num_particles=num_particles,
@@ -81,7 +83,6 @@ Y0 = np.linspace(y0, y1, num_particles)
 Z0 = 5  # Fixed particle depth
 state.append(X=X0, Y=Y0, Z=Z0)
 # Write initial state
-output.write(state)
 
 # -------------
 # Time loop
@@ -89,8 +90,9 @@ output.write(state)
 
 print("Time loop")
 for step in range(timer.Nsteps):
-    timer.update()
+    if step > 0:
+        timer.update()
     force.update(step, state.X, state.Y, state.Z)
-    tracker.update(state, grid=grid, force=force)
     if step % output.output_period_steps == 0:
         output.write(state)
+    tracker.update(state, grid=grid, force=force)

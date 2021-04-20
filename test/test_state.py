@@ -139,7 +139,7 @@ def test_append_missing_variable():
 
 def test_append_missing_particle_variable():
     state = State(particle_variables=dict(X_start=float))
-    #with pytest.raises(TypeError):
+    # with pytest.raises(TypeError):
     state.append(X=100, Y=200, Z=5)
     assert state.X_start[0] != state.X_start[0]
 
@@ -155,7 +155,7 @@ def test_missing_default():
         instance_variables=dict(age=float, stage=int), default_values=dict(age=0)
     )
     # No default for stage
-    #with pytest.raises(TypeError):
+    # with pytest.raises(TypeError):
     #    state.append(X=1, Y=2, Z=3)
     # changed behaviour: now check for NaN
     state.append(X=1, Y=2, Z=3)
