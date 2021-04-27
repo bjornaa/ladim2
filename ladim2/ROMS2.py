@@ -1,4 +1,5 @@
 """
+
 LADiM Grid og Forcing form the Regional Ocean Model System (ROMS)
 
 Adaptive version
@@ -29,6 +30,13 @@ from ladim2.timekeeper import TimeKeeper
 DEBUG = False
 parallel = False
 
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
+# Turn off numba logging
+numba_logger = logging.getLogger("numba")
+numba_logger.setLevel(logging.WARNING)
+
 # ---------------------------
 # Grid class
 # ---------------------------
@@ -53,7 +61,7 @@ class Grid(BaseGrid):
 
     def __init__(self, filename: Union[Path, str], Vinfo=None, **args,) -> None:
 
-        print("Grid.__init__")
+        logger.info("Initiating grid")
 
         # logging.info("Initializing ROMS-type grid object")
 
@@ -67,8 +75,7 @@ class Grid(BaseGrid):
         try:
             ncid = Dataset(filename)
         except OSError:
-            # logging.error("Could not open grid file " + grid_file)
-            print(f"Could not open grid file {filename}")
+            logger.critical(f"Could not open grid file {filename}")
             raise SystemExit(1)
         ncid.set_auto_maskandscale(False)
 
@@ -341,8 +348,7 @@ class Forcing(BaseForce):
         ibm_forcing: Optional[List[str]] = None,
     ) -> None:
 
-        logging.info("Initiating forcing")
-        print("Forcing.__init__")
+        logger.info("Initiating forcing")
 
         self.grid = grid  # Get the grid object.
         # self.timer = timer
@@ -367,9 +373,9 @@ class Forcing(BaseForce):
         files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
-            logging.error("No input file: {}".format(filename))
+            logger.error("No input file: {}".format(filename))
             raise SystemExit(3)
-        logging.info("Number of forcing files = {}".format(numfiles))
+        logger.info("Number of forcing files = {}".format(numfiles))
 
         self.files = files
 
@@ -441,9 +447,6 @@ class Forcing(BaseForce):
             raise SystemExit(3)
 
         self.steps = steps
-        # self.files = files
-
-        # print("Init: finished")
 
     # ===================================================
 
@@ -451,9 +454,6 @@ class Forcing(BaseForce):
     # TODO: Implement a switch for turning it on again if wanted
     def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
         """Update the fields to given time step t"""
-
-        if DEBUG:
-            print("update, step = ", step)
 
         # self.K, self.A = z2s(self.grid.z_r, X, Y, Z)  # OK
         self.K, self.A = z2s(
@@ -511,8 +511,9 @@ class Forcing(BaseForce):
                 i1_new = min(self.grid.imax - 1, int(X.max()) + 1 + self.pad)
                 j0_new = max(1, int(Y.min()) - self.pad)
                 j1_new = min(self.grid.jmax - 1, int(Y.max()) + 1 + self.pad)
-                if DEBUG:
-                    print("new grid limits: ", i0_new, i1_new, j0_new, j1_new)
+                logging.debug(
+                    f"new grid limits: {i0_new}, {i1_new}, {j0_new}, {j1_new}"
+                )
                 # Save the new grid limits
                 self.i0_new = i0_new
                 self.i1_new = i1_new
@@ -596,6 +597,9 @@ class Forcing(BaseForce):
     def open_forcing_file(self, time_step: int) -> None:
 
         """Open forcing file and get scaling info given time step"""
+
+        logger.info(f"Open forcing file: {self.file_idx[time_step]}")
+
         # Open the correct forcing file
         nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
@@ -621,7 +625,7 @@ class Forcing(BaseForce):
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logging.info("Reading velocity for time step = {}".format(time_step))
+        logger.debug("Reading velocity for time step = {}".format(time_step))
 
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
@@ -632,15 +636,15 @@ class Forcing(BaseForce):
 
         frame = self.frame_idx[time_step]
 
-        if DEBUG:
-            print("_read_velocity")
-            print("   model time step =", time_step)
-            timevar = self._nc.variables["ocean_time"]
-            time_origin = np.datetime64(timevar.units.split("since")[1])
-            data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
-            print("   data file:   ", self.file_idx[time_step])
-            print("   data record: ", frame)
-            print("   data time:   ", data_time)
+        # if DEBUG:
+        #     print("_read_velocity")
+        #     print("   model time step =", time_step)
+        #     timevar = self._nc.variables["ocean_time"]
+        #     time_origin = np.datetime64(timevar.units.split("since")[1])
+        #     data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
+        #     print("   data file:   ", self.file_idx[time_step])
+        #     print("   data record: ", frame)
+        #     print("   data time:   ", data_time)
 
         # Read the velocity
         U = self._nc.variables["u"][
@@ -649,13 +653,6 @@ class Forcing(BaseForce):
         V = self._nc.variables["v"][
             frame, :, self.j0_new - 1 : self.j1_new, self.i0_new : self.i1_new
         ]
-
-        # if np.any(U < -10000):
-        #     print("Undef U")
-        # if np.any(V < -10000):
-        #     print("Undef V")
-        # U[U < -10000] = 0
-        # V[V < -10000] = 0
 
         # Scale if needed
         # Assume offset = 0 for velocity
@@ -718,8 +715,8 @@ class Forcing(BaseForce):
             self.variables[name] = sample3D(
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )
-        #print(len(self.variables["temp"]))
-        #print(self.variables["temp"][-1])
+        # print(len(self.variables["temp"]))
+        # print(self.variables["temp"][-1])
 
     def velocity(
         self,
@@ -946,11 +943,11 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
     if np.any(I):
         i = I.nonzero()[0][0] + 1  # Index of first out-of-order frame
         oooframe = str(all_frames[i]).split(".")[0]  # Remove microseconds
-        logging.info(f"Time frame {i} = {oooframe} out of order")
-        logging.critical("Forcing time frames not strictly sorted")
+        logger.info(f"Time frame {i} = {oooframe} out of order")
+        logger.critical("Forcing time frames not strictly sorted")
         raise SystemExit(4)
 
-    logging.info(f"Number of available forcing times = {len(all_frames)}")
+    logger.info(f"Number of available forcing times = {len(all_frames)}")
     # print("scan finished")
     return all_frames, num_frames
 
@@ -962,10 +959,10 @@ def forcing_steps(
 
     all_frames, num_frames = scan_file_times(files)
 
-    time0 = all_frames[0]
-    time1 = all_frames[-1]
-    logging.info(f"First forcing time = {time0}")
-    logging.info(f"Last forcing time = {time1}")
+    time0 = all_frames[0].astype("M8[s]")
+    time1 = all_frames[-1].astype("M8[s]")
+    logger.info(f"First forcing time = {time0}")
+    logger.info(f"Last forcing time = {time1}")
     # start_time = self.start_time)
     # stop_time = self.stop_time)
     # dt = np.timedelta64(self.timer.dt, "s")
@@ -975,11 +972,11 @@ def forcing_steps(
 
     if time0 > timer.min_time:
         error_string = "No forcing at minimum time"
-        # logging.error(error_string)
+        logging.error(error_string)
         raise SystemExit(error_string)
     if time1 < timer.max_time:
         error_string = "No forcing at maximum time"
-        # logging.error(error_string)
+        logging.error(error_string)
         raise SystemExit(error_string)
 
     # Make a list steps of the forcing time steps

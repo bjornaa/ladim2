@@ -26,6 +26,9 @@ from .grid import BaseGrid
 # from .utilities import ingrid
 
 DEBUG = False
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class ParticleReleaser(Iterator):
@@ -38,7 +41,6 @@ class ParticleReleaser(Iterator):
         datatypes: Dict[str, Any],
         names: Optional[List[str]] = None,
         grid: Optional[BaseGrid] = None,
-        # dtype: Dict = None,
         continuous: Optional[bool] = False,
         release_frequency: Optional[int] = 0,  # frequency in seconds
         warm_start_file: Optional[str] = None,
@@ -49,9 +51,14 @@ class ParticleReleaser(Iterator):
         self.stop_time = timer.stop_time
         self.time_reversal = timer.time_reversal
 
-        # # logging.info("Initializing the particle releaser")
+        logger.info("Initializing the particle releaser")
 
         self._df = self.read_release_file(release_file, datatypes, names)
+        if continuous:
+            logger.info("  Continuous release")
+        else:
+            logger.info("  Discrete release")
+        logger.info(f"  Release file: {release_file}")
 
         # If no mult column, add a column of ones
         if "mult" not in self._df.columns:
@@ -65,7 +72,7 @@ class ParticleReleaser(Iterator):
         else:
             self._df = self._df[self._df.index <= self.stop_time]  # Use < ?
         if len(self._df) == 0:  # All release after simulation time
-            logging.critical("All particles released after similation stop")
+            logger.critical("All particles released after similation stop")
             raise SystemExit(3)
 
         # Make the dataframe explicitly discrete
@@ -83,13 +90,13 @@ class ParticleReleaser(Iterator):
 
         # With warm start skip release at start time (already accounted for)
         if warm_start_file:
-            print("warm start in release")
+            logging.debug("warm start in release")
             self._df = self._df[self._df.index > self.start_time]
 
         # Avoid simulations without particles
         # Cold start and all particles released before start
         if len(self._df) == 0 and not warm_start_file:
-            logging.critical("All particles released before simulation start")
+            logger.critical("All particles released before simulation start")
             raise SystemExit(3)
 
         # Add a release_time column if requested by the datatypes
@@ -105,26 +112,26 @@ class ParticleReleaser(Iterator):
         #     lenA = len(A)
         #     A = A[ingrid(A["X"], A["Y"], subgrid)]
         #     if len(A) < lenA:
-        #         logging.warning("Ignoring particle release outside subgrid")
+        #         logger.warning("Ignoring particle release outside subgrid")
 
         if warm_start_file:
             # Get particle data from  warm start file
             with Dataset(warm_start_file) as f:
                 warm_particle_count = np.max(f.variables["pid"][:]) + 1
+            logger.info(f"  warm_particle_count: {warm_particle_count}")
         #         for name in config["particle_variables"]:
         #             pvars[name] = f.variables[name][:warm_particle_count]
         else:  # cold start
             warm_particle_count = 0
-        # print("release: warm_particle_count =", warm_particle_count)
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum() + warm_particle_count
-        # logging.info("Total particle count = {}".format(self.total_particle_count))
+        logger.info(f"  Total particle count: {self.total_particle_count}")
 
         # Release times
         self.times = self._df.index.unique()
         self.steps = [timer.time2step(t) for t in self.times]
-        # logging.info("Number of release times = {}".format(len(self.times)))
+        logger.info(f"  Number of release times = {len(self.times)}")
 
         # Make dataframes for each timeframe
         self._B = [x[1] for x in self._df.groupby(self._df.index)]
@@ -141,8 +148,7 @@ class ParticleReleaser(Iterator):
 
         """
 
-        if DEBUG:
-            print("particle release")
+        logger.debug("Particle release time")
 
         # This should not happen
         if self._index >= len(self.times):
@@ -171,7 +177,7 @@ class ParticleReleaser(Iterator):
         self._index += 1
         self._particle_count += len(V)
 
-        # print(V)
+        logger.debug(f"Appending {len(V)} new particles")
 
         return V
 
@@ -214,12 +220,12 @@ class ParticleReleaser(Iterator):
         # Conversion from longitude, latitude to grid coordinates
         if "X" not in df.columns or "Y" not in df.columns:
             if "lon" not in df.columns or "lat" not in df.columns:
-                # logging.critical("Particle release must include a position")
+                logger.critical("Particle release must include a position")
                 raise SystemExit(3)
             try:
                 X, Y = grid.ll2xy(df["lon"], df["lat"])  # type: ignore
             except AttributeError:
-                print("""Can not convert from lon/lat to grid coordinates""")
+                logger.critical("Can not convert from lon/lat to grid coordinates")
                 raise SystemExit(3)
 
             df["lon"] = X
@@ -240,11 +246,11 @@ class ParticleReleaser(Iterator):
             n = np.sum(df.index >= self.start_time)
 
         if n == 0:
-            logging.warning("No particles released at simulation start")
+            logger.warning("No particles released at simulation start")
             n = 1  # Use first release entry
         release_time0 = df.index[n - 1]
-        if DEBUG:
-            print("release_time0 =", release_time0)
+        # if DEBUG:
+        #    print("release_time0 =", release_time0)
         # Remove the early entries
         # NOTE: Makes a new DataFrame
         if not self.time_reversal:
@@ -258,7 +264,7 @@ class ParticleReleaser(Iterator):
         # Can be moved out of if-block?
         # n = np.sum(df.index <= self.start_time)
         # if n == 0:
-        #    logging.warning("No particles released at simulation start")
+        #    logger.warning("No particles released at simulation start")
         #    n = 1
 
         file_times = df.index.unique()

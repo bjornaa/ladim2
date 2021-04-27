@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib
+from typing import Tuple
 
 import numpy as np  # type: ignore
 
@@ -15,7 +16,7 @@ class BaseGrid(ABC):
     ymax: float
 
     @abstractmethod
-    def metric(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
     @abstractmethod

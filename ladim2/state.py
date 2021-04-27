@@ -8,12 +8,18 @@ Class for the state of the model
 # October 2020
 # ----------------------------------
 
+import logging
 from numbers import Number
 from collections.abc import Sized
 from typing import Dict, Union, Sequence, Optional, Any
 
 import numpy as np  # type: ignore
 
+DEBUG = False
+
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 # From State point-of-view the only difference between
 # instance and particle variables is that instance variables
@@ -83,7 +89,7 @@ class State(Sized):
 
         """
 
-        # print("State.__init__")
+        logger.info("Initiating the model state")
 
         # Make dtypes dictionary
         mandatory_variables = dict(
@@ -94,9 +100,11 @@ class State(Sized):
         # Explicitly set instance variables override the defaults
         ivar = dict(mandatory_variables, **ivar)
         self.instance_variables = set(ivar)
+        logger.info(f"  Instance variables: {list(ivar)}")
 
         pvar = particle_variables if particle_variables else dict()
         self.particle_variables = set(pvar)
+        logger.info(f"  Particle variables: {list(pvar)}")
 
         # Raises TypeError if overlap
         self.dtypes = dict(**ivar, **pvar)
@@ -158,6 +166,7 @@ class State(Sized):
         # if b.ndim == 0:  # All arguments are scalar
         #    b = np.broadcast([0])  # Make b.size = 1
         num_new_particles = b.size
+        logger.debug(f"Appending {num_new_particles} particles")
         values = {
             var: np.broadcast_to(v, shape=(num_new_particles,))
             for var, v in value_vars.items()
@@ -178,9 +187,16 @@ class State(Sized):
 
     def compactify(self) -> None:
         """Remove dead particles from the instance variables"""
-        alive = self.alive.copy()
-        for var in self.instance_variables:
-            self.variables[var] = self.variables[var][alive]
+
+        n_particles = len(self.variables["pid"])
+        n_alive = sum(self.variables["alive"])
+        n_remove = n_particles - n_alive
+        if n_remove > 0:
+            logger.debug(f"Compactifying: removing {n_remove} particles")
+            # Take a copy, so that variables["alive"] can be compactified
+            alive = self.alive.copy()
+            for var in self.instance_variables:
+                self.variables[var] = self.variables[var][alive]
 
     def __len__(self) -> int:
         return len(self.pid)

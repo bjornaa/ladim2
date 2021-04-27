@@ -14,6 +14,7 @@
 import re
 from pathlib import Path
 from datetime import date
+import logging
 from typing import Dict, Union, Optional, Sequence, Any, Generator
 
 import numpy as np  # type: ignore
@@ -25,6 +26,8 @@ from ladim2.grid import BaseGrid
 from ladim2.output import BaseOutput
 
 Variable = Dict[str, Any]
+
+logger = logging.getLogger(__name__)
 
 
 def init_output(**args) -> BaseOutput:
@@ -51,7 +54,7 @@ class Output(BaseOutput):
         global_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
 
-        # logging.info("Initializing output")
+        logger.info("Initializing output")
 
         self.timer = timer
         self.filename = filename
@@ -59,7 +62,13 @@ class Output(BaseOutput):
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables if particle_variables else dict()
 
+        logger.info(f"  Filename: {filename}")
+        logger.info(f"  Instance variables: {list(instance_variables)}")
+        logger.info(f"  Particle variables: {list(self.particle_variables)}")
+
         self.skip_initial = skip_initial
+        if skip_initial:
+            logger.info("  Skipping initial output")
         # self.numrec = numrec if numrec else 0
         self.numrec = numrec
         self.ncargs = ncargs if ncargs else dict()
@@ -74,20 +83,23 @@ class Output(BaseOutput):
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
-        self.output_period_steps = self.output_period // timer._dt
+        self.output_period_steps = self.output_period // timer.dt
         if timer.time_reversal:
             self.output_period = -self.output_period
+        logger.info(f"  Output period: {str(self.output_period)}")
 
         self.num_records = abs(
             (timer.stop_time - timer.start_time) // self.output_period
         )
         if not skip_initial:  # Add an initial record
             self.num_records += 1
+        logger.info(f"  Number of records: {self.num_records}")
 
         if self.numrec:
             self.multifile = True
             self.filenames = fname_gnrt(Path(filename))
             self.filename = next(self.filenames)
+            logger.info("  Multifile output")
         else:
             self.multifile = False
             self.filename = Path(filename)
@@ -117,6 +129,8 @@ class Output(BaseOutput):
 
     def create_netcdf(self) -> Dataset:
         """Create a LADiM output netCDF file"""
+
+        logging.debug(f"Creating new output file: {self.filename}")
 
         # Handle netcdf args
         ncargs = self.ncargs
@@ -183,7 +197,7 @@ class Output(BaseOutput):
 
         """
 
-        # print("Write, time = ", self.timer.time)
+        logger.debug("Writing output")
 
         # May skip initial output
         if self.skip_initial:

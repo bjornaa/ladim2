@@ -74,7 +74,7 @@ class Output(BaseOutput):
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
-        self.output_period_steps = self.output_period // timer._dt
+        self.output_period_steps = self.output_period // timer.dt
         if timer.time_reversal:
             self.output_period = -self.output_period
 
@@ -173,7 +173,6 @@ class Output(BaseOutput):
 
         return nc
 
-
     def write(self, state: State) -> None:
         """Write output instance variables to a (multi-)file
 
@@ -201,7 +200,9 @@ class Output(BaseOutput):
         for var in self.instance_variables:
             if var == "pid":
                 continue
-            self.nc.variables[var][self.local_record_count, state.pid] = getattr(state, var)
+            self.nc.variables[var][self.local_record_count, state.pid] = getattr(
+                state, var
+            )
 
         # Compute lon, lat if needed
         if self.lonlat:

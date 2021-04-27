@@ -8,7 +8,7 @@
 # Licensed under the MIT license
 # ------------------------------------
 
-# import logging
+import logging
 from typing import Tuple
 
 import numpy as np  # type:ignore
@@ -22,22 +22,27 @@ from .grid import BaseGrid
 
 Velocity = Tuple[np.ndarray, np.ndarray]
 
-parallel = False
+PARALLEL = False
+DEBUG = False
+
+logger = logging.getLogger(__name__)
+
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class Tracker:
     """The physical particle tracking kernel"""
 
-    # logging.info("Initiating the particle tracking")
-
     def __init__(
         self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False
     ):
 
-        print("Tracker.__init__")
+        logger.info("Initiating the particle tracker")
 
         self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
+        logger.info(f"  Advection method: {advection}")
 
         # advect <- requested advection method
         # advection = string "EF", "RK2", "RK4"
@@ -46,11 +51,18 @@ class Tracker:
             self.advect = getattr(self, self.advection)
 
         self.vertical_advection = vertical_advection
+        if vertical_advection:
+            logger.info("  Vertical advection activated")
 
         self.diffusion = bool(diffusion)
         self.D = diffusion
+        if self.diffusion:
+            logger.info(f"  Horizontal diffusion: {diffusion} m²/s")
+
         self.vertdiff = bool(vertdiff)
         self.Dz = vertdiff
+        if self.vertdiff:
+            logger.info(f"  Vertical diffusion: {vertdiff} m²/s")
 
     def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
         """Move the particles one time step"""
@@ -214,7 +226,7 @@ class Tracker:
         return W
 
 
-@numba.njit(parallel=parallel)
+@numba.njit(parallel=PARALLEL)
 def RKstep0(X, Y, U, V, frac, dtdx, dtdy):
     Xp = X + frac * U * dtdx
     Yp = Y + frac * V * dtdy
@@ -245,7 +257,7 @@ def RKstep1(
 RKstep = RKstep1
 
 
-@numba.njit(parallel=parallel)
+@numba.njit(parallel=PARALLEL)
 def clip(
     X: np.ndarray, Y: np.ndarray, xmin: float, xmax: float, ymin: float, ymax: float
 ) -> None:
@@ -255,7 +267,7 @@ def clip(
         Y[p] = max(min(Y[p], ymax), ymin)
 
 
-@numba.njit(parallel=parallel)
+@numba.njit(parallel=PARALLEL)
 def RK4avg(
     U1: np.ndarray, U2: np.ndarray, U3: np.ndarray, U4: np.ndarray
 ) -> np.ndarray:
