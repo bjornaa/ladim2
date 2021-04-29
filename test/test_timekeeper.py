@@ -18,7 +18,7 @@ def test_init():
     t = TimeKeeper(start=start_time, stop=stop_time, dt=dt)
     assert str(t.start_time) == "2020-04-04T12:00:00"
     assert str(t.stop_time) == "2020-04-05T12:00:00"
-    assert t.dt == dt
+    assert t.dtsec == dt
     assert t.reference_time == t.start_time
     assert t.Nsteps == 24
 
@@ -35,11 +35,11 @@ def test_init():
 
     # dt as yaml-type timedeltas
     t = TimeKeeper(start_time, stop_time, dt=[1, "h"])
-    assert t.dt == 3600
+    assert t.dtsec == 3600
 
     # dt specified in ISO 8601 format
     t = TimeKeeper(start_time, stop_time, dt="PT1H")
-    assert t.dt == 3600
+    assert t.dtsec == 3600
 
     # start - stop not divisible by dt
     t0 = TimeKeeper(start="2020-04-04", stop="2020-04-04 12:00", dt=3600)
@@ -128,7 +128,7 @@ def test_reverse_init():
     assert str(t.start_time) == "2020-04-05T12:00:00"
     assert str(t.stop_time) == "2020-04-04T12:00:00"
     assert str(t.min_time) == "2020-04-04T12:00:00"
-    assert t.dt == dt
+    assert t.dtsec == dt
     assert t.reference_time == t.stop_time
     assert t.Nsteps == 24
 
