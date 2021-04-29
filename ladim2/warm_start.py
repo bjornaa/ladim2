@@ -1,5 +1,6 @@
 """Perform initialization for warm start in LADiM"""
 
+import logging
 from typing import List
 
 import numpy as np
@@ -7,13 +8,22 @@ from netCDF4 import Dataset
 
 from .state import State
 
+DEBUG = False
+
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
+
 
 def warm_start(
     warm_start_file: str, warm_start_variables: List[str], state: State
 ) -> None:
     """Initiate the state from a warm start"""
 
-    #print("warm start: variables = ", warm_start_variables)
+    logger.info("Warm start")
+    logger.info(f"  Warm start file {warm_start_file}")
+
+    logger.info(f"  warm start variables: {warm_start_variables}")
 
     # wvars = warm_start_variables.copy() + ["pid"]
     wvars: set = {"pid", "X", "Y", "Z", "alive", "active"}.union(warm_start_variables)
@@ -54,7 +64,7 @@ def warm_start(
                 shape = (pid_max,)
             values = np.full(shape, state.default_values[var])
         else:
-            print(f"Warm start: No value for variable {var}")
+            logger.error(f"Warm start: No value for variable {var}")
             raise SystemExit(1)
 
         state.variables[var] = values

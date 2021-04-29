@@ -1,3 +1,9 @@
+"""Plot the particle distribution at given time step
+
+This version uses a coast file precomputed by make_coast.py
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
@@ -14,7 +20,7 @@ from postladim import ParticleFile
 
 # Files
 particle_file = "latlon.nc"
-coast_file = "coast2.wkb"  # Made by make_coast.py
+coast_file = "coast.wkb"  # Made by make_coast.py
 
 # time step to plot
 tstep = 90
@@ -62,7 +68,7 @@ boundary = np.vstack((north[:, :2], south[:, :2]))
 ax.set_boundary(Path(boundary), transform=proj)
 
 # Plot the coast
-ax.add_feature(coast)
+ax.add_feature(coast, facecolor="Khaki", edgecolor='Black')
 
 # Add graticule
 ax.gridlines(xlocs=range(lon0, lon1 + 2, 2), ylocs=range(lat0, lat1 + 1))
@@ -70,6 +76,6 @@ ax.gridlines(xlocs=range(lon0, lon1 + 2, 2), ylocs=range(lat0, lat1 + 1))
 # ---------------------
 # Plot the particles
 # ---------------------
-ax.plot(lon, lat, ".", color="red", markersize=1, transform=lonlat)
+ax.plot(lon, lat, ".", color="red", markersize=3, transform=lonlat)
 
 plt.show()

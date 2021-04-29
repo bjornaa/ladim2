@@ -86,7 +86,6 @@ def test_read_release_both_header_names():
         )
 
 
-
 def test_clean_add_mult():
     """If no mult column, clean_release_data should add mult=1"""
 
@@ -390,6 +389,7 @@ def test_continuous_freq_mismatch2():
     df = pr._df
     assert pr.total_particle_count == 7
     assert all(df.X == 4 * [100] + 3 * [106])
+
 
 def test_release_time_column():
     """With release time in datatypes include a release_time column"""

@@ -4,6 +4,7 @@ build/
 .mypy
 __pycache__/
 dist/
+LADiM2.egg-info/
 
 # Hidden directories
 .*/

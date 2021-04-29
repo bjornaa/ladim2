@@ -17,7 +17,7 @@ GSHHS_resolution = "i"
 fname = "coast.wkb"
 
 # Define regional domain
-lonmin, lonmax, latmin, latmax = -6, 12, 54, 62  # North Sea
+lonmin, lonmax, latmin, latmax = -6, 12, 54, 63  # North Sea
 
 # Global coastline from GSHHS as shapely collection generator
 path = shapereader.gshhs(scale=GSHHS_resolution)

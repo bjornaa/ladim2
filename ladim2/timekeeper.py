@@ -6,6 +6,7 @@
 # 2020-10-29
 # ================================
 
+import logging
 import datetime
 import re
 from typing import Union, Optional, Sequence
@@ -14,8 +15,11 @@ import numpy as np  # type: ignore
 Time = Union[str, np.datetime64, datetime.datetime]
 TimeDelta = Union[int, np.timedelta64, datetime.timedelta, Sequence, str]
 
-# TODO: Implement reasonable behaviour for backward tracking
-#       stop before start
+DEBUG = False
+
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class TimeKeeper:
@@ -60,12 +64,14 @@ class TimeKeeper:
 
         """
 
-        # print("TimeControl.__init__")
+        logger.info("Initiating the timekeeper")
 
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
         self.time_reversal = time_reversal
         self.time = self.start_time  # Running clock
+        logger.info(f"  Model start time: {self.start_time}")
+        logger.info(f"  Model stop time:  {self.stop_time}")
 
         # Quality control
         duration = self.stop_time - self.start_time
@@ -83,20 +89,24 @@ class TimeKeeper:
             self.reference_time = np.datetime64(reference, "s")
         else:
             self.reference_time = self.min_time
+        logger.info(f"  Reference time:   {self.reference_time}")
 
-        self._dt = normalize_period(dt)  # np.timedelta64(-,"s")
-        self.dt = self._dt.astype("int")  # seconds
+        self.dt = normalize_period(dt)  # np.timedelta64(-,"s")
+        self.dtsec = self.dt / np.timedelta64(1, "s")  # seconds
+        logger.info(f"  Time step: {str(self.dt)}")
 
         # Number of time steps (excluding initial)
-        self.Nsteps = abs(duration) // self._dt
-        self.simulation_time = self.Nsteps * self._dt
+        self.Nsteps = abs(duration) // self.dt
+        self.simulation_time = self.Nsteps * self.dt
+        logger.info(f"  Length of  simulation: {duration2iso(duration)}")
+        logger.info(f"  Number of time steps: {self.Nsteps}")
 
     def update(self) -> None:
         """Update the clock"""
         if self.time_reversal:
-            self.time = self.time - self._dt
+            self.time = self.time - self.dt
         else:
-            self.time = self.time + self._dt
+            self.time = self.time + self.dt
 
     def reset(self) -> None:
         """Reset the clock"""
@@ -113,14 +123,14 @@ class TimeKeeper:
         time can be datetime instance or an iso time string
         """
         if self.time_reversal:
-            return (self.start_time - np.datetime64(time_)) // self._dt
-        return (np.datetime64(time_) - self.start_time) // self._dt
+            return (self.start_time - np.datetime64(time_)) // self.dt
+        return (np.datetime64(time_) - self.start_time) // self.dt
 
     def step2isotime(self, stepnr: int) -> str:
         """Return time in iso 8601 format from a time step number"""
         if self.time_reversal:
-            return str(self.start_time - stepnr * self._dt)
-        return str(self.start_time + stepnr * self._dt)
+            return str(self.start_time - stepnr * self.dt)
+        return str(self.start_time + stepnr * self.dt)
 
     def step2nctime(self, stepnr: int, unit: str = "s") -> float:
         """
@@ -129,15 +139,38 @@ class TimeKeeper:
         unit should be a single character, "s", "m", or "h", default = "s"
         """
         if self.time_reversal:
-            delta = self.start_time - stepnr * self._dt - self.reference_time
+            delta = self.start_time - stepnr * self.dt - self.reference_time
         else:
-            delta = self.start_time + stepnr * self._dt - self.reference_time
+            delta = self.start_time + stepnr * self.dt - self.reference_time
         value = delta / np.timedelta64(1, unit)
         return value
 
     def cf_units(self, unit="s"):
         """Return string with units for time following the CF standard"""
         return f"{self.unit_table[unit]} since {self.reference_time}"
+
+
+def duration2iso(duration: Union[datetime.timedelta, np.timedelta64]) -> str:
+    """Convert time delta to ISO 8601 format"""
+    if isinstance(duration, np.timedelta64):
+        seconds = int(round(duration / np.timedelta64(1, "s")))
+    else:
+        seconds = int(round(duration.total_seconds()))
+
+    if not seconds:  # zero duration
+        return "PT0S"
+
+    days, sec = divmod(seconds, 86400)
+    T = "T" if sec else ""
+    hours, sec = divmod(sec, 3600)
+    min, sec = divmod(sec, 60)
+    daystr = f"{days:d}D" if days else ""
+    hourstr = f"{hours:d}H" if hours else ""
+    minstr = f"{min:d}M" if min else ""
+    secstr = f"{sec:d}S" if sec else ""
+    if duration:
+        return "".join(("P", daystr, T, hourstr, minstr, secstr))
+    return "PT0S"  # else zero duration
 
 
 def normalize_period(per: TimeDelta) -> np.timedelta64:

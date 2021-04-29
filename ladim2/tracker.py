@@ -8,10 +8,11 @@
 # Licensed under the MIT license
 # ------------------------------------
 
-# import logging
+import logging
 from typing import Tuple
 
 import numpy as np  # type:ignore
+import numba
 
 from .state import State
 from .timekeeper import normalize_period
@@ -21,20 +22,27 @@ from .grid import BaseGrid
 
 Velocity = Tuple[np.ndarray, np.ndarray]
 
+PARALLEL = False
+DEBUG = False
+
+logger = logging.getLogger(__name__)
+
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
+
 
 class Tracker:
     """The physical particle tracking kernel"""
-
-    # logging.info("Initiating the particle tracking")
 
     def __init__(
         self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False
     ):
 
-        print("Tracker.__init__")
+        logger.info("Initiating the particle tracker")
 
         self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
+        logger.info(f"  Advection method: {advection}")
 
         # advect <- requested advection method
         # advection = string "EF", "RK2", "RK4"
@@ -43,22 +51,26 @@ class Tracker:
             self.advect = getattr(self, self.advection)
 
         self.vertical_advection = vertical_advection
+        if vertical_advection:
+            logger.info("  Vertical advection activated")
 
         self.diffusion = bool(diffusion)
         self.D = diffusion
+        if self.diffusion:
+            logger.info(f"  Horizontal diffusion: {diffusion} m²/s")
+
         self.vertdiff = bool(vertdiff)
         self.Dz = vertdiff
+        if self.vertdiff:
+            logger.info(f"  Vertical diffusion: {vertdiff} m²/s")
 
     def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
-        """Move the particles"""
+        """Move the particles one time step"""
 
         X, Y, Z = state.X, state.Y, state.Z
 
         self.dx, self.dy = grid.metric(X, Y)
-        # dt = self.dt
-        # self.num_particles = len(X)
-        # Make more elegant, need not do every time
-        # Works for C-grid
+
         self.xmin = grid.xmin + 0.01
         self.xmax = grid.xmax - 0.01
         self.ymin = grid.ymin + 0.01
@@ -66,6 +78,7 @@ class Tracker:
 
         U = np.zeros_like(X)
         V = np.zeros_like(Y)
+
         # --- Advection ---
         if self.advection:
             Uadv, Vadv = self.advect(X, Y, Z, force)
@@ -140,74 +153,28 @@ class Tracker:
     ) -> Velocity:
         """Euler-Forward advective velocity"""
 
-        # dt = self.dt
-        # pm, pn = grid.sample_metric(X, Y)
-
         U, V = force.velocity(X, Y, Z)
 
         return U, V
 
-    # def RK2a(self, forcing: Forcing, state: State) -> Velocity:
-    #     """Runge-Kutta second order = Heun scheme"""
-
-    #     X, Y, Z = state["X"], state["Y"], state["Z"]
-    #     dt = self.dt
-
-    #     U, V = forcing.velocity(X, Y, Z)
-    #     X1 = X + 0.5 * U * dt / self.dx
-    #     Y1 = Y + 0.5 * V * dt / self.dy
-
-    #     U, V = forcing.velocity(X1, Y1, Z, tstep=0.5)
-    #     return U, V
-
-    def RK2b(
+    def RK2(
         self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
     ) -> Velocity:
 
-        # def RK2b(self, forcing: Forcing, state: State) -> Velocity:
         """Runge-Kutta second order = Heun scheme
 
         This version does not sample velocities outside the grid
         """
 
-        # X, Y, Z = state["X"], state["Y"], state["Z"]
         dt = self.dt
+        dtdx = dt / self.dx
+        dtdy = dt / self.dy
 
-        U, V = force.velocity(X, Y)
-        X1 = X + 0.5 * U * dt / self.dx
-        Y1 = Y + 0.5 * V * dt / self.dy
-        X1.clip(self.xmin, self.xmax, out=X1)
-        Y1.clip(self.ymin, self.ymax, out=Y1)
+        U, V = force.velocity(X, Y, Z)
+        X1, Y1 = RKstep(X, Y, U, V, 0.5, dtdx, dtdy)
+        clip(X, Y, self.xmin, self.xmax, self.ymin, self.ymax)
 
-        U, V = force.velocity(X1, Y1, fractional_step=0.5)
-        return U, V
-
-    RK2 = RK2b
-
-    #     """Runge-Kutta fourth order advection"""
-
-    #     X, Y, Z = state["X"], state["Y"], state["Z"]
-    #     dt = self.dt
-    #     dx, dy = self.dx, self.dy
-
-    #     U1, V1 = forcing.velocity(X, Y, Z, tstep=0.0)
-    #     X1 = X + 0.5 * U1 * dt / dx
-    #     Y1 = Y + 0.5 * V1 * dt / dy
-
-    #     U2, V2 = forcing.velocity(X1, Y1, Z, tstep=0.5)
-    #     X2 = X + 0.5 * U2 * dt / dx
-    #     Y2 = Y + 0.5 * V2 * dt / dy
-
-    #     U3, V3 = forcing.velocity(X2, Y2, Z, tstep=0.5)
-    #     X3 = X + U3 * dt / dx
-    #     Y3 = Y + V3 * dt / dy
-
-    #     U4, V4 = forcing.velocity(X3, Y3, Z, tstep=1.0)
-
-    #     U = (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
-    #     V = (V1 + 2 * V2 + 2 * V3 + V4) / 6.0
-
-    #     return U, V
+        return force.velocity(X1, Y1, Z, fractional_step=0.5)
 
     def RK4(
         self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
@@ -219,42 +186,25 @@ class Tracker:
         """
 
         dt = self.dt
-        dx, dy = self.dx, self.dy
-        dtdx = dt / dx
-        dtdy = dt / dy
+        dtdx = dt / self.dx
+        dtdy = dt / self.dy
         xmin, xmax, ymin, ymax = self.xmin, self.xmax, self.ymin, self.ymax
 
         U1, V1 = force.velocity(X, Y, Z, fractional_step=0.0)
         X1, Y1 = RKstep(X, Y, U1, V1, 0.5, dtdx, dtdy)
-
-        # X1 = X + 0.5 * U1 * dt / dx
-        # Y1 = Y + 0.5 * V1 * dt / dy
-        # X1.clip(xmin, xmax, out=X1)
-        # Y1.clip(ymin, ymax, out=Y1)
+        clip(X1, Y1, xmin, xmax, ymin, ymax)
 
         U2, V2 = force.velocity(X1, Y1, Z, fractional_step=0.5)
         X2, Y2 = RKstep(X, Y, U2, V2, 0.5, dtdx, dtdy)
-
-        # X2 = X + 0.5 * U2 * dt / dx
-        # Y2 = Y + 0.5 * V2 * dt / dy
-        # X2.clip(xmin, xmax, out=X2)
-        # Y2.clip(ymin, ymax, out=Y2)
+        clip(X2, Y2, xmin, xmax, ymin, ymax)
 
         U3, V3 = force.velocity(X2, Y2, Z, fractional_step=0.5)
         X3, Y3 = RKstep(X, Y, U3, V3, 1.0, dtdx, dtdy)
-        # X3 = X + U3 * dt / dx
-        # Y3 = Y + V3 * dt / dy
-        # X3.clip(xmin, xmax, out=X3)
-        # Y3.clip(ymin, ymax, out=Y3)
+        clip(X3, Y3, xmin, xmax, ymin, ymax)
 
         U4, V4 = force.velocity(X3, Y3, Z, fractional_step=1.0)
 
-        # U = (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
-        # V = (V1 + 2 * V2 + 2 * V3 + V4) / 6.0
-        U = RK4avg(U1, U2, U3, U4)
-        V = RK4avg(V1, V2, V3, V4)
-
-        return U, V
+        return RK4avg(U1, U2, U3, U4), RK4avg(V1, V2, V3, V4)
 
     def diffuse(self, num_particles: int) -> Velocity:
         """Random walk diffusion"""
@@ -276,11 +226,50 @@ class Tracker:
         return W
 
 
-def RKstep(X, Y, U, V, frac, dtdx, dtdy):
+@numba.njit(parallel=PARALLEL)
+def RKstep0(X, Y, U, V, frac, dtdx, dtdy):
     Xp = X + frac * U * dtdx
     Yp = Y + frac * V * dtdy
     return Xp, Yp
 
 
-def RK4avg(U1, U2, U3, U4):
+@numba.njit(parallel=False)
+def RKstep1(
+    X: np.ndarray,
+    Y: np.ndarray,
+    U: np.ndarray,
+    V: np.ndarray,
+    frac: float,
+    dtdx: np.ndarray,
+    dtdy: np.ndarray,
+) -> Velocity:
+    """Do a forward Runge-Kutta (partial) step"""
+
+    N = len(X)
+    Xp = np.empty(N)
+    Yp = np.empty(N)
+    for i in numba.prange(N):
+        Xp[i] = X[i] + frac * U[i] * dtdx[i]
+        Yp[i] = Y[i] + frac * V[i] * dtdy[i]
+    return X, Y
+
+
+RKstep = RKstep1
+
+
+@numba.njit(parallel=PARALLEL)
+def clip(
+    X: np.ndarray, Y: np.ndarray, xmin: float, xmax: float, ymin: float, ymax: float
+) -> None:
+    """Clip particle positions in place towards forcing domain boundary"""
+    for p in numba.prange(len(X)):
+        X[p] = max(min(X[p], xmax), xmin)
+        Y[p] = max(min(Y[p], ymax), ymin)
+
+
+@numba.njit(parallel=PARALLEL)
+def RK4avg(
+    U1: np.ndarray, U2: np.ndarray, U3: np.ndarray, U4: np.ndarray
+) -> np.ndarray:
+    """Average velocity component for Runge-Kutta 4-th order"""
     return (U1 + 2 * U2 + 2 * U3 + U4) / 6.0

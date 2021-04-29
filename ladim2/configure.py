@@ -11,8 +11,9 @@ with compability wrapper for LADiM version 1 configuration
 # December 2020
 # -----------------------------------
 
+import sys
 from pathlib import Path
-from pprint import pprint
+import logging
 
 import numpy as np
 from netCDF4 import Dataset, num2date
@@ -23,19 +24,28 @@ import yaml
 # from .timekeeper import normalize_period
 
 DEBUG = False
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     """Main configuration function"""
+
+    logger.info("Configuration")
+    logger.info(f"  Configuration file: {config_file}")
 
     with open(config_file) as fid:
         config: Dict[str, Any] = yaml.safe_load(fid)
 
     # Assume version >= 2 has explicit version tag
     # Consider alternative: using ladim2 -v1 xxx.yaml
-    if "version" not in config:
+    version = config.get("version", 1)
+    logger.info(f"  Configuration file version: {version}")
+
+    # Try old configure version
+    if version == 1:
         config = configure_v1(config)
-        # pprint(config)
 
     # Some sections may be missing
     if "state" not in config:
@@ -51,8 +61,6 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
 
     # Use time step from time
     config["tracker"]["dt"] = config["time"]["dt"]
-    # if config["ibm"]:
-    #    config["ibm"]["dt"] = normalize_period(config["time"]["dt"])
 
     # If missing grid["filename"] use forcing["filename"]
     if "module" not in config["grid"]:
@@ -87,9 +95,16 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         # warm start -> release
         config["release"]["warm_start_file"] = config["warm_start"]["filename"]
 
+    # Default output = out_nc_ragged, contiguous ragged representation
+    if "output" not in config["output"]:
+        config["output"]["module"] = "out_nc_ragged"
+    # skip_initial is default with warm start
+    if "filename" in config["warm_start"] and "skip_initial" not in config["output"]:
+        config["output"]["skip_initial"] = True
+
     # Possible improvement: write a yaml-file
     if DEBUG:
-        pprint(config)
+        yaml.dump(config, stream=sys.stdout)
 
     return config
 

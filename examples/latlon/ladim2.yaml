@@ -8,7 +8,7 @@ version: 2.0
 
 time:
     start: 1989-05-24 12:00:00
-    stop:  1989-06-05 12:00:00
+    stop:  1989-06-18 12:00:00
     dt: [1, h]
 
 state:
@@ -34,7 +34,7 @@ release:
 output:
     filename: latlon.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
-    output_period: [3, h]
+    output_period: [2, h]
     instance_variables:
         pid:
             encoding: {datatype: i4, zlib=True}

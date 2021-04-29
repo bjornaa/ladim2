@@ -28,7 +28,7 @@ release:
     release_file : line.rls
 
 output:
-    # module: output
+    module: out_nc_ragged
     filename: out.nc
     ncargs: {data_model: NETCDF3_CLASSIC}
     output_period: [3, h]
@@ -49,5 +49,6 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
-    # particle_variables:
-    #     X0: {ncformat: f4, long_name: X-coordinate of particle release}
+    global_attributes:
+        title: LADiM line example
+        institution: Institute of Marine Research

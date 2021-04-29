@@ -37,6 +37,7 @@ release:
     release_frequency: [1, h]
 
 output:
+    module: out_nc_ragged
     filename: out.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
