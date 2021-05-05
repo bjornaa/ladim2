@@ -18,7 +18,7 @@ in principle use forcing from any ocean model through the plug-in system. Presen
 has modules for the Regional Ocean Model System, `ROMS <http://www.myroms.org>`_.
 
 The `Institute of Marine Research <https://www.hi.no/en>`_ can trace a particle tracking
-model called LADiM back tpothe 1990-ies. This old code was written in fortran. The
+model called LADiM back to the 1990-ies. This old code was written in fortran. The
 present LADiM model is implemented from scratch in the python programming language. It
 has been actively developed and used since 2017 with version 2 released in 2021.
 
@@ -29,16 +29,21 @@ documentation is hosted on `Read the Docs
 <https://ladim.readthedocs.io/en/master>`_. A `pdf version
 <https://media.readthedocs.org/pdf/ladim/master/ladim.pdf>`_ is also available.
 
+The flexibility of the python language makes it a natural choice for this kind of model.
 There are alternative particle tracking models written in python. Most notable are `Ocean
 Parcels <https://oceanparcels.org>`_ and `OpenDrift <https://opendrift.github.io/>`_. An
 older model, `Paegan-Transport <https://github.com/asascience-open/Paegan-Transport>`_,
 does not seem to be under active development anymore. There is considerable overlap in
-functionality among these models.
+functionality among these models. Python has a reputation for being slow. In practice
+this is not a problem for ``LADiM``. For most applications the bottleneck is reading
+large NetCDF files with model output. This is independent of language as the NetCDF
+library written in C is used. ``LADiM`` uses the effective ``numpy`` library for
+computations with a few functions using ``numba`` for an extra speed boost.
 
-``LADiM`` is used extensively at the `Institute of Marine Research <https://www.hi.no/en>`_.
-The traditional use for particle tracking is transport of fish eggs and larvae. Presently
-a major subject is the study of spreading and abundance of salmon lice. Operationally,
-`weekly maps
+``LADiM`` is used extensively at the `Institute of Marine Research
+<https://www.hi.no/en>`_. The traditional use for particle tracking is transport of fish
+eggs and larvae. Presently a major subject is the study of spreading and abundance of
+salmon lice. Operationally, `weekly maps
 <https://www.hi.no/forskning/marine-data-forskningsdata/lakseluskart/html/lakseluskart.html>`_
 of salmon lice copepodites are made available. Results from LADiM simulations are also
 crucial in the "traffic light" system for management of the salmon aquaculture industry

@@ -197,6 +197,13 @@ class ParticleReleaser(Iterator):
                 time_vars.append(var)
             else:
                 dtypes[var] = dtype
+        # Standard dtypes
+        dtypes['mult'] = int
+        dtypes['X'] = float
+        dtypes['Y'] = float
+        dtypes['Z'] = float
+        dtypes['lon'] = float
+        dtypes['lat'] = float
 
         df = pd.read_csv(
             rls_file,
