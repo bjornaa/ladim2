@@ -1,26 +1,25 @@
 # Minimal IBM to kill old particles
 
+import numpy as np
+
 from ladim2.ibm import BaseIBM
 from ladim2.timekeeper import TimeKeeper
 from ladim2.state import State
-
-DAY = 24 * 60 * 60  # Number of seconds in a day
 
 
 class IBM(BaseIBM):
     def __init__(
         self,
-        lifetime: float,   # Particle life time, units=days
+        lifetime: float,  # Particle life time, units=days
         timer: TimeKeeper,
         state: State,
-        forcing=None,    # This IBM does not use forcing
-        grid=None,       # This IBM does not use grid
+        **args,
     ) -> None:
 
         print("Initializing killer feature")
         self.lifetime = lifetime
         self.state = state
-        self.dt = timer.dt
+        self.dt = timer.dt / np.timedelta64(1, "D")
 
     def update(self) -> None:
 
@@ -29,5 +28,5 @@ class IBM(BaseIBM):
         # Update the particle age
         state["age"] += self.dt
 
-        # Mark particles older than prescribed lifetime as dead
-        state["alive"] = state.age < self.lifetime * DAY
+        # Add particles older than prescribed lifetime to dead
+        state["alive"] &= state.age < self.lifetime

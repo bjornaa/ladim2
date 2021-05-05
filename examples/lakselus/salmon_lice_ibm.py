@@ -38,7 +38,7 @@ class IBM(BaseIBM):
         self.vertical_diffusion = self.D > 0
 
         self.timer = timer
-        self.dt = timer.dt
+        self.dt = timer.dt / np.timedelta64(1, 'D')  # Timestep in days
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
         # salinity_model = config["ibm"].get('salinity_model', 'new')
@@ -58,8 +58,6 @@ class IBM(BaseIBM):
         forcing.force_particles(state.X, state.Y)
         state["temp"] = forcing.variables["temp"]
         state["salt"] = forcing.variables["salt"]
-        # state["temp"] = forcing.field(state.X, state.Y, state.Z, "temp")
-        #state["salt"] = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
         state["age"] += state.temp * self.dt / 86400
@@ -99,4 +97,4 @@ class IBM(BaseIBM):
         state["Z"][state.Z >= 20.0] = 19.0
 
         # Mark particles older than 200 degree days as dead
-        state["alive"] = state.alive & (state.age < 200)
+        state["alive"] &= state.age < 200
