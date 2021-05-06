@@ -1,3 +1,5 @@
+"""Base class and import system for ndividual Based Module"""
+
 import sys
 import os
 from pathlib import Path
@@ -6,22 +8,35 @@ import importlib
 
 
 class BaseIBM(ABC):
+    """Base class for Individual Based Model"""
     @abstractmethod
     def update(self) -> None:
-        pass
+        """Updates the IBM to the next time step"""
 
 
-def init_IBM(**args) -> BaseIBM:
+def init_IBM(module, **args) -> BaseIBM:
+    """Initiates an IBM class
 
-    args = args.copy()
-    module = args.pop("module")
+    Args:
+        module:
+            Name of the module containing the IBM
+        args:
+            Keyword arguments passed on to the IBM
 
-    # System path for ladim2.ladim2.ibms
+    The module should be in the "ibm" directory of LADiM or in the working directory.
+    The working directory takes priority.
+    The IBM class in the module should be named "IBM".
+    """
+
+    # Temporarily modify sys.path
+    syspath = sys.path
+    # Add ibms directory
     p = Path(__file__).parent / "ibms"
     sys.path.insert(0, str(p))
-    # Working directory
+    # Put working directory first
     sys.path.insert(0, os.getcwd())
 
     # Import correct module and return an instance of the IBM class
     ibm_mod = importlib.import_module(module)
+    sys.path = syspath
     return ibm_mod.IBM(**args)  # type: ignore

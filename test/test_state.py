@@ -1,5 +1,5 @@
 import numpy as np  # type: ignore
-import pytest  # type: ignore
+import pytest
 
 from ladim2.state import State
 
@@ -36,7 +36,7 @@ def test_init_args():
         default_values=dict(age=0, stage=1),
     )
     assert "age" in S.instance_variables
-    assert S.age.dtype == np.float
+    assert S.age.dtype == float
     assert S.default_values["age"] == 0
     assert S.stage.dtype == int
     assert S.particle_variables == {"release_time"}

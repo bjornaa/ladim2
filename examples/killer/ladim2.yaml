@@ -25,7 +25,7 @@ state:
 ibm:
     module: killer_ibm
     #variables: [age]
-    lifetime: 1   # Life time of particles in days
+    lifetime: 1   # Life time of particles in day
 
 tracker:
     advection: EF

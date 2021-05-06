@@ -30,7 +30,7 @@ def test_init():
     # t = TimeKeeper(start_time, stop_time, dt=datetime.timedelta(seconds=3600))
     # assert t.dt == 3600
     t = TimeKeeper(start_time, stop_time, dt=np.timedelta64(1, "h"))
-    assert t.dt / np.timedelta64(1, "s") == 3600
+    assert t.dt / np.timedelta64(1, "m") == 60
     assert t.dtsec == 3600
 
     # dt as yaml-type timedeltas
