@@ -74,7 +74,7 @@ def test_output_init():
     # Check some attributes
     assert out.filename == NCFILE
     assert set(out.instance_variables) == {"pid", "X"}
-    assert out.output_period_steps == 24  # 12 h / 0.5 h
+    assert out.output_period_step == 24  # 12 h / 0.5 h
     out.close()
     NCFILE.unlink()
 

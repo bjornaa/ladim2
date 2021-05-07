@@ -12,13 +12,15 @@ import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
 
-# from typing import Tuple
-# import numpy as np  # type: ignore
+import numpy as np  # type: ignore
+
 from .state import State
 
 
 class BaseOutput(ABC):
     """Abstract base class for LADiM forcing"""
+
+    output_period: np.timedelta64(0, 's')
 
     @abstractmethod
     def write(self, state: State) -> None:
@@ -27,6 +29,12 @@ class BaseOutput(ABC):
     @abstractmethod
     def write_particle_variables(self, state: State) -> None:
         pass
+
+    @abstractmethod
+    def close(self) -> None:
+        """Close (last) output file"""
+
+
 
 
 def init_output(**args) -> BaseOutput:

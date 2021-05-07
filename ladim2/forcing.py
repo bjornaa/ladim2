@@ -33,11 +33,13 @@ class BaseForce(ABC):
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
+    @abstractmethod
+    def close(self) -> None:
+        """Close the (last) forcing file"""
 
-def init_force(**args) -> BaseForce:
 
-    args = args.copy()
-    module = args.pop("module")
+def init_force(module, **args) -> BaseForce:
+
 
     # System path for ladim2.ladim2
     p = Path(__file__).parent

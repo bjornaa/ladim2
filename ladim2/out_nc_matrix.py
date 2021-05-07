@@ -74,7 +74,7 @@ class Output(BaseOutput):
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
-        self.output_period_steps = self.output_period // timer.dt
+        self.output_period_step = self.output_period // timer.dt
         if timer.time_reversal:
             self.output_period = -self.output_period
 

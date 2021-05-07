@@ -96,7 +96,7 @@ class TimeKeeper:
         logger.info(f"  Time step: {str(self.dt)}")
 
         # Number of time steps (excluding initial)
-        self.Nsteps = abs(duration) // self.dt
+        self.Nsteps = int(abs(duration) // self.dt)
         self.simulation_time = self.Nsteps * self.dt
         logger.info(f"  Length of  simulation: {duration2iso(duration)}")
         logger.info(f"  Number of time steps: {self.Nsteps}")
