@@ -30,6 +30,7 @@ if DEBUG:
 # Define some types
 Scalar = Number
 Arraylike = Union[np.ndarray, Sequence[Scalar], Scalar]
+Dtype = Union[type, np.dtype]
 
 # State has no internal difference between particle and instance variable.
 # With append also particle variables needs a value
@@ -100,14 +101,14 @@ class State(Sized):
         # Explicitly set instance variables override the defaults
         ivar = dict(mandatory_variables, **ivar)
         self.instance_variables = set(ivar)
-        logger.info(f"  Instance variables: {list(ivar)}")
+        logger.info("  Instance variables: %s", list(ivar))
 
         pvar = particle_variables if particle_variables else dict()
         self.particle_variables = set(pvar)
-        logger.info(f"  Particle variables: {list(pvar)}")
+        logger.info("  Particle variables: %s", list(pvar))
 
         # Raises TypeError if overlap
-        self.dtypes = dict(**ivar, **pvar)
+        self.dtypes: Dict[str, Dtype] = dict(**ivar, **pvar)
         # expand aliases (presently only "time")
         for var in self.dtypes:
             if self.dtypes[var] == "time":
@@ -166,7 +167,7 @@ class State(Sized):
         # if b.ndim == 0:  # All arguments are scalar
         #    b = np.broadcast([0])  # Make b.size = 1
         num_new_particles = b.size
-        logger.debug(f"Appending {num_new_particles} particles")
+        logger.debug("Appending %d particles", num_new_particles)
         values = {
             var: np.broadcast_to(v, shape=(num_new_particles,))
             for var, v in value_vars.items()
@@ -192,7 +193,7 @@ class State(Sized):
         n_alive = sum(self.variables["alive"])
         n_remove = n_particles - n_alive
         if n_remove > 0:
-            logger.debug(f"Compactifying: removing {n_remove} particles")
+            logger.debug("Compactifying: removing %d particles", n_remove)
             # Take a copy, so that variables["alive"] can be compactified
             alive = self.alive.copy()
             for var in self.instance_variables:

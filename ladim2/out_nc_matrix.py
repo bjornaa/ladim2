@@ -14,6 +14,7 @@
 import re
 from pathlib import Path
 from datetime import date
+import logging
 from typing import Dict, Union, Optional, Sequence, Any, Generator
 
 import numpy as np  # type: ignore
@@ -26,9 +27,10 @@ from ladim2.output import BaseOutput
 
 Variable = Dict[str, Any]
 
-
-def init_output(**args) -> BaseOutput:
-    return Output(**args)
+DEBUG = False
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class Output(BaseOutput):

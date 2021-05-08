@@ -1,15 +1,4 @@
-"""Particle release class"""
-
-# -------------------
-# release.py
-# part of LADiM
-# --------------------
-
-# ----------------------------------
-# Bjørn Ådlandsvik <bjorn@imr.no>
-# Institute of Marine Research
-# Bergen, Norway
-# ----------------------------------
+"""Particle release module for LADiM"""
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -20,10 +9,15 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from netCDF4 import Dataset
 
-from .timekeeper import TimeKeeper, normalize_period
-from .grid import BaseGrid
+from ladim2.timekeeper import TimeKeeper, normalize_period
+from ladim2.grid import BaseGrid
 
-# from .utilities import ingrid
+
+# ----------------------------------
+# Bjørn Ådlandsvik <bjorn@imr.no>
+# Institute of Marine Research
+# Bergen, Norway
+# ----------------------------------
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -42,7 +36,7 @@ class ParticleReleaser(Iterator):
         names: Optional[List[str]] = None,
         grid: Optional[BaseGrid] = None,
         continuous: Optional[bool] = False,
-        release_frequency: Optional[int] = 0,  # frequency in seconds
+        release_frequency: int = 0,  # frequency in seconds
         warm_start_file: Optional[str] = None,
         **args,
     ) -> None:
@@ -58,7 +52,7 @@ class ParticleReleaser(Iterator):
             logger.info("  Continuous release")
         else:
             logger.info("  Discrete release")
-        logger.info(f"  Release file: {release_file}")
+        logger.info("  Release file: %s", release_file)
 
         # If no mult column, add a column of ones
         if "mult" not in self._df.columns:
@@ -118,7 +112,7 @@ class ParticleReleaser(Iterator):
             # Get particle data from  warm start file
             with Dataset(warm_start_file) as f:
                 warm_particle_count = np.max(f.variables["pid"][:]) + 1
-            logger.info(f"  warm_particle_count: {warm_particle_count}")
+            logger.info("  warm_particle_count: %d", warm_particle_count)
         #         for name in config["particle_variables"]:
         #             pvars[name] = f.variables[name][:warm_particle_count]
         else:  # cold start
@@ -126,12 +120,12 @@ class ParticleReleaser(Iterator):
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum() + warm_particle_count
-        logger.info(f"  Total particle count: {self.total_particle_count}")
+        logger.info("  Total particle count: %d, self.total_particle_count")
 
         # Release times
         self.times = self._df.index.unique()
         self.steps = [timer.time2step(t) for t in self.times]
-        logger.info(f"  Number of release times = {len(self.times)}")
+        logger.info("  Number of release times: %d", len(self.times))
 
         # Make dataframes for each timeframe
         self._B = [x[1] for x in self._df.groupby(self._df.index)]
@@ -177,7 +171,7 @@ class ParticleReleaser(Iterator):
         self._index += 1
         self._particle_count += len(V)
 
-        logger.debug(f"Appending {len(V)} new particles")
+        logger.debug("Appending %d new particles", len(V))
 
         return V
 
@@ -198,12 +192,12 @@ class ParticleReleaser(Iterator):
             else:
                 dtypes[var] = dtype
         # Standard dtypes
-        dtypes['mult'] = int
-        dtypes['X'] = float
-        dtypes['Y'] = float
-        dtypes['Z'] = float
-        dtypes['lon'] = float
-        dtypes['lat'] = float
+        dtypes["mult"] = int
+        dtypes["X"] = float
+        dtypes["Y"] = float
+        dtypes["Z"] = float
+        dtypes["lon"] = float
+        dtypes["lat"] = float
 
         df = pd.read_csv(
             rls_file,
@@ -227,7 +221,7 @@ class ParticleReleaser(Iterator):
         # Conversion from longitude, latitude to grid coordinates
         if "X" not in df.columns or "Y" not in df.columns:
             if "lon" not in df.columns or "lat" not in df.columns:
-                logger.critical("Particle release must include a position")
+                logger.critical("Particle release must include position")
                 raise SystemExit(3)
             try:
                 X, Y = grid.ll2xy(df["lon"], df["lat"])  # type: ignore
@@ -265,20 +259,7 @@ class ParticleReleaser(Iterator):
         else:
             df = df[df.index <= release_time0]
 
-        # Find first effective release time
-        # i.e. the last time <= start_time
-        #   and remove too early releases
-        # Can be moved out of if-block?
-        # n = np.sum(df.index <= self.start_time)
-        # if n == 0:
-        #    logger.warning("No particles released at simulation start")
-        #    n = 1
-
         file_times = df.index.unique()
-
-        # time0 = file_times[0]
-        # time1 = stop_time
-        # times = np.arange(time0, time1, release_frequency)
 
         if not self.time_reversal:
             freq = self.release_frequency

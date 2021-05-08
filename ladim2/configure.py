@@ -14,12 +14,12 @@ with compability wrapper for LADiM version 1 configuration
 import sys
 from pathlib import Path
 import logging
+from typing import Union, Dict, Any
 
 import numpy as np
-from netCDF4 import Dataset, num2date
-
-from typing import Union, Dict, Any
+from netCDF4 import Dataset, num2date  # type: ignore
 import yaml
+
 
 # from .timekeeper import normalize_period
 
@@ -29,23 +29,46 @@ if DEBUG:
     logger.setLevel(logging.DEBUG)
 
 
-def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
-    """Main configuration function"""
+def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]:
+    """Main configuration function of LADiM
+
+    Args:
+        config_file:
+            Name of configuration file
+        version:
+            configuration format version,
+                = 1 for LADiM version 1.x
+                = 2 for LADiM version 2.x
+
+    Returns:
+        2-level configuration dictionary
+
+    """
 
     logger.info("Configuration")
-    logger.info(f"  Configuration file: {config_file}")
+    logger.info("  Configuration file %s:", config_file)
 
-    with open(config_file) as fid:
-        config: Dict[str, Any] = yaml.safe_load(fid)
+    if not Path(config_file).exists():
+        logger.critical("No configuration file %s:", config_file)
+        raise SystemExit(3)
 
-    # Assume version >= 2 has explicit version tag
-    # Consider alternative: using ladim2 -v1 xxx.yaml
-    version = config.get("version", 1)
-    logger.info(f"  Configuration file version: {version}")
+    try:
+        with open(config_file) as fid:
+            config: Dict[str, Any] = yaml.safe_load(fid)
+    except yaml.parser.ParserError:
+        logger.critical("Not a valid yaml file: %s", config_file)
+        raise SystemExit(3)
+
+    logger.info("  Configuration file version: %s", version)
 
     # Try old configure version
     if version == 1:
-        config = configure_v1(config)
+        if config.get("version", None) == 2:
+            logger.warning("Configuration format mismatch")
+            logger.warning("Trying version 1 as requested by command line")
+            config = configure_v1(config)
+    elif version != 2:
+        logger.warning("Configuration version should be 1 or 2, trying version 2")
 
     # Some sections may be missing
     if "state" not in config:
@@ -62,7 +85,7 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
     # Use time step from time
     config["tracker"]["dt"] = config["time"]["dt"]
 
-    # If missing grid["filename"] use forcing["filename"]
+    # If grid["filename"] is missing, use forcing["filename"]
     if "module" not in config["grid"]:
         config["grid"]["module"] = config["forcing"]["module"]
     if "filename" not in config["grid"]:
@@ -80,14 +103,14 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
         try:
             nc = Dataset(warm_start_file)
         except (FileNotFoundError, OSError):
-            # logging.error(f"Could not open warm start file,{warm_start_file}")
+            logging.critical("Could not open warm start file:%s", warm_start_file)
             raise SystemExit(1)
         tvar = nc.variables["time"]
         # Use last record in restart file
         warm_start_time = np.datetime64(num2date(tvar[-1], tvar.units))
         warm_start_time = warm_start_time.astype("M8[s]")
         config["time"]["start"] = warm_start_time
-        # logging.info(f"    Warm start at {warm_start_time}")
+        logging.info("    Warm start at %s", warm_start_time)
 
         if "variables" not in config["warm_start"]:
             config["warm_start"]["variables"] = []
@@ -113,48 +136,45 @@ def configure(config_file: Union[Path, str]) -> Dict[str, Any]:
 
 
 def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Convert version 1 configuration file
+    """Tries to read version 1 configuration files
 
-    It is possible to have configuration files that works with both ladim1 and ladim2.
-    Unfortunately, it is also possible to have configuration files that works with
-    ladim1 and not ladim2.
-    Ordinary use cases at IMR should work
+    This function may fail for valid configuration files for LADiM version 1.
+    Ordinary use cases at IMR should work.
 
     """
 
-    conf: Dict[str, Any] = dict()  # output version 2 configuration
-    # conf["version"] = 1.0
+    conf2: Dict[str, Any] = dict()  # output version 2 configuration
 
     # time
-    conf["time"] = dict(
+    conf2["time"] = dict(
         start=config["time_control"]["start_time"],
         stop=config["time_control"]["stop_time"],
         dt=config["numerics"]["dt"],
     )
     if "reference_time" in config["time_control"]:
-        conf["time"]["reference"] = config["time_control"]["reference_time"]
+        conf2["time"]["reference"] = config["time_control"]["reference_time"]
 
     # grid and forcing
-    conf["grid"] = dict()
-    conf["forcing"] = dict()
+    conf2["grid"] = dict()
+    conf2["forcing"] = dict()
     if "ladim.gridforce.ROMS" in config["gridforce"]["module"]:
-        conf["grid"]["module"] = "ladim2.ROMS"
+        conf2["grid"]["module"] = "ladim2.ROMS"
         if "gridfile" in config["gridforce"]:
-            conf["grid"]["filename"] = config["gridforce"]["gridfile"]
+            conf2["grid"]["filename"] = config["gridforce"]["gridfile"]
         elif "gridfile" in config["files"]:
-            conf["grid"]["filename"] = config["files"]["gridfile"]
-        conf["forcing"]["module"] = "ladim2.ROMS"
+            conf2["grid"]["filename"] = config["files"]["gridfile"]
+        conf2["forcing"]["module"] = "ladim2.ROMS"
         if "input_file" in config["gridforce"]:
-            conf["forcing"]["filename"] = config["gridforce"]["input_file"]
+            conf2["forcing"]["filename"] = config["gridforce"]["input_file"]
         elif "input_file" in config["files"]:
-            conf["forcing"]["filename"] = config["files"]["input_file"]
+            conf2["forcing"]["filename"] = config["files"]["input_file"]
     if "subgrid" in config["gridforce"]:
-        conf["grid"]["subgrid"] = config["gridforce"]["subgrid"]
+        conf2["grid"]["subgrid"] = config["gridforce"]["subgrid"]
     if "ibm_forcing" in config["gridforce"]:
-        conf["forcing"]["ibm_forcing"] = config["gridforce"]["ibm_forcing"]
+        conf2["forcing"]["ibm_forcing"] = config["gridforce"]["ibm_forcing"]
 
     # state
-    conf["state"] = dict()
+    conf2["state"] = dict()
     instance_variables = dict()
     particle_variables = dict()
     if "ibm" in config and "variables" in config["ibm"]:
@@ -168,40 +188,40 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
             and var in config["particle_release"]["particle_variables"]
         ):
             particle_variables[var] = config["particle_release"].get(var, "float")
-    conf["state"]["instance_variables"] = instance_variables
-    conf["state"]["particle_variables"] = particle_variables
-    conf["state"]["default_values"] = dict()
-    for var in conf["state"]["instance_variables"]:
-        conf["state"]["default_values"][var] = 0
+    conf2["state"]["instance_variables"] = instance_variables
+    conf2["state"]["particle_variables"] = particle_variables
+    conf2["state"]["default_values"] = dict()
+    for var in conf2["state"]["instance_variables"]:
+        conf2["state"]["default_values"][var] = 0
 
     # tracker
-    conf["tracker"] = dict(advection=config["numerics"]["advection"])
+    conf2["tracker"] = dict(advection=config["numerics"]["advection"])
     if config["numerics"]["diffusion"]:
-        conf["tracker"]["diffusion"] = config["numerics"]["diffusion"]
+        conf2["tracker"]["diffusion"] = config["numerics"]["diffusion"]
 
     # release
-    conf["release"] = dict(
+    conf2["release"] = dict(
         release_file=config["files"]["particle_release_file"],
         names=config["particle_release"]["variables"],
     )
     if "release_type" in config["particle_release"]:
         if config["particle_release"]["release_type"] == "continuous":
-            conf["release"]["continuous"] = True
-            conf["release"]["release_frequency"] = config["particle_release"][
+            conf2["release"]["continuous"] = True
+            conf2["release"]["release_frequency"] = config["particle_release"][
                 "release_frequency"
             ]
     # ibm
     if "ibm" in config:
-        conf["ibm"] = dict()
+        conf2["ibm"] = dict()
         for var in config["ibm"]:
             if var == "ibm_module":
-                conf["ibm"]["module"] = config["ibm"][var]
+                conf2["ibm"]["module"] = config["ibm"][var]
                 continue
             if var != "variables":
-                conf["ibm"][var] = config["ibm"][var]
+                conf2["ibm"][var] = config["ibm"][var]
 
     # output
-    conf["output"] = dict(
+    conf2["output"] = dict(
         filename=config["files"]["output_file"],
         output_period=config["output_variables"]["outper"],
         instance_variables=dict(),
@@ -211,18 +231,18 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
         ),
     )
     for var in config["output_variables"]["instance"]:
-        conf["output"]["instance_variables"][var] = dict()
+        conf2["output"]["instance_variables"][var] = dict()
         D = config["output_variables"][var].copy()
-        conf["output"]["instance_variables"][var]["encoding"] = dict(
+        conf2["output"]["instance_variables"][var]["encoding"] = dict(
             datatype=D.pop("ncformat")
         )
-        conf["output"]["instance_variables"][var]["attributes"] = D
+        conf2["output"]["instance_variables"][var]["attributes"] = D
     for var in config["output_variables"]["particle"]:
-        conf["output"]["particle_variables"][var] = dict()
+        conf2["output"]["particle_variables"][var] = dict()
         D = config["output_variables"][var].copy()
-        conf["output"]["particle_variables"][var]["encoding"] = dict(
+        conf2["output"]["particle_variables"][var]["encoding"] = dict(
             datatype=D.pop("ncformat")
         )
-        conf["output"]["particle_variables"][var]["attributes"] = D
+        conf2["output"]["particle_variables"][var]["attributes"] = D
 
-    return conf
+    return conf2

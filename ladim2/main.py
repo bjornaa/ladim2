@@ -13,11 +13,16 @@ from typing import Union
 from ladim2 import __version__, __file__
 from ladim2.configure import configure
 from ladim2.model import Model
+
 # from ladim2.warm_start import warm_start
 from ladim2.timekeeper import duration2iso
 
 
-def main(configuration_file: Union[Path, str], loglevel: int = logging.INFO) -> None:
+def main(
+    configuration_file: Union[Path, str],
+    loglevel: int = logging.INFO,
+    config_version: int = 2,
+) -> None:
     """Main function for LADiM
 
     args:
@@ -63,7 +68,7 @@ def main(configuration_file: Union[Path, str], loglevel: int = logging.INFO) -> 
     # Configuration
     # ----------------
 
-    config = configure(configuration_file)
+    config = configure(configuration_file, config_version)
 
     # -------------------
     # Initialization
@@ -77,11 +82,6 @@ def main(configuration_file: Union[Path, str], loglevel: int = logging.INFO) -> 
     # --------------------------
 
     logger.debug("Initial particle release")
-
-    # Warm start?
-    # if config["warm_start"]:
-    #    D = config["warm_start"]
-    #    warm_start(D["filename"], D["variables"], model.state)
 
     # --------------
     # Time loop
@@ -113,9 +113,9 @@ def script():
         description="LADiM 2.0 — Lagrangian Advection and Diffusion Model"
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Show more information",
+        "-d",
+        "--debug",
+        help="Show debug information",
         action="store_const",
         dest="loglevel",
         const=logging.DEBUG,
@@ -130,13 +130,20 @@ def script():
         const=logging.WARNING,
         default=logging.INFO,
     )
-    parser.add_argument("config_file", nargs="?", default="ladim2.yaml")
+    parser.add_argument(
+        "-v", "--version", help="Configuration format version", type=int, default=2
+    )
+    parser.add_argument(
+        "config_file", nargs="?", help="Configuration file", default="ladim2.yaml"
+    )
 
     args = parser.parse_args()
 
     # Start up message
+    print("")
     print(" ========================================================")
     print(" === LADiM – Lagrangian Advection and Diffusion Model ===")
-    print(" ========================================================\n")
+    print(" ========================================================")
+    print("")
 
-    main(args.config_file, loglevel=args.loglevel)
+    main(args.config_file, loglevel=args.loglevel, config_version=args.version)

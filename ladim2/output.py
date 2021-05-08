@@ -12,7 +12,7 @@ import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
 
-import numpy as np  # type: ignore
+import numpy as np
 
 from .state import State
 
@@ -20,28 +20,37 @@ from .state import State
 class BaseOutput(ABC):
     """Abstract base class for LADiM forcing"""
 
-    output_period: np.timedelta64(0, 's')
+    output_period = np.timedelta64(0, "s")
 
     @abstractmethod
     def write(self, state: State) -> None:
-        pass
+        """Write data from instance variables to output file"""
 
     @abstractmethod
     def write_particle_variables(self, state: State) -> None:
-        pass
+        """Write data from particle variables to output file"""
 
     @abstractmethod
     def close(self) -> None:
         """Close (last) output file"""
 
 
+def init_output(module, **args) -> BaseOutput:
+    """Initiates an Output class
 
+    Args:
+        module:
+            Name of the module defining the Output class
+        args:
+            Keyword arguments passed on to the Output instance
 
-def init_output(**args) -> BaseOutput:
+    Returns:
+        An Output instance
 
-    args = args.copy()
-    module = args.pop("module")
-
+    The module should be in the LADiM source directory or in the working directory.
+    The working directory takes priority.
+    The Forcing class in the module should be named "Output".
+    """
     # System path for ladim2.ladim2
     p = Path(__file__).parent
     sys.path.insert(0, str(p))
@@ -50,4 +59,4 @@ def init_output(**args) -> BaseOutput:
 
     # Import correct module
     output_module = importlib.import_module(module)
-    return output_module.init_output(**args)  # type: ignore
+    return output_module.Output(**args)  # type: ignore

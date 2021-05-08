@@ -1,3 +1,6 @@
+"""Abstract base class for LADiM grid"""
+
+
 import sys
 import os
 from pathlib import Path
@@ -9,29 +12,42 @@ import numpy as np  # type: ignore
 
 
 class BaseGrid(ABC):
+    """Abstract Base Class for LADiM grid"""
 
-    xmin: float = 4
+    xmin: float
     xmax: float
     ymin: float
     ymax: float
 
     @abstractmethod
     def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        pass
+        """Estimates grid spacing at particle positions"""
 
     @abstractmethod
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
-        pass
+        """Tests if particles are inside the grid"""
 
     @abstractmethod
     def atsea(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
-        pass
+        """Tests if particles are at sea"""
 
 
-def init_grid(**args) -> BaseGrid:
+def init_grid(module, **args) -> BaseGrid:
+    """Creates an instance of the Grid class
 
-    args = args.copy()
-    module = args.pop("module")
+    Args:
+        module:
+            Name of the module defining the Grid class
+        args:
+            Keyword arguments passed on to the Grid instance
+
+    Returns:
+        A Gridinstance
+
+    The module should be in the LADiM source directory or in the working directory.
+    The working directory takes priority.
+    The Grid class in the module should be named "Forcing".
+    """
 
     # System path for ladim2.ladim2
     p = Path(__file__).parent

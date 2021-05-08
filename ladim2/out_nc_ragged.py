@@ -1,16 +1,6 @@
-# Trenger:
-#
-# time_keeper
-# output_period
-#   kan beregne num_output
-# numrec = number of records per file
-# nparticles
-# ncargs: generelt, noe per variabel også?
-#    Kalt encoding, bruke ncargs per variabal
-#    og global_ncargs analogt med ncattrs
+"""Output module for NetCDF contiguous ragged array"""
 
 
-# import os
 import re
 from pathlib import Path
 from datetime import date
@@ -27,11 +17,10 @@ from ladim2.output import BaseOutput
 
 Variable = Dict[str, Any]
 
+DEBUG = False
 logger = logging.getLogger(__name__)
-
-
-def init_output(**args) -> BaseOutput:
-    return Output(**args)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class Output(BaseOutput):
@@ -62,9 +51,9 @@ class Output(BaseOutput):
         self.instance_variables = instance_variables
         self.particle_variables = particle_variables if particle_variables else dict()
 
-        logger.info(f"  Filename: {filename}")
-        logger.info(f"  Instance variables: {list(instance_variables)}")
-        logger.info(f"  Particle variables: {list(self.particle_variables)}")
+        logger.info("  Filename: %s", filename)
+        logger.info("  Instance variables: %s", list(instance_variables))
+        logger.info("  Particle variables: %s", list(self.particle_variables))
 
         self.skip_initial = skip_initial
         if skip_initial:
@@ -86,14 +75,14 @@ class Output(BaseOutput):
         self.output_period_step = self.output_period // timer.dt
         if timer.time_reversal:
             self.output_period = -self.output_period
-        logger.info(f"  Output period: {str(self.output_period)}")
+        logger.info("  Output period: %s", str(self.output_period))
 
-        self.num_records = abs(
-            (timer.stop_time - timer.start_time) // self.output_period
+        self.num_records = int(
+            abs((timer.stop_time - timer.start_time) // self.output_period)
         )
         if not skip_initial:  # Add an initial record
             self.num_records += 1
-        logger.info(f"  Number of records: {self.num_records}")
+        logger.info("  Number of records: %s", self.num_records)
 
         if self.numrec:
             self.multifile = True
@@ -128,9 +117,13 @@ class Output(BaseOutput):
                 self.xy2ll = lambda x, y: (x, y)
 
     def create_netcdf(self) -> Dataset:
-        """Create a LADiM output netCDF file"""
+        """Create a LADiM output netCDF file
 
-        logging.debug(f"Creating new output file: {self.filename}")
+        Returns:
+            An open NetCDF Dataset
+        """
+
+        logging.debug("Creating new output file: %s", self.filename)
 
         # Handle netcdf args
         ncargs = self.ncargs
@@ -208,8 +201,6 @@ class Output(BaseOutput):
         start = self.local_instance_count
         end = start + count
 
-        # rec_count = self.record_count % self.numrec  # record count *in* the file
-
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
         self.nc.variables["particle_count"][self.local_record_count] = count
 
@@ -229,7 +220,7 @@ class Output(BaseOutput):
         self.record_count += 1
         self.local_instance_count += count
         self.local_record_count += 1
-        self.nctime += self.output_period / np.timedelta64(1, self.time_unit)
+        self.nctime += float(self.output_period / np.timedelta64(1, self.time_unit))
 
         # File finished? (beregn fra rec_count)
         if self.local_record_count == self.local_num_records:
@@ -243,8 +234,12 @@ class Output(BaseOutput):
                 self.local_record_count = 0
 
     def write_particle_variables(self, state: State) -> None:
-        """Write all output particle variables"""
-        npart = state.pid.max() + 1  # Total number of particles so far
+        """Write all output particle variables
+
+        Args:
+            state: A Ladim State instance
+        """
+        npart = int(state.pid.max()) + 1  # Total number of particles so far
         for var in self.particle_variables:
             if state.dtypes[var] == np.dtype("datetime64[s]"):
                 unit = self.time_unit
@@ -260,12 +255,16 @@ class Output(BaseOutput):
 def fname_gnrt(filename: Path) -> Generator[Path, None, None]:
     """Generate file names based on prototype
 
+    Args:
+        filename: File name root
+    Yields:
+        Sequence of numbered file names
+
     Examples:
     output/cake.nc -> output/cake_000.nc, output/cake_001.nc, ...
     cake_04.nc -> cake_04.nc, cake_05.nc, ....
     """
 
-    # fname0, ext = splitext(filename)
     stem = filename.stem  # filename without parent and extension
     pattern = r"_(\d+)$"  # _digits at end of string
     m = re.search(pattern, stem)

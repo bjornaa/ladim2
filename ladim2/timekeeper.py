@@ -70,8 +70,8 @@ class TimeKeeper:
         self.stop_time = np.datetime64(stop, "s")
         self.time_reversal = time_reversal
         self.time = self.start_time  # Running clock
-        logger.info(f"  Model start time: {self.start_time}")
-        logger.info(f"  Model stop time:  {self.stop_time}")
+        logger.info("  Model start time: %s", self.start_time)
+        logger.info("  Model stop time: %s", self.stop_time)
 
         # Quality control
         duration = self.stop_time - self.start_time
@@ -89,17 +89,17 @@ class TimeKeeper:
             self.reference_time = np.datetime64(reference, "s")
         else:
             self.reference_time = self.min_time
-        logger.info(f"  Reference time:   {self.reference_time}")
+        logger.info("  Reference time: %s", self.reference_time)
 
         self.dt = normalize_period(dt)  # np.timedelta64(-,"s")
         self.dtsec = self.dt / np.timedelta64(1, "s")  # seconds
-        logger.info(f"  Time step: {str(self.dt)}")
+        logger.info("  Time step: %s", self.dt)
 
         # Number of time steps (excluding initial)
         self.Nsteps = int(abs(duration) // self.dt)
         self.simulation_time = self.Nsteps * self.dt
-        logger.info(f"  Length of  simulation: {duration2iso(duration)}")
-        logger.info(f"  Number of time steps: {self.Nsteps}")
+        logger.info("  Length of  simulation: %d", duration2iso(duration))
+        logger.info("  Number of time steps: %d", self.Nsteps)
 
     def update(self) -> None:
         """Update the clock"""
@@ -115,7 +115,7 @@ class TimeKeeper:
     def nctime(self, unit: str = "s") -> float:
         """Get float value of model time"""
         delta = self.time - self.reference_time
-        return delta / np.timedelta64(1, unit)
+        return float(delta / np.timedelta64(1, unit))
 
     def time2step(self, time_: Time) -> int:
         """Timestep from time
@@ -123,8 +123,8 @@ class TimeKeeper:
         time can be datetime instance or an iso time string
         """
         if self.time_reversal:
-            return (self.start_time - np.datetime64(time_)) // self.dt
-        return (np.datetime64(time_) - self.start_time) // self.dt
+            return int((self.start_time - np.datetime64(time_)) // self.dt)
+        return int((np.datetime64(time_) - self.start_time) // self.dt)
 
     def step2isotime(self, stepnr: int) -> str:
         """Return time in iso 8601 format from a time step number"""
@@ -142,8 +142,7 @@ class TimeKeeper:
             delta = self.start_time - stepnr * self.dt - self.reference_time
         else:
             delta = self.start_time + stepnr * self.dt - self.reference_time
-        value = delta / np.timedelta64(1, unit)
-        return value
+        return float(delta / np.timedelta64(1, unit))
 
     def cf_units(self, unit="s"):
         """Return string with units for time following the CF standard"""
@@ -153,9 +152,9 @@ class TimeKeeper:
 def duration2iso(duration: Union[datetime.timedelta, np.timedelta64]) -> str:
     """Convert time delta to ISO 8601 format"""
     if isinstance(duration, np.timedelta64):
-        seconds = int(round(duration / np.timedelta64(1, "s")))
+        seconds = int(duration / np.timedelta64(1, "s") + 0.5)
     else:
-        seconds = int(round(duration.total_seconds()))
+        seconds = int(duration.total_seconds() + 0.5)
 
     if not seconds:  # zero duration
         return "PT0S"
@@ -163,10 +162,10 @@ def duration2iso(duration: Union[datetime.timedelta, np.timedelta64]) -> str:
     days, sec = divmod(seconds, 86400)
     T = "T" if sec else ""
     hours, sec = divmod(sec, 3600)
-    min, sec = divmod(sec, 60)
+    min_, sec = divmod(sec, 60)
     daystr = f"{days:d}D" if days else ""
     hourstr = f"{hours:d}H" if hours else ""
-    minstr = f"{min:d}M" if min else ""
+    minstr = f"{min_:d}M" if min_ else ""
     secstr = f"{sec:d}S" if sec else ""
     if duration:
         return "".join(("P", daystr, T, hourstr, minstr, secstr))
@@ -191,8 +190,8 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
         value, unit = per
         try:
             return np.timedelta64(np.timedelta64(value, unit), "s")
-        except (TypeError, ValueError):
-            raise ValueError(f"{per} is not a valid time period")
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{per} is not a valid time period") from exc
 
     if isinstance(per, str):  # ISO 8601 standard PTxHyMzS
         pattern = r"^PT(\d+H)?(\d+M)?(\d+S)?$"

@@ -9,6 +9,7 @@ import importlib
 
 class BaseIBM(ABC):
     """Base class for Individual Based Model"""
+
     @abstractmethod
     def update(self) -> None:
         """Updates the IBM to the next time step"""
@@ -23,7 +24,9 @@ def init_IBM(module, **args) -> BaseIBM:
         args:
             Keyword arguments passed on to the IBM
 
-    The module should be in the "ibm" directory of LADiM or in the working directory.
+    Returns:
+        An IBNM instance
+
     The working directory takes priority.
     The IBM class in the module should be named "IBM".
     """
