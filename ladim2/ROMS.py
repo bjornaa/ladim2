@@ -16,7 +16,7 @@ from typing import Union, Optional, List, Tuple, Dict
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
-import numba
+import numba  # type: ignore
 
 
 from ladim2.grid import BaseGrid
@@ -37,10 +37,6 @@ numba_logger.setLevel(logging.WARNING)
 # ---------------------------
 # Grid class
 # ---------------------------
-
-
-def init_grid(**args) -> BaseGrid:
-    return Grid(**args)
 
 
 class Grid(BaseGrid):
@@ -65,12 +61,12 @@ class Grid(BaseGrid):
     ) -> None:
 
         logger.info("Initiating grid")
-        logger.info(f"  Grid file: {filename}")
+        logger.info("  Grid file: %s", filename)
 
         try:
             ncid = Dataset(filename)
         except OSError:
-            logger.critical(f"Could not open grid file {filename}")
+            logger.critical("Could not open grid file %s", filename)
             raise SystemExit(1)
         ncid.set_auto_maskandscale(False)
 
@@ -91,14 +87,14 @@ class Grid(BaseGrid):
         if (not 1 <= limits[0] < limits[1] <= imax0 - 1) or (
             not 1 <= limits[2] < limits[3] <= jmax0 - 1
         ):
-            logger.critical(f"Illegal subgrid specification: {limits}")
+            logger.critical("Illegal subgrid specification: %s", limits)
             raise SystemExit(1)
 
         self.i0, self.i1, self.j0, self.j1 = limits
         self.imax = self.i1 - self.i0
         self.jmax = self.j1 - self.j0
         if subgrid:
-            logger.info(f"  Subgrid: {self.i0}, {self.i1}, {self.j0}, {self.j1}")
+            logger.info("  Subgrid: %d, %d, %d, %d", self.i0, self.i1, self.j0, self.j1)
 
         # Limits for where velocities are defined
         self.xmin = float(self.i0)
@@ -231,18 +227,20 @@ class Grid(BaseGrid):
 
     # Error if point outside
     def atsea(self, X, Y):
-        """Returns True for points at sea"""
+        """Returns True for particles at sea"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         return self.M[J, I] > 0
 
     def xy2ll(self, X, Y):
+        """Converts particle positions from grid coordinates to longitude/latitude"""
         return (
             sample2D(self.lon, X - self.i0, Y - self.j0),
             sample2D(self.lat, X - self.i0, Y - self.j0),
         )
 
     def ll2xy(self, lon, lat):
+        """Converts particle positions from longitude/latitude to grid coordinates"""
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
         return X + self.i0, Y + self.j0
 
@@ -252,18 +250,24 @@ class Grid(BaseGrid):
 # ------------------------------------------------
 
 
-def s_stretch(N, theta_s, theta_b, stagger="rho", Vstretching=1):
-    """Compute a s-level stretching array
+def s_stretch(
+    N: int, theta_s: float, theta_b: float, stagger: str = "rho", Vstretching: int = 1
+):
+    """Computes the ROMS s-level stretching array
 
-    *N* : Number of vertical levels
-
-    *theta_s* : Surface stretching factor
-
-    *theta_b* : Bottom stretching factor
-
-    *stagger* : "rho"|"w"
-
-    *Vstretching* : 1|2|4
+    Args:
+        N:
+            The mumber of vertical levels
+        theta_s:
+            ROMS surface stretching factor
+        theta_b:
+            ROMS bottom stretching factor
+        stagger: "rho"|"w"
+            Choose "rho" or "w" points in the vertical staggering
+        Vstretching: 1|2|4
+            ROMS vertical stretching parameter
+    Returns:
+        1D vertical s-level stretching array
 
     """
 
@@ -297,28 +301,27 @@ def s_stretch(N, theta_s, theta_b, stagger="rho", Vstretching=1):
     raise ValueError("Unknown Vstretching")
 
 
-def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
-    """Return depth of rho-points in s-levels
+def sdepth(
+    H: np.ndarray, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
+) -> np.ndarray:
+    """Return depth of grid cells
 
-    *H* : arraylike
-      Bottom depths [meter, positive]
+    Args:
+        H: array of floats
+            Bottom depth
+        Hc:
+            ROMS reference depth
+        C:
+            1D sorted array, -1 <= C[i] < C[i+1] <= 0
+        stagger: "rho"|"w"
+            Choose "rho" or "w" points in the vertical staggering
+        Vtransform: 1|2
+            ROMS vertical s-level transform
+    Returns:
+        z_rho or z_w, depth of rho or w points
+        Array of floats, ndim = H.ndim + 1 and shape = C.shape + H.shape
 
-    *Hc* : scalar
-       Critical depth
-
-    *cs_r* : 1D array
-       s-level stretching curve
-
-    *stagger* : [ 'rho' | 'w' ]
-
-    *Vtransform* : [ 1 | 2 ]
-       defines the transform used, defaults 1 = Song-Haidvogel
-
-    Returns an array with ndim = H.ndim + 1 and
-    shape = cs_r.shape + H.shape with the depths of the
-    mid-points in the s-levels.
-
-    Typical usage::
+    Typical usage:
 
     >>> fid = Dataset(roms_file)
     >>> H = fid.variables['h'][:, :]
@@ -357,10 +360,6 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
 # -----------------------------------
 # Force
 # -----------------------------------
-
-
-def init_force(**args) -> BaseForce:
-    return Forcing(**args)
 
 
 class Forcing(BaseForce):
@@ -409,14 +408,13 @@ class Forcing(BaseForce):
 
         # Input files and times
 
-        logger.info(f"  Forcing file name (pattern): {filename}")
+        logger.info("  Forcing file name (pattern): %s", filename)
         files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
-            logger.error("No input file: {}".format(filename))
+            logger.error("No input file: %s", filename)
             raise SystemExit(3)
-        logger.info("  Number of forcing files = {}".format(numfiles))
-
+        logger.info("  Number of forcing files = %s", numfiles)
         self.files = files
 
         self.time_reversal = timer.time_reversal
@@ -541,7 +539,7 @@ class Forcing(BaseForce):
 
         """Open forcing file and get scaling info given time step"""
 
-        logger.debug(f"Open forcing file: {self.file_idx[time_step]}")
+        logger.debug("Open forcing file: %s", self.file_idx[time_step])
         # Open the correct forcing file
         nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
@@ -679,8 +677,7 @@ class Forcing(BaseForce):
             V = self.fields["v"] + fractional_step * self.fields["dV"]
         if self.time_reversal:
             return sample3DUV(-U, -V, X - i0, Y - j0, self.K, self.A, method=method)
-        else:
-            return sample3DUV(U, V, X - i0, Y - j0, self.K, self.A, method=method)
+        return sample3DUV(U, V, X - i0, Y - j0, self.K, self.A, method=method)
 
     # Simplify to grid cell
     # def field(
@@ -693,6 +690,7 @@ class Forcing(BaseForce):
     #     F = self[name]
     #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
     def field(self, X, Y, Z, name):
+        """Dummy function for backwards compatibility of IBMs"""
         return self.variables[name]
 
 
@@ -707,14 +705,19 @@ def z2s(
     """
     Find s-level and coefficients for vertical interpolation
 
-    input:
-        z_rho  3D array with vertical s-coordinate structure at rho-points
-        X, Y   1D arrays, horizontal position in grid coordinates
-        Z      1D array, particle depth, meters, positive
+    Args:
+        z_rho:  3D float array
+            Vertical s-coordinate structure at rho-points
+        X, Y:   1D float arrays
+            Horizontal position in grid coordinates
+        Z:      1D float array
+            particle depth in meters, positive downwards
 
     Returns
-        K      1D integer array
-        A      1D float array
+        K:      1D integer array
+            Vertical index
+        A:     1D float array
+            Vertical interpolation weight
 
     With:
         1 <= K < kmax = z_rho.shape[0]
@@ -734,9 +737,6 @@ def z2s(
 
     """
 
-    if DEBUG:
-        print("--- z2s")
-
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
     J = np.around(Y).astype("int")
@@ -745,6 +745,7 @@ def z2s(
 
 @numba.njit(parallel=parallel)
 def z2s_kernel(I, J, Z, z_rho):
+    """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
     A = np.ones(N, dtype=np.float64)
@@ -822,7 +823,24 @@ def sample3D(
 
 
 @numba.njit(parallel=parallel)
-def trilinear(F, X, Y, K, A):
+def trilinear(
+    F: np.ndarray, X: np.ndarray, Y: np.ndarray, K: np.ndarray, A: np.ndarray
+) -> np.ndarray:
+    """Performs 3D linear interpolation
+
+    Args:
+        F: 3D array
+            Field to interpolate
+        X, Y: 1D arrays
+            Horizontal particle positions
+        K: 1D integer array
+            Vertical index of particles in s-level structure
+        A: 1D array
+            Vertical interpolation weights
+    Returns:
+        1D array of values of F interpolated to the particle positions
+
+    """
     N = len(X)
     R = np.empty(N, dtype=np.float64)
     for n in numba.prange(N):
@@ -851,6 +869,7 @@ def sample3DUV(
     A: np.ndarray,
     method="bilinear",
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Samples a 3D velocity field"""
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),
         sample3D(V, X, Y + 0.5, K, A, method=method),
@@ -886,12 +905,12 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:
-    all_frames: List of all time frames
+    all_frames: 1D array of all time frames
     num_frames: Mapping: filename -> number of time frames in file
 
     """
     # print("scan starting")
-    all_frames = []  # All time frames
+    frames = []  # Expanding list of all time frames
     num_frames = {}  # Number of time frames in each file
     for fname in files:
         with Dataset(fname) as nc:
@@ -899,19 +918,20 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
             num_frames[fname] = len(new_times)
             units = nc.variables["ocean_time"].units
             new_frames = num2date(new_times, units)
-            all_frames.extend(new_frames)
+            frames.extend(new_frames)
+    all_frames = np.array([np.datetime64(tf) for tf in frames])
 
     # Check that time frames are strictly sorted
-    all_frames = np.array([np.datetime64(tf) for tf in all_frames])
     I = all_frames[1:] <= all_frames[:-1]
     if np.any(I):
-        i = I.nonzero()[0][0] + 1  # Index of first out-of-order frame
+        # Index of first out-of-order frame
+        i = I.nonzero()[0][0] + 1
         oooframe = str(all_frames[i]).split(".")[0]  # Remove microseconds
-        logger.info(f"Time frame {i} = {oooframe} out of order")
+        logger.info("Time frame %d = %s out of order", i, oooframe)
         logger.critical("Forcing time frames not strictly sorted")
         raise SystemExit(4)
 
-    logger.info(f"  Number of available forcing times = {len(all_frames)}")
+    logger.info("  Number of available forcing times = %d", len(all_frames))
     return all_frames, num_frames
 
 
@@ -924,8 +944,8 @@ def forcing_steps(
 
     time0 = all_frames[0].astype("M8[s]")
     time1 = all_frames[-1].astype("M8[s]")
-    logger.info(f"  First forcing time = {time0}")
-    logger.info(f"  Last forcing time = {time1}")
+    logger.info("  First forcing time = %s", time0)
+    logger.info("  Last forcing time = %s", time1)
     # start_time = self.start_time)
     # stop_time = self.stop_time)
     # dt = np.timedelta64(self.timer.dt, "s")

@@ -20,6 +20,10 @@ class BaseGrid(ABC):
     ymax: float
 
     @abstractmethod
+    def depth(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        """Estimates bottom depth at particle positions"""
+
+    @abstractmethod
     def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Estimates grid spacing at particle positions"""
 
@@ -57,4 +61,4 @@ def init_grid(module, **args) -> BaseGrid:
 
     # Import correct module
     grid_module = importlib.import_module(module)
-    return grid_module.init_grid(**args)  # type: ignore
+    return grid_module.Grid(**args)  # type: ignore

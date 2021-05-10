@@ -11,13 +11,15 @@ import os
 import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Dict
 
 import numpy as np  # type: ignore
 
 
 class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
+
+    variables: Dict[str, np.ndarray]
 
     @abstractmethod
     def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
@@ -63,4 +65,4 @@ def init_force(module, **args) -> BaseForce:
 
     # Import correct module
     forcing_module = importlib.import_module(module)
-    return forcing_module.init_force(**args)  # type: ignore
+    return forcing_module.Forcing(**args)  # type: ignore

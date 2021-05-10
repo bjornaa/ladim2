@@ -12,7 +12,7 @@ import logging
 from typing import Tuple
 
 import numpy as np  # type:ignore
-import numba
+import numba  # type: ignore
 
 from .state import State
 from .timekeeper import normalize_period
@@ -26,7 +26,6 @@ PARALLEL = False
 DEBUG = False
 
 logger = logging.getLogger(__name__)
-
 if DEBUG:
     logger.setLevel(logging.DEBUG)
 
@@ -42,7 +41,7 @@ class Tracker:
 
         self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
-        logger.info(f"  Advection method: {advection}")
+        logger.info("  Advection method: %s", advection)
 
         # advect <- requested advection method
         # advection = string "EF", "RK2", "RK4"
@@ -57,12 +56,12 @@ class Tracker:
         self.diffusion = bool(diffusion)
         self.D = diffusion
         if self.diffusion:
-            logger.info(f"  Horizontal diffusion: {diffusion} m²/s")
+            logger.info("  Horizontal diffusion: %s m²/s", diffusion)
 
         self.vertdiff = bool(vertdiff)
         self.Dz = vertdiff
         if self.vertdiff:
-            logger.info(f"  Vertical diffusion: {vertdiff} m²/s")
+            logger.info("  Vertical diffusion: %s m²/s", vertdiff)
 
     def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
         """Move the particles one time step"""
@@ -122,10 +121,11 @@ class Tracker:
         # Sample the depth level
         h = None
         if self.vertdiff or self.vertical_advection:
-            if hasattr(grid, "sample_depth") and callable(grid.sample_depth):
-                h = grid.sample_depth(X, Y)
-            elif hasattr(grid, "depth") and callable(grid.depth):
-                h = grid.depth(X, Y)
+            # if hasattr(grid, "sample_depth") and callable(grid.sample_depth):
+            #     h = grid.sample_depth(X, Y)
+            # elif hasattr(grid, "depth") and callable(grid.depth):
+            #     h = grid.depth(X, Y)
+            h = grid.depth(X, Y)
 
             # Diffusion
             if self.vertdiff:

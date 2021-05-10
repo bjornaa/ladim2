@@ -3,13 +3,12 @@ from ladim2.grid import BaseGrid
 import numpy as np
 
 
-def init_grid(**args) -> BaseGrid:
-    return TestGrid(**args)
-
-
-class TestGrid(BaseGrid):
+class Grid(BaseGrid):
     def __init__(self, **args):
         pass
+
+    def depth(self, X, Y):
+        return 100 + np.zeros_like(X)
 
     def metric(self, X, Y):
         return np.ones_like(X)
