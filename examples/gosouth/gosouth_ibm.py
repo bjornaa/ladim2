@@ -27,7 +27,7 @@ class IBM(BaseIBM):
         grid: BaseGrid,
         forcing=None,  # This IBM does not use forcing
     ):
-        self.dt = timer.dt
+        self.dt = timer.dtsec
         self.state = state
         self.grid = grid
 

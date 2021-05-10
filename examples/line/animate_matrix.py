@@ -3,15 +3,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from netCDF4 import Dataset
-from postladim import ParticleFile
+from netCDF4 import Dataset, num2date
+
+# from postladim import ParticleFile
 
 # ---------------
 # User settings
 # ---------------
 
 # Files
-particle_file = "out.nc"
+particle_file = "out_matrix.nc"
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
@@ -34,8 +35,9 @@ Xb = np.arange(i0 - 0.5, i1)
 Yb = np.arange(j0 - 0.5, j1)
 
 # particle_file
-pf = ParticleFile(particle_file)
-num_times = pf.num_times
+pf = Dataset(particle_file)
+num_times = len(pf.dimensions["time"])
+time_units = pf.variables["time"].units
 
 # Set up the plot area
 fig = plt.figure(figsize=(9, 8))
@@ -65,18 +67,25 @@ M = np.ma.masked_where(M > 0, M)
 plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 
 # Plot initial particle distribution
-X, Y = pf.position(0)
+X = pf.variables["X"][0, :]
+Y = pf.variables["Y"][0, :]
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
 timestamp = ax.text(
-    0.02, 0.95, pf.time(0), fontsize=15, backgroundcolor="white", transform=ax.transAxes
+    0.02,
+    0.95,
+    num2date(pf.variables["time"][0], time_units),
+    fontsize=15,
+    backgroundcolor="white",
+    transform=ax.transAxes,
 )
 
 
 # Update function
 def animate(t):
-    X, Y = pf.position(t)
+    X = pf.variables["X"][t, :]
+    Y = pf.variables["Y"][t, :]
     particle_dist.set_data(X, Y)
-    timestamp.set_text(pf.time(t))
+    timestamp.set_text(num2date(pf.variables["time"][t], time_units))
     return particle_dist, timestamp
 
 

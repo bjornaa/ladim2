@@ -7,7 +7,7 @@ import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
-from ladim2.out_nc_ragged import fname_gnrt, Output
+from ladim2.out_netcdf import fname_gnrt, Output
 
 NCFILE = Path("output_test.nc")
 

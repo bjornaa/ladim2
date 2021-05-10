@@ -28,10 +28,10 @@ release:
     release_file : line.rls
 
 output:
-    # module: out_nc_ragged
-    module: out_nc_matrix
+    module: out_netcdf
+    layout: matrix
     filename: out_matrix.nc
-    ncargs: {data_model: NETCDF3_CLASSIC}
+    ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:
         X:

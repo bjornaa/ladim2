@@ -98,7 +98,7 @@ class TimeKeeper:
         # Number of time steps (excluding initial)
         self.Nsteps = int(abs(duration) // self.dt)
         self.simulation_time = self.Nsteps * self.dt
-        logger.info("  Length of  simulation: %d", duration2iso(duration))
+        logger.info("  Length of  simulation: %s", duration2iso(duration))
         logger.info("  Number of time steps: %d", self.Nsteps)
 
     def update(self) -> None:

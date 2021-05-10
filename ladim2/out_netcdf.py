@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from datetime import date
 import logging
-from typing import Dict, Union, Optional, Sequence, Any, Generator
+from typing import Dict, Union, Optional, Sequence, Any, Generator, Tuple
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
@@ -30,12 +30,13 @@ class Output(BaseOutput):
 
     def __init__(
         self,
-        timer: TimeKeeper,
         filename: Union[Path, str],
+        timer: TimeKeeper,
         output_period: Union[int, np.timedelta64, Sequence],
         num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
+        layout: str = "ragged",  # "ragged" or "matrix"
         grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
@@ -45,13 +46,19 @@ class Output(BaseOutput):
 
         logger.info("Initializing output")
 
-        self.timer = timer
         self.filename = filename
+        self.layout = layout
+        self.timer = timer
         self.num_particles = num_particles
         self.instance_variables = instance_variables
+        if self.layout == "matrix":  # No need to save pid in orthogonal layout
+            self.instance_variables.pop("pid", None)
         self.particle_variables = particle_variables if particle_variables else dict()
-
         logger.info("  Filename: %s", filename)
+        if self.layout == "matrix":
+            logger.info("  Layout: %s", "netcdf orthogonal array")
+        else:
+            logger.info("  Layout: %s", "netcdf contiguous ragged array")
         logger.info("  Instance variables: %s", list(instance_variables))
         logger.info("  Particle variables: %s", list(self.particle_variables))
 
@@ -68,7 +75,12 @@ class Output(BaseOutput):
             self.global_attributes = global_attributes
         else:
             self.global_attributes = dict()
-        self.global_attributes["type"] = "LADiM output, netcdf contiguous ragged array"
+        if self.layout == "matrix":
+            self.global_attributes["type"] = "LADiM output, netcdf orthogonal array"
+        else:
+            self.global_attributes[
+                "type"
+            ] = "LADiM output, netcdf contiguous ragged array"
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
@@ -117,7 +129,7 @@ class Output(BaseOutput):
                 self.xy2ll = lambda x, y: (x, y)
 
     def create_netcdf(self) -> Dataset:
-        """Create a LADiM output netCDF file
+        """Create a LADiM output netCDF file for contiguous ragged array format
 
         Returns:
             An open NetCDF Dataset
@@ -134,23 +146,28 @@ class Output(BaseOutput):
         # Number of records in the file (last file may be smaller)
         self.local_num_records = min(self.numrec, self.num_records - self.record_count)
 
+        # Dimensions
         nc.createDimension("time", self.local_num_records)
-        nc.createDimension("particle_instance", None)  # Unlimited
         nc.createDimension("particle", self.num_particles)
+        if self.layout == "matrix":
+            instance_dim: Tuple[str, ...] = ("time", "particle")
+        else:
+            nc.createDimension("particle_instance", None)  # Unlimited
+            instance_dim = ("particle_instance",)
 
+        # Variables
         v = nc.createVariable("time", "f8", ("time",))
         v.long_name = "time"
         v.standard_name = "time"
         v.units = f"seconds since {self.timer.reference_time}"
-        v = nc.createVariable("particle_count", "i", ("time",))
-        v.long_name = "Number of particles"
-        v.ragged_row_count = "particle count at nth timestep"
+        if self.layout == "ragged":
+            v = nc.createVariable("particle_count", "i", ("time",))
+            v.long_name = "Number of particles"
+            v.ragged_row_count = "particle count at nth timestep"
 
         if self.instance_variables is not None:
             for var, conf in self.instance_variables.items():
-                v = nc.createVariable(
-                    var, conf["encoding"]["datatype"], ("particle_instance",)
-                )
+                v = nc.createVariable(var, conf["encoding"]["datatype"], instance_dim)
                 for att, value in conf["attributes"].items():
                     setattr(v, att, value)
 
@@ -197,32 +214,41 @@ class Output(BaseOutput):
             self.skip_initial = False
             return
 
-        count = len(state)  # Present number of particles
-        start = self.local_instance_count
-        end = start + count
-
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
-        self.nc.variables["particle_count"][self.local_record_count] = count
 
-        for var in self.instance_variables:
-            self.nc.variables[var][start:end] = getattr(state, var)
+        if self.layout == "matrix":
+            for var in self.instance_variables:
+                self.nc.variables[var][self.local_record_count, :] = getattr(state, var)
+        else:  # ragged
+            count = len(state)  # Present number of particles
+            start = self.local_instance_count
+            end = start + count
+            self.nc.variables["particle_count"][self.local_record_count] = count
+            for var in self.instance_variables:
+                self.nc.variables[var][start:end] = getattr(state, var)
 
-        # Compute lon, lat if needed
+        # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
-            self.nc.variables["lon"][start:end] = lon
-            self.nc.variables["lat"][start:end] = lat
+            if self.layout == "matrix":
+                self.nc.variables["lon"][self.local_record_count, :] = lon
+                self.nc.variables["lat"][self.local_record_count, :] = lat
+            else:
+                self.nc.variables["lon"][start:end] = lon
+                self.nc.variables["lat"][start:end] = lat
 
         # Flush to file
         self.nc.sync()
 
-        self.instance_count += count
+        # Prepare for next time
+        if self.layout == "ragged":
+            self.instance_count += count
+            self.local_instance_count += count
         self.record_count += 1
-        self.local_instance_count += count
         self.local_record_count += 1
         self.nctime += float(self.output_period / np.timedelta64(1, self.time_unit))
 
-        # File finished? (beregn fra rec_count)
+        # File finished?
         if self.local_record_count == self.local_num_records:
             self.write_particle_variables(state)
             self.nc.close()
