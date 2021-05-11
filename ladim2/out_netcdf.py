@@ -214,11 +214,20 @@ class Output(BaseOutput):
             self.skip_initial = False
             return
 
+        if self.layout == "ragged":
+            state.compactify()
+
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
         if self.layout == "matrix":
+            # Fill out state.alive, False for unborn particles
+            has_value = np.full(self.num_particles, False)
+            has_value[: len(state)] = state.alive
             for var in self.instance_variables:
-                self.nc.variables[var][self.local_record_count, :] = getattr(state, var)
+                # values = getattr(state, var)
+                self.nc.variables[var][self.local_record_count, has_value] = getattr(
+                    state, var
+                )[state.alive]
         else:  # ragged
             count = len(state)  # Present number of particles
             start = self.local_instance_count

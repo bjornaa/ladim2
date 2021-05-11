@@ -76,7 +76,8 @@ class Model:
 
         if self.ibm is not None:
             self.ibm.update()  # type: ignore
-            self.state.compactify()
+
+        # self.state.compactify()
 
         # --- Output
         if step % self.output.output_period_step == 0:

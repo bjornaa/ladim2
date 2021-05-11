@@ -37,14 +37,15 @@ release:
     release_frequency: [1, h]
 
 output:
-    module: out_nc_matrix
+    module: out_netcdf
     filename: out_matrix.nc
+    layout: matrix
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:
         X:
-            encoding: {datatype: f4, zlib=True}
-            attributes: {long_name: particle X-coordinate}
+            encoding: {datatype: i2, zlib=True}
+            attributes: {long_name: particle X-coordinate, scale_factor: 0.01}
         Y:
             encoding: {datatype: f4, zlib=True}
             attributes: {long_name: particle Y-coordinate}
@@ -54,7 +55,7 @@ output:
                 long_name: particle depth
                 standard_name: depth_below_surface
                 units: m
-                positive: down
+                positive: downq
         age:
             encoding: {datatype: f4, zlib=True}
             attributes:
