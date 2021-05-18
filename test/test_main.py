@@ -16,7 +16,7 @@ import numpy as np
 class Test_output_when_different_scenarios:
     def test_single_stationary_particle(self):
         gridforce_zero = make_gridforce()
-        release_single = make_release(t=[0], X=[1], Y=[1], Z=[0])
+        release_single = make_release(t=[0], X=[2], Y=[2], Z=[0])
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_single) as result:
@@ -31,11 +31,11 @@ class Test_output_when_different_scenarios:
                 "pid",
             }
 
-            assert result.X.values.tolist() == [1, 1, 1]
+            assert result.X.values.tolist() == [2, 2, 2]
 
     def test_multiple_release_times(self):
         gridforce_zero = make_gridforce()
-        release_multiple = make_release(t=[0, 1, 2], X=1, Y=1, Z=0)
+        release_multiple = make_release(t=[0, 1, 2], X=2, Y=2, Z=0)
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_multiple) as result:
@@ -48,7 +48,7 @@ class Test_output_when_different_scenarios:
 
     def test_multiple_initial_particles(self):
         gridforce_zero = make_gridforce()
-        release_multiple = make_release(t=[0] * 5, X=1, Y=1, Z=0)
+        release_multiple = make_release(t=[0] * 5, X=2, Y=2, Z=0)
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_multiple) as result:
