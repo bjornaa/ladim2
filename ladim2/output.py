@@ -23,6 +23,10 @@ class BaseOutput(ABC):
     output_period = np.timedelta64(0, "s")
 
     @abstractmethod
+    def __init__(self, modules: dict, **kwargs):
+        self.modules = modules
+
+    @abstractmethod
     def write(self, state: State) -> None:
         """Write data from instance variables to output file"""
 

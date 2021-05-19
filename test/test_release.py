@@ -10,12 +10,20 @@ from ladim2.timekeeper import TimeKeeper
 # from ladim2.state import State
 
 
+class Dummy:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 timer = TimeKeeper(
     start=np.datetime64("2015-03-31 12"),
     stop=np.datetime64("2015-04-04"),
     dt=np.timedelta64(15, "m"),
 )
 datatypes0 = dict(mult=int, X=float, Y=float, Z=float)
+state0 = Dummy(dtypes=datatypes0)
+modules0 = dict(time=timer, state=state0, grid=None)
 
 
 def test_read_release():
@@ -98,7 +106,7 @@ def test_clean_add_mult():
     """
     )
 
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+    pr = ParticleReleaser(modules0, f)
     assert all(pr._df.mult == [1, 1, 1])
 
 
@@ -115,7 +123,7 @@ def test_clean_nopos():
     )
 
     with pytest.raises(SystemExit):
-        ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+        ParticleReleaser(modules0, f)
 
 
 def test_clean_convert_lonlat():
@@ -137,7 +145,8 @@ def test_clean_convert_lonlat():
     """
     )
 
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0, grid=Grid())
+    modules = dict(modules0, grid=Grid())
+    pr = ParticleReleaser(modules, f)
     df = pr._df
     assert all(df["Y"] == 2 * np.array([60, 59.5, 58.0]))
 
@@ -154,7 +163,7 @@ def test_clean_lonlat_no_convert():
     )
 
     with pytest.raises(SystemExit):
-        ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+        ParticleReleaser(modules0, f)
 
 
 def test_remove_late_release():
@@ -168,7 +177,7 @@ def test_remove_late_release():
         "2015-05-03 12"  3.9  58.0   5
     """
     )
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+    pr = ParticleReleaser(modules0, f)
     df = pr._df
     assert pr.total_particle_count == 1
     assert len(pr.steps) == 1
@@ -189,7 +198,7 @@ def test_remove_early_release():
         "2015-04-03 12"  3.9  58.0   5
     """
     )
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+    pr = ParticleReleaser(modules0, f)
     df = pr._df
     assert pr.total_particle_count == 2
     assert len(pr.steps) == 2
@@ -212,7 +221,7 @@ def test_remove_early_release2():
         "2015-04-03 12"  3.9  58.0   5
     """
     )
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+    pr = ParticleReleaser(modules0, f)
     df = pr._df
     assert pr.total_particle_count == 1
     assert len(pr.steps) == 1
@@ -233,7 +242,7 @@ def test_too_late_release():
     """
     )
     with pytest.raises(SystemExit):
-        ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+        ParticleReleaser(modules0, f)
 
 
 def test_too_early_release():
@@ -248,7 +257,7 @@ def test_too_early_release():
     """
     )
     with pytest.raises(SystemExit):
-        ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+        ParticleReleaser(modules0, f)
 
 
 def test_continuous0():
@@ -261,9 +270,7 @@ def test_continuous0():
     """
     )
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, timer=timer, datatypes=datatypes0, continuous=True, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     df = pr._df
     assert len(df) == 7
@@ -286,9 +293,7 @@ def test_continuous1():
     """
     )
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, timer=timer, datatypes=datatypes0, continuous=True, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     df = pr._df
     assert pr.total_particle_count == 7
@@ -312,9 +317,7 @@ def test_continuous2():
     """
     )
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, continuous=True, timer=timer, datatypes=datatypes0, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     df = pr._df
     assert pr.total_particle_count == 14
@@ -344,9 +347,7 @@ def test_continuous_freq_mismatch():
     )
 
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, timer=timer, datatypes=datatypes0, continuous=True, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
     df = pr._df
     assert pr.total_particle_count == 7
     assert len(pr.steps) == 7
@@ -383,9 +384,7 @@ def test_continuous_freq_mismatch2():
     )
 
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, timer=timer, datatypes=datatypes0, continuous=True, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
     df = pr._df
     assert pr.total_particle_count == 7
     assert all(df.X == 4 * [100] + 3 * [106])
@@ -404,7 +403,9 @@ def test_release_time_column():
     )
     freq = np.timedelta64(12, "h")
     datatypes = dict(datatypes0, super=int, release_time=np.dtype("M8[s]"))
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes)
+    modules = modules0.copy()
+    modules['state'] = Dummy(dtypes=datatypes)
+    pr = ParticleReleaser(modules, f, timer=timer)
     A = pr._df
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
     assert A["release_time"][1] == np.datetime64("2015-04-01")
@@ -422,7 +423,7 @@ def test_iterate1():
     """
     )
 
-    pr = ParticleReleaser(f, timer=timer, datatypes=datatypes0)
+    pr = ParticleReleaser(modules0, f)
     A = next(pr)
     assert len(A) == 1
     assert A.X[0] == 100
@@ -452,9 +453,7 @@ def test_iterate2():
     """
     )
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(
-        f, timer=timer, datatypes=datatypes0, continuous=True, release_frequency=freq,
-    )
+    pr = ParticleReleaser(modules0,  f, continuous=True, release_frequency=freq)
 
     for k in range(3):
         A = next(pr)

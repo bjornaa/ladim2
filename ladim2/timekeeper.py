@@ -52,6 +52,7 @@ class TimeKeeper:
         dt: TimeDelta,
         reference: Optional[Time] = None,
         time_reversal: bool = False,
+        modules: dict = None,
     ) -> None:
         """
         start      start time
@@ -65,7 +66,7 @@ class TimeKeeper:
         """
 
         logger.info("Initiating the timekeeper")
-
+        self.modules = modules
         self.start_time = np.datetime64(start, "s")
         self.stop_time = np.datetime64(stop, "s")
         self.time_reversal = time_reversal

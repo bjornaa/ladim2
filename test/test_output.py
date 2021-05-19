@@ -12,10 +12,19 @@ from ladim2.out_netcdf import fname_gnrt, Output
 NCFILE = Path("output_test.nc")
 
 
+class Dummy:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 config0 = dict(
-    timer=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
+    modules=dict(
+        time=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
+        release=Dummy(total_particle_count=3),
+        grid=None,
+    ),
     filename=NCFILE,
-    num_particles=3,
     output_period=np.timedelta64(12, "h"),
     ncargs=dict(format="NETCDF4_CLASSIC"),
     instance_variables=dict(
@@ -112,11 +121,13 @@ def test_file_creation():
 def test_reference_time():
     """Explicit reference time"""
 
-    state = State()
     timer = TimeKeeper(
         start="2020-01-01 12", stop="2020-01-03 12", reference="2000-01-01", dt=1800,
     )
-    config = dict(config0, timer=timer)
+    state = State()
+    config = config0.copy()
+    config['modules'] = config['modules'].copy()
+    config['modules']['time'] = timer
     out = Output(**config)
     state.append(X=100, Y=10, Z=5)
     out.write(state)

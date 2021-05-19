@@ -34,11 +34,12 @@ class Tracker:
     """The physical particle tracking kernel"""
 
     def __init__(
-        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False
+        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False,
+        modules: dict = None,
     ):
 
         logger.info("Initiating the particle tracker")
-
+        self.modules = modules
         self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
         logger.info("  Advection method: %s", advection)

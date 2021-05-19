@@ -30,14 +30,12 @@ class Output(BaseOutput):
 
     def __init__(
         self,
+        modules: dict,
         filename: Union[Path, str],
-        timer: TimeKeeper,
         output_period: Union[int, np.timedelta64, Sequence],
-        num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
         layout: str = "ragged",  # "ragged" or "matrix"
-        grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
@@ -45,11 +43,13 @@ class Output(BaseOutput):
     ) -> None:
 
         logger.info("Initializing output")
-
+        timer = modules['time']
+        grid = modules['grid']
+        self.modules = modules
         self.filename = filename
         self.layout = layout
         self.timer = timer
-        self.num_particles = num_particles
+        self.num_particles = modules['release'].total_particle_count
         self.instance_variables = instance_variables
         if self.layout == "matrix":  # No need to save pid in orthogonal layout
             self.instance_variables.pop("pid", None)

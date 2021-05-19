@@ -47,7 +47,7 @@ def test_prestep0(setup):
 
     timer = TimeKeeper(start="1989-05-24T12", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(dict(grid=grid, time=timer), filename, ibm_forcing=["temp"])
 
     # First field
     force.update(force.steps[0], X, Y, Z)
@@ -72,7 +72,7 @@ def test_midstep(setup):
 
     timer = TimeKeeper(start="1989-05-26T00", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(dict(grid=grid, time=timer), filename, ibm_forcing=["temp"])
 
     # First field
     force.update(0, X, Y, Z)
@@ -99,7 +99,7 @@ def test_start_second(setup):
 
     timer = TimeKeeper(start="1989-05-27T12", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(dict(grid=grid, time=timer), filename, ibm_forcing=["temp"])
 
     # First field
     force.update(force.steps[1], X, Y, Z)

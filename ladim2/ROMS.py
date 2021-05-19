@@ -59,7 +59,6 @@ class Grid(BaseGrid):
         Vinfo=None,
         **args,
     ) -> None:
-
         logger.info("Initiating grid")
         logger.info("  Grid file: %s", filename)
 
@@ -384,15 +383,15 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        grid: Grid,
-        timer: TimeKeeper,
+        modules: dict,
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
-
-        self.grid = grid  # Get the grid object.
+        timer = modules['time']
+        self.modules = modules
+        self.grid = modules['grid']  # Get the grid object.
         # self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
