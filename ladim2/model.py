@@ -62,8 +62,7 @@ class Model:
         # --- Update forcing ---
         self.force.update()
 
-        if self.ibm is not None:
-            self.ibm.update()  # type: ignore
+        self.ibm.update()  # type: ignore
 
         # self.state.compactify()
 
