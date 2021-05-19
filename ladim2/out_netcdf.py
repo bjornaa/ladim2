@@ -128,6 +128,11 @@ class Output(BaseOutput):
             except AttributeError:
                 self.xy2ll = lambda x, y: (x, y)
 
+    def update(self):
+        step = self.modules['time'].step
+        if step % self.output_period_step == 0:
+            self.write(self.modules['state'])
+
     def create_netcdf(self) -> Dataset:
         """Create a LADiM output netCDF file for contiguous ragged array format
 

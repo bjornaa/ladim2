@@ -67,8 +67,7 @@ class Model:
         # self.state.compactify()
 
         # --- Output
-        if step % self.output.output_period_step == 0:
-            self.output.write(self.state)
+        self.output.update()
 
         # --- Update state to next time step
         # Improve: no need to update after last write

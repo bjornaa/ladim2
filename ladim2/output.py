@@ -27,7 +27,7 @@ class BaseOutput(ABC):
         self.modules = modules
 
     @abstractmethod
-    def write(self, state: State) -> None:
+    def update(self) -> None:
         """Write data from instance variables to output file"""
 
     @abstractmethod
