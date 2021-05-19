@@ -25,7 +25,7 @@ class BaseForce(ABC):
         self.variables: Dict[str, np.ndarray]
 
     @abstractmethod
-    def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    def update(self) -> None:
         """Update the forcing to the next time step"""
 
     @abstractmethod

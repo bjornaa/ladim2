@@ -60,7 +60,7 @@ class Model:
             self.state.append(**V)
 
         # --- Update forcing ---
-        self.force.update(step, self.state.X, self.state.Y, self.state.Z)
+        self.force.update()
 
         if self.ibm is not None:
             self.ibm.update()  # type: ignore

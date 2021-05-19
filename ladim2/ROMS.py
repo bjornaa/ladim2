@@ -476,8 +476,13 @@ class Forcing(BaseForce):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    def update(self) -> None:
         """Update the fields to given time step t"""
+
+        X = self.modules['state'].X
+        Y = self.modules['state'].Y
+        Z = self.modules['state'].Z
+        step = self.modules['time'].step
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
