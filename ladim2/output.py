@@ -49,7 +49,7 @@ def init_output(module, **args) -> BaseOutput:
 
     The module should be in the LADiM source directory or in the working directory.
     The working directory takes priority.
-    The Forcing class in the module should be named "Output".
+    The Output class in the module should be named "Output".
     """
     # System path for ladim2.ladim2
     p = Path(__file__).parent

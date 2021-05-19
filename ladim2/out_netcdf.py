@@ -1,4 +1,4 @@
-"""Output module for NetCDF contiguous ragged array"""
+"""Output module for sparce layout aka NetCDF contiguous ragged array"""
 
 
 import re
@@ -24,7 +24,7 @@ if DEBUG:
 
 
 class Output(BaseOutput):
-    """LADiM output, contiguous ragged array representation in NetCDF
+    """LADiM output, contiguous sparce layout aka ragged array representation in NetCDF
 
     """
 
@@ -36,7 +36,7 @@ class Output(BaseOutput):
         num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
-        layout: str = "ragged",  # "ragged" or "matrix"
+        layout: str = "sparce",  # "sparce" or "dence"
         grid: Optional[BaseGrid] = None,
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
@@ -51,14 +51,14 @@ class Output(BaseOutput):
         self.timer = timer
         self.num_particles = num_particles
         self.instance_variables = instance_variables
-        if self.layout == "matrix":  # No need to save pid in orthogonal layout
+        if self.layout == "dence":  # No need to save pid in orthogonal layout
             self.instance_variables.pop("pid", None)
         self.particle_variables = particle_variables if particle_variables else dict()
         logger.info("  Filename: %s", filename)
-        if self.layout == "matrix":
-            logger.info("  Layout: %s", "netcdf orthogonal array")
+        if self.layout == "dence":
+            logger.info("  Layout: %s", "dense = netcdf orthogonal array")
         else:
-            logger.info("  Layout: %s", "netcdf contiguous ragged array")
+            logger.info("  Layout: %s", "sparse = netcdf contiguous ragged array")
         logger.info("  Instance variables: %s", list(instance_variables))
         logger.info("  Particle variables: %s", list(self.particle_variables))
 
@@ -75,7 +75,7 @@ class Output(BaseOutput):
             self.global_attributes = global_attributes
         else:
             self.global_attributes = dict()
-        if self.layout == "matrix":
+        if self.layout == "dence":
             self.global_attributes["type"] = "LADiM output, netcdf orthogonal array"
         else:
             self.global_attributes[
@@ -149,7 +149,7 @@ class Output(BaseOutput):
         # Dimensions
         nc.createDimension("time", self.local_num_records)
         nc.createDimension("particle", self.num_particles)
-        if self.layout == "matrix":
+        if self.layout == "dence":
             instance_dim: Tuple[str, ...] = ("time", "particle")
         else:
             nc.createDimension("particle_instance", None)  # Unlimited
@@ -160,7 +160,7 @@ class Output(BaseOutput):
         v.long_name = "time"
         v.standard_name = "time"
         v.units = f"seconds since {self.timer.reference_time}"
-        if self.layout == "ragged":
+        if self.layout == "sparce":
             v = nc.createVariable("particle_count", "i", ("time",))
             v.long_name = "Number of particles"
             v.ragged_row_count = "particle count at nth timestep"
@@ -214,12 +214,12 @@ class Output(BaseOutput):
             self.skip_initial = False
             return
 
-        if self.layout == "ragged":
+        if self.layout == "sparce":
             state.compactify()
 
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
-        if self.layout == "matrix":
+        if self.layout == "dence":
             # Fill out state.alive, False for unborn particles
             has_value = np.full(self.num_particles, False)
             has_value[: len(state)] = state.alive
@@ -228,7 +228,7 @@ class Output(BaseOutput):
                 self.nc.variables[var][self.local_record_count, has_value] = getattr(
                     state, var
                 )[state.alive]
-        else:  # ragged
+        else:  # sparce
             count = len(state)  # Present number of particles
             start = self.local_instance_count
             end = start + count
@@ -239,7 +239,7 @@ class Output(BaseOutput):
         # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
-            if self.layout == "matrix":
+            if self.layout == "dence":
                 self.nc.variables["lon"][self.local_record_count, :] = lon
                 self.nc.variables["lat"][self.local_record_count, :] = lat
             else:
@@ -250,7 +250,7 @@ class Output(BaseOutput):
         self.nc.sync()
 
         # Prepare for next time
-        if self.layout == "ragged":
+        if self.layout == "sparce":
             self.instance_count += count
             self.local_instance_count += count
         self.record_count += 1

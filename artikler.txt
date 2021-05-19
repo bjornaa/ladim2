@@ -18,6 +18,11 @@ Johnsen, 2021, The development of a sustainability assessment indicator and its 
 to management changes as derived from salmon lice dispersal modelling, ICES J. Mar. Sci.,
 doi:10.1093/icesjms/fsab077,
 
+A. Coates, I.A. Johnsen, T. Dempster, and B.L. Phillips, 2021, Parasite management in
+aquaculture exerts selection on salmon louse behaviour, Evol. Appl.,
+doi:10.1111/eva.13255,
+
+
 --------- 2020 ----------
 
 L. Asplin, J. Albretsen, I.A. Johnsen, and A.D Sandvik, 2020, The hydrodynamic foundation

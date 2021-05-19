@@ -9,11 +9,12 @@
 import logging
 import datetime
 import re
-from typing import Union, Optional, Sequence
-import numpy as np  # type: ignore
+from typing import Union, Tuple, Optional
+import numpy as np
 
 Time = Union[str, np.datetime64, datetime.datetime]
-TimeDelta = Union[int, np.timedelta64, datetime.timedelta, Sequence, str]
+TimeDelta = Union[int, np.timedelta64, datetime.timedelta, Tuple[int, str], str]
+
 
 DEBUG = False
 
@@ -144,7 +145,7 @@ class TimeKeeper:
             delta = self.start_time + stepnr * self.dt - self.reference_time
         return float(delta / np.timedelta64(1, unit))
 
-    def cf_units(self, unit="s"):
+    def cf_units(self, unit: str = "s") -> str:
         """Return string with units for time following the CF standard"""
         return f"{self.unit_table[unit]} since {self.reference_time}"
 

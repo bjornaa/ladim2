@@ -21,12 +21,18 @@ Horizontal sampling
 # 2010-09-30
 # -----------------------------------
 
-from typing import Tuple
+from typing import Tuple, Optional
+
 import numpy as np  # type: ignore
+
+# Type aliases
+Field = np.ndarray  # 2D gridded field
+ParticleArray = np.ndarray  # 1D array of values per particle
 
 
 # ---------------------
-def sample2D2(F: np.ndarray, X, Y) -> np.ndarray:
+
+def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
     """Bilinear sample of a 2D field
 
     *F* : 2D array
@@ -66,7 +72,9 @@ def sample2D2(F: np.ndarray, X, Y) -> np.ndarray:
 # --------------------------------------------------
 
 
-def sample2DUV(U, V, X, Y) -> Tuple[np.ndarray, np.ndarray]:
+def sample2DUV(
+    U: Field, V: Field, X: ParticleArray, Y: ParticleArray
+) -> Tuple[ParticleArray, ParticleArray]:
     """2D interpolation of velocity"""
     return sample2D(U, X + 0.5, Y), sample2D(V, X, Y + 0.5)
 
@@ -74,7 +82,9 @@ def sample2DUV(U, V, X, Y) -> Tuple[np.ndarray, np.ndarray]:
 # -------------------------------------------------
 
 
-def sample2D_masked(F, M, X, Y):
+def sample2D_masked(
+    F: Field, M: Field, X: ParticleArray, Y: ParticleArray
+) -> ParticleArray:
     """Bilinear sample of a 2D field
 
     F = 2D array, M = mask (=1 on sea, = 0 on land)
@@ -128,7 +138,14 @@ def sample2D_masked(F, M, X, Y):
 # ------------------
 
 
-def sample2D(F, X, Y, mask=None, undef_value=0.0, outside_value=None):
+def sample2D(
+    F: Field,
+    X: ParticleArray,
+    Y: ParticleArray,
+    mask: Optional[Field] = None,
+    undef_value: float = 0.0,
+    outside_value: float = None,
+) -> ParticleArray:
     """Bilinear sample of a 2D field
 
     *F* : 2D array
@@ -159,7 +176,7 @@ def sample2D(F, X, Y, mask=None, undef_value=0.0, outside_value=None):
     # X and Y should be broadcastable to the same shape
     Z = np.add(X, Y)
     # scalar is True if both X and Y are scalars
-    scalar = np.isscalar(Z)
+    # scalar = np.isscalar(Z)
 
     if np.ndim(F) != 2:
         raise ValueError("F must be 2D")
@@ -220,8 +237,8 @@ def sample2D(F, X, Y, mask=None, undef_value=0.0, outside_value=None):
         S = np.where(outside, outside_value, S)
 
     #   Scalar input gives scalar output
-    if scalar:
-        S = float(S)
+    # if scalar:
+    #    S = float(S)
 
     return S
 
@@ -229,15 +246,21 @@ def sample2D(F, X, Y, mask=None, undef_value=0.0, outside_value=None):
 # -----------------------------------------
 
 
-def bilin_inv(f, g, F, G, maxiter=7, tol=1.0e-7):
+def bilin_inv(
+    f: ParticleArray,
+    g: ParticleArray,
+    F: Field,
+    G: Field,
+    maxiter: int = 7,
+    tol: float = 1.0e-7,
+) -> Tuple[ParticleArray, ParticleArray]:
     """Inverse bilinear interpolation
 
-    f, g : scalars or arrays of same shape
+    f, g : Arrays of same shape
     F, G : 2D arrays of the same shape
 
     returns x, y : shaped like f and g
-    such that F and G linearly interpolated to x, y
-    returns f and g
+    such that F and G linearly interpolated to x, y returns f and g
 
     """
 
@@ -245,38 +268,37 @@ def bilin_inv(f, g, F, G, maxiter=7, tol=1.0e-7):
     if G.shape != (imax, jmax):
         raise ValueError("Shape mismatch in 2D arrays")
 
-    scalar = np.isscalar(f)
+    # scalar = np.isscalar(f)
 
-    if scalar:
-        if not np.isscalar(g):
-            raise ValueError("Target values must both be scalars or both arrays")
-        # initial guess = mid point
-        x = 0.5 * imax
-        y = 0.5 * jmax
+    # if scalar:
+    #     if not np.isscalar(g):
+    #         raise ValueError("Target values must both be scalars or both arrays")
+    #     # initial guess = mid point
+    #     x = 0.5 * imax
+    #     y = 0.5 * jmax
 
-    else:  # vector target
-        f = np.asarray(f)
-        g = np.asarray(g)
-        fshape = f.shape
-        if g.shape != fshape:
-            raise ValueError("Target arrays must have the same shape")
-        # Make 1D
-        # f = f.ravel()
-        # g = g.ravel()
+    # else:  # vector target
+    f = np.asarray(f)
+    g = np.asarray(g)
+    fshape = f.shape
+    if g.shape != fshape:
+        raise ValueError("Target arrays must have the same shape")
+    # Make 1D
+    # f = f.ravel()
+    # g = g.ravel()
 
-        # initial guess
-        x = np.zeros_like(f) + 0.5 * imax
-        y = np.zeros_like(f) + 0.5 * jmax
+    # initial guess
+    x = np.zeros_like(f) + 0.5 * imax
+    y = np.zeros_like(f) + 0.5 * jmax
 
     for t in range(maxiter):
 
-        if scalar:
-            i = int(x)
-            j = int(y)
-        else:
-            i = x.astype("i")
-            j = y.astype("i")
-
+        # if scalar:
+        #     i = int(x)
+        #     j = int(y)
+        # else:
+        i = x.astype("i")
+        j = y.astype("i")
         p, q = x - i, y - j
 
         # Bilinear estimate of F[x,y] and G[x,y]

@@ -34,6 +34,11 @@ if DEBUG:
 numba_logger = logging.getLogger("numba")
 numba_logger.setLevel(logging.WARNING)
 
+# Type aliases
+Field = np.ndarray  # 3D or 2D gridded field
+ParticleArray = np.ndarray  # 1D array of values per particle
+
+
 # ---------------------------
 # Grid class
 # ---------------------------
@@ -65,9 +70,9 @@ class Grid(BaseGrid):
 
         try:
             ncid = Dataset(filename)
-        except OSError:
+        except OSError as ex:
             logger.critical("Could not open grid file %s", filename)
-            raise SystemExit(1)
+            raise SystemExit(1) from ex
         ncid.set_auto_maskandscale(False)
 
         # Subgrid, only considers internal grid cells
@@ -112,7 +117,7 @@ class Grid(BaseGrid):
         self.Iv = self.I
         self.Jv = slice(self.j0 - 1, self.j1)
 
-        # git pushical grid
+        # Explicit Vinfo
 
         if Vinfo is not None:
             self.N = Vinfo["N"]
@@ -181,7 +186,9 @@ class Grid(BaseGrid):
         # Close the file(s)
         ncid.close()
 
-    def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def metric(
+        self, X: ParticleArray, Y: ParticleArray
+    ) -> Tuple[ParticleArray, ParticleArray]:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
@@ -193,15 +200,15 @@ class Grid(BaseGrid):
         A = self.dx[J, I]
         return A, A
 
-    def depth(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Return the depth of grid cells"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         return self.H[J, I]
 
     def lonlat(
-        self, X: np.ndarray, Y: np.ndarray, method: str = "bilinear"
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, X: ParticleArray, Y: ParticleArray, method: str = "bilinear"
+    ) -> Tuple[ParticleArray, ParticleArray]:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)
@@ -210,7 +217,7 @@ class Grid(BaseGrid):
         J = Y.round().astype("int") - self.j0
         return self.lon[J, I], self.lat[J, I]
 
-    def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points inside the subgrid"""
         return (
             (self.xmin + 0.5 < X)
@@ -219,7 +226,7 @@ class Grid(BaseGrid):
             & (Y < self.ymax - 0.5)
         )
 
-    def onland(self, X, Y):
+    def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points on land"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
@@ -232,14 +239,18 @@ class Grid(BaseGrid):
         J = Y.round().astype(int) - self.j0
         return self.M[J, I] > 0
 
-    def xy2ll(self, X, Y):
+    def xy2ll(
+        self, X: ParticleArray, Y: ParticleArray
+    ) -> Tuple[ParticleArray, ParticleArray]:
         """Converts particle positions from grid coordinates to longitude/latitude"""
         return (
             sample2D(self.lon, X - self.i0, Y - self.j0),
             sample2D(self.lat, X - self.i0, Y - self.j0),
         )
 
-    def ll2xy(self, lon, lat):
+    def ll2xy(
+        self, lon: ParticleArray, lat: ParticleArray
+    ) -> Tuple[ParticleArray, ParticleArray]:
         """Converts particle positions from longitude/latitude to grid coordinates"""
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
         return X + self.i0, Y + self.j0
@@ -252,7 +263,7 @@ class Grid(BaseGrid):
 
 def s_stretch(
     N: int, theta_s: float, theta_b: float, stagger: str = "rho", Vstretching: int = 1
-):
+) -> np.ndarray:
     """Computes the ROMS s-level stretching array
 
     Args:
@@ -302,8 +313,8 @@ def s_stretch(
 
 
 def sdepth(
-    H: np.ndarray, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
-) -> np.ndarray:
+    H: Field, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
+) -> Field:
     """Return depth of grid cells
 
     Args:
@@ -477,7 +488,9 @@ class Forcing(BaseForce):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    def update(
+        self, step: int, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
+    ) -> None:
         """Update the fields to given time step t"""
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
@@ -558,14 +571,14 @@ class Forcing(BaseForce):
             else:
                 self.scaled[key] = False
 
-    def _read_velocity(self, time_step: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_velocity(self, time_step: int) -> Tuple[Field, Field]:
         """Read velocity fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logger.debug("Reading velocity for time step = {}".format(time_step))
+        logger.debug("Reading velocity for time step = %s", time_step)
 
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
@@ -625,7 +638,7 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self, X: np.ndarray, Y: np.ndarray,
+        self, X: ParticleArray, Y: ParticleArray,
     ):
         """Interpolate forcing to particle positions"""
 
@@ -654,14 +667,12 @@ class Forcing(BaseForce):
 
     def velocity(
         self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        # K: np.ndarray,
-        # A: np.ndarray,
-        Z: np.ndarray,
+        X: ParticleArray,
+        Y: ParticleArray,
+        Z: ParticleArray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[ParticleArray, ParticleArray]:
 
         if DEBUG:
             print("interpolating velocity")
@@ -700,8 +711,8 @@ class Forcing(BaseForce):
 
 
 def z2s(
-    z_rho: np.ndarray, X: np.ndarray, Y: np.ndarray, Z: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+    z_rho: Field, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
+) -> Tuple[ParticleArray, ParticleArray]:
     """
     Find s-level and coefficients for vertical interpolation
 
@@ -743,7 +754,7 @@ def z2s(
     return z2s_kernel(I, J, Z, z_rho)
 
 
-@numba.njit(parallel=parallel)
+@numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(I, J, Z, z_rho):
     """The kernel of the z2s function"""
     N = len(I)
@@ -763,13 +774,13 @@ def z2s_kernel(I, J, Z, z_rho):
 
 
 def sample3D(
-    F: np.ndarray,
-    X: np.ndarray,
-    Y: np.ndarray,
-    K: np.ndarray,
-    A: np.ndarray,
+    F: Field,
+    X: ParticleArray,
+    Y: ParticleArray,
+    K: ParticleArray,
+    A: ParticleArray,
     method: str = "bilinear",
-) -> np.ndarray:
+) -> ParticleArray:
     """
     Sample a 3D field on the (sub)grid
 
@@ -822,10 +833,10 @@ def sample3D(
     return F[K, J, I]
 
 
-@numba.njit(parallel=parallel)
+@numba.njit(parallel=parallel)  # type: ignore
 def trilinear(
-    F: np.ndarray, X: np.ndarray, Y: np.ndarray, K: np.ndarray, A: np.ndarray
-) -> np.ndarray:
+    F: Field, X: ParticleArray, Y: ParticleArray, K: ParticleArray, A: ParticleArray
+) -> ParticleArray:
     """Performs 3D linear interpolation
 
     Args:
@@ -861,14 +872,14 @@ def trilinear(
 
 
 def sample3DUV(
-    U: np.ndarray,
-    V: np.ndarray,
-    X: np.ndarray,
-    Y: np.ndarray,
-    K: np.ndarray,
-    A: np.ndarray,
+    U: Field,
+    V: Field,
+    X: ParticleArray,
+    Y: ParticleArray,
+    K: ParticleArray,
+    A: ParticleArray,
     method="bilinear",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[ParticleArray, ParticleArray]:
     """Samples a 3D velocity field"""
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),

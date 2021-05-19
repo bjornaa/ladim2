@@ -27,9 +27,10 @@ if DEBUG:
 
 # ------------------------
 
-# Define some types
+# Define some types aliases
 Scalar = Number
 Arraylike = Union[np.ndarray, Sequence[Scalar], Scalar]
+ParticleArray = np.ndarray
 Dtype = Union[type, np.dtype]
 
 # State has no internal difference between particle and instance variable.
@@ -157,7 +158,6 @@ class State(Sized):
         for name in state_vars:
             if name not in value_vars:
                 self.default_values[name] = np.nan
-        #        raise TypeError(f"Variable {name} has no value")
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
@@ -203,7 +203,7 @@ class State(Sized):
         return len(self.pid)
 
     # Allow item notation, state[var]
-    def __getitem__(self, var: str) -> np.ndarray:
+    def __getitem__(self, var: str) -> ParticleArray:
         """Allow item style write access to variables"""
         return self.variables[var]
 
@@ -215,7 +215,7 @@ class State(Sized):
             raise KeyError("Size of data should be unchanged")
         self.variables[var] = value
 
-    def __getattr__(self, var: str) -> np.ndarray:
+    def __getattr__(self, var: str) -> ParticleArray:
         """Allow read access in attribute style"""
         return self.variables[var]
 
