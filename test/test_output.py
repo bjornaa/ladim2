@@ -199,10 +199,6 @@ def test_write():
     # out.write_particle_variables(state)
     # out.close()
 
-    # The netcdf file is already closed  (done by last write)
-    with pytest.raises(RuntimeError):
-        out.close()
-
     # Check some of the content
     h = 3600
     with Dataset(NCFILE) as nc:

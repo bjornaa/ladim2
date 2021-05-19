@@ -72,8 +72,11 @@ class Model:
 
     def finish(self):
         """Clean-up after the model run"""
-        self.force.close()
-        # output.close()
+        module_names = ['grid', 'forcing', 'release', 'tracker', 'ibm', 'output']
+        for name in module_names:
+            module = self.modules[name]
+            if hasattr(module, 'close') and callable(module.close):
+                module.close()
 
 
 def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:

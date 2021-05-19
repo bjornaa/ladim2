@@ -289,7 +289,8 @@ class Output(BaseOutput):
                 self.nc.variables[var][:npart] = state[var][:npart]
 
     def close(self) -> None:
-        self.nc.close()
+        if self.nc.isopen():
+            self.nc.close()
 
 
 def fname_gnrt(filename: Path) -> Generator[Path, None, None]:
