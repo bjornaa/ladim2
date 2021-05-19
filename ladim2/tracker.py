@@ -34,11 +34,12 @@ class Tracker:
     """The physical particle tracking kernel"""
 
     def __init__(
-        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False
+        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False,
+        modules: dict = None,
     ):
 
         logger.info("Initiating the particle tracker")
-
+        self.modules = modules
         self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
         self.advection = advection  # Name of advection method
         logger.info("  Advection method: %s", advection)
@@ -63,8 +64,12 @@ class Tracker:
         if self.vertdiff:
             logger.info("  Vertical diffusion: %s m²/s", vertdiff)
 
-    def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
+    def update(self) -> None:
         """Move the particles one time step"""
+
+        state = self.modules['state']
+        grid = self.modules['grid']
+        force = self.modules['forcing']
 
         X, Y, Z = state.X, state.Y, state.Z
 

@@ -30,17 +30,18 @@ class ParticleReleaser(Iterator):
 
     def __init__(
         self,
+        modules: dict,
         release_file: Union[Path, str],
-        timer: TimeKeeper,
-        datatypes: Dict[str, Any],
         names: Optional[List[str]] = None,
-        grid: Optional[BaseGrid] = None,
         continuous: Optional[bool] = False,
         release_frequency: int = 0,  # frequency in seconds
         warm_start_file: Optional[str] = None,
         **args,
     ) -> None:
-
+        timer = modules['time']
+        grid = modules['grid']
+        datatypes = modules['state'].dtypes
+        self.modules = modules
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
         self.time_reversal = timer.time_reversal
@@ -133,6 +134,12 @@ class ParticleReleaser(Iterator):
         # # Read the particle variables
         self._index = 0  # Index of next release
         self._particle_count = warm_particle_count
+
+    def update(self):
+        step = self.modules['time'].step
+        if step in self.steps:
+            V = next(self)
+            self.modules['state'].append(**V)
 
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release

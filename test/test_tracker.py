@@ -34,8 +34,8 @@ class Timer:
 
 
 class Forcing:
-    def __init__(self, grid, timer):
-        pass
+    def __init__(self, modules: dict = None, **kwargs):
+        self.modules = modules
 
     def velocity(self, X, Y, Z):
         return 0.5 * np.ones_like(X), np.ones_like(Y)
@@ -50,13 +50,14 @@ def test_advection():
     grid = Grid()
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
-    tracker = Tracker(advection="EF", dt=600)
+    modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
+    tracker = Tracker(modules=modules, advection="EF", dt=600)
 
     X = [30, 22.2, 11.1]
     Y = [40, 42, 45]
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update()
 
     assert all(state.X == [x + 3 for x in X])
     assert all(state.Y == [y + 6 for y in Y])
@@ -67,16 +68,17 @@ def test_vertical_diffusion_changes_z_coordinate():
     grid = Grid()
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
-    tracker0 = Tracker(advection="EF", dt=600, vertdiff=0)
-    tracker1 = Tracker(advection="EF", dt=600, vertdiff=1e-7)
+    modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
+    tracker0 = Tracker(modules=modules, advection="EF", dt=600, vertdiff=0)
+    tracker1 = Tracker(modules=modules, advection="EF", dt=600, vertdiff=1e-7)
 
     Z = [0, 5, 50] * 3
     state.append(X=[2] * 9, Y=[2] * 9, Z=Z)
 
-    tracker0.update(state, grid, forcing)
+    tracker0.update()
     assert state.Z.tolist() == Z
 
-    tracker1.update(state, grid, forcing)
+    tracker1.update()
     assert all(state.Z != Z)
     assert all(state.Z > 0)
     assert all(state.Z < 50)
@@ -91,14 +93,15 @@ def test_out_of_area():
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
     config = dict(advection="EF", dt=600)
-    tracker = Tracker(**config)
+    modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
+    tracker = Tracker(modules=modules, **config)
 
     X = [30, grid.imax - 2.1, 11.1]
     Y = [30, grid.jmax - 2.1, 22.2]
 
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update()
 
     # Killed particle 1, out-of-area
     # Question: should tracker.update do a compactify?

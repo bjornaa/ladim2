@@ -30,14 +30,12 @@ class Output(BaseOutput):
 
     def __init__(
         self,
+        modules: dict,
         filename: Union[Path, str],
-        timer: TimeKeeper,
         output_period: Union[int, np.timedelta64, Sequence],
-        num_particles: int,  # Total number of particles
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
-        layout: str = "sparce",  # "sparce" or "dence"
-        grid: Optional[BaseGrid] = None,
+        layout: str = "ragged",  # "ragged" or "matrix"
         ncargs: Optional[Dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
@@ -45,11 +43,13 @@ class Output(BaseOutput):
     ) -> None:
 
         logger.info("Initializing output")
-
+        timer = modules['time']
+        grid = modules['grid']
+        self.modules = modules
         self.filename = filename
         self.layout = layout
         self.timer = timer
-        self.num_particles = num_particles
+        self.num_particles = modules['release'].total_particle_count
         self.instance_variables = instance_variables
         if self.layout == "dence":  # No need to save pid in orthogonal layout
             self.instance_variables.pop("pid", None)
@@ -127,6 +127,11 @@ class Output(BaseOutput):
                 self.xy2ll = grid.xy2ll  # type: ignore
             except AttributeError:
                 self.xy2ll = lambda x, y: (x, y)
+
+    def update(self):
+        step = self.modules['time'].step
+        if step % self.output_period_step == 0:
+            self.write(self.modules['state'])
 
     def create_netcdf(self) -> Dataset:
         """Create a LADiM output netCDF file for contiguous ragged array format
@@ -284,7 +289,8 @@ class Output(BaseOutput):
                 self.nc.variables[var][:npart] = state[var][:npart]
 
     def close(self) -> None:
-        self.nc.close()
+        if self.nc.isopen():
+            self.nc.close()
 
 
 def fname_gnrt(filename: Path) -> Generator[Path, None, None]:

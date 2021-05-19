@@ -65,6 +65,7 @@ class State(Sized):
     # append and compactify (rename the last to kill?)
 
     __slots__ = [
+        "modules",
         "variables",
         "instance_variables",
         "particle_variables",
@@ -78,6 +79,7 @@ class State(Sized):
         instance_variables: Optional[Dict[str, type]] = None,
         particle_variables: Optional[Dict[str, type]] = None,
         default_values: Optional[Dict[str, Scalar]] = None,
+        modules: dict = None,
     ) -> None:
         """
         Initialize the state
@@ -92,7 +94,7 @@ class State(Sized):
         """
 
         logger.info("Initiating the model state")
-
+        self.modules = modules
         # Make dtypes dictionary
         mandatory_variables = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool

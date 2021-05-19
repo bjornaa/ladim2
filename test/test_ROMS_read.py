@@ -8,6 +8,12 @@ from ladim2.timekeeper import TimeKeeper
 from ladim2 import ROMS
 
 
+class Dummy:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 filename = Path("examples/data/ocean_avg_0014.nc")
 # Can be run from test directory or ladim2 root
 cwd = Path.cwd()
@@ -47,20 +53,21 @@ def test_prestep0(setup):
 
     timer = TimeKeeper(start="1989-05-24T12", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    state = Dummy(X=X, Y=Y, Z=Z)
+    modules = dict(grid=grid, time=timer, state=state)
+    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
 
     # First field
-    force.update(force.steps[0], X, Y, Z)
+    force.update()
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[0])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[0])
 
     # Do some updating
-    force.update(force.steps[0] + 1, X, Y, Z)
-    force.update(force.steps[1], X, Y, Z)
-    force.update(force.steps[1] + 1, X, Y, Z)
+    while timer.step < force.steps[2]:
+        timer.update()
+        force.update()
 
     # Check third field
-    force.update(force.steps[2], X, Y, Z)
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[2])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[2])
 
@@ -72,10 +79,12 @@ def test_midstep(setup):
 
     timer = TimeKeeper(start="1989-05-26T00", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    state = Dummy(X=X, Y=Y, Z=Z)
+    modules = dict(grid=grid, time=timer, state=state)
+    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
 
     # First field
-    force.update(0, X, Y, Z)
+    force.update()
 
     # Time interpolation for velocity
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(0.5 * (U_dir[0] + U_dir[1]))
@@ -83,11 +92,11 @@ def test_midstep(setup):
     assert force.variables["temp"][0] == pytest.approx(temp_dir[0])
 
     # Do some updating
-    force.update(force.steps[1], X, Y, Z)
-    force.update(force.steps[1] + 1, X, Y, Z)
+    while timer.step < force.steps[2]:
+        timer.update()
+        force.update()
 
     # Check third field
-    force.update(force.steps[2], X, Y, Z)
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[2])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[2])
 
@@ -99,19 +108,20 @@ def test_start_second(setup):
 
     timer = TimeKeeper(start="1989-05-27T12", stop="1989-05-30T15", dt=3600)
     grid = ROMS.Grid(filename, subgrid=subgrid,)
-    force = ROMS.Forcing(grid, timer, filename, ibm_forcing=["temp"])
+    state = Dummy(X=X, Y=Y, Z=Z)
+    modules = dict(grid=grid, time=timer, state=state)
+    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
 
     # First field
-    force.update(force.steps[1], X, Y, Z)
+    force.update()
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[1])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[1])
 
     # Do some updating
-    force.update(force.steps[1] + 1, X, Y, Z)
-    force.update(force.steps[2], X, Y, Z)
-    force.update(force.steps[2] + 1, X, Y, Z)
+    while timer.step < force.steps[3]:
+        timer.update()
+        force.update()
 
     # Check third field (4th on file)
-    force.update(force.steps[3], X, Y, Z)
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[3])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[3])

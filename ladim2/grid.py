@@ -14,10 +14,13 @@ import numpy as np  # type: ignore
 class BaseGrid(ABC):
     """Abstract Base Class for LADiM grid"""
 
-    xmin: float
-    xmax: float
-    ymin: float
-    ymax: float
+    @abstractmethod
+    def __init__(self, modules: dict, **kwargs):
+        self.modules = modules
+        self.xmin: float
+        self.xmax: float
+        self.ymin: float
+        self.ymax: float
 
     @abstractmethod
     def depth(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
@@ -34,31 +37,3 @@ class BaseGrid(ABC):
     @abstractmethod
     def atsea(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Tests if particles are at sea"""
-
-
-def init_grid(module, **args) -> BaseGrid:
-    """Creates an instance of the Grid class
-
-    Args:
-        module:
-            Name of the module defining the Grid class
-        args:
-            Keyword arguments passed on to the Grid instance
-
-    Returns:
-        A Gridinstance
-
-    The module should be in the LADiM source directory or in the working directory.
-    The working directory takes priority.
-    The Grid class in the module should be named "Forcing".
-    """
-
-    # System path for ladim2.ladim2
-    p = Path(__file__).parent
-    sys.path.insert(0, str(p))
-    # Working directory
-    sys.path.insert(0, os.getcwd())
-
-    # Import correct module
-    grid_module = importlib.import_module(module)
-    return grid_module.Grid(**args)  # type: ignore

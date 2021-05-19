@@ -19,9 +19,9 @@ time:
     dt: 3600
 
 forcing:
-    module: ROMS2
+    module: ladim2.ROMS2
     filename: ../data/ocean_avg_0014.nc
-    pad: 2
+    pad: 25
 
 tracker:
     advection: EF

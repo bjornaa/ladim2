@@ -118,9 +118,6 @@ def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]
         # warm start -> release
         config["release"]["warm_start_file"] = config["warm_start"]["filename"]
 
-    # Default output = out_nc_ragged, contiguous ragged representation
-    if "module" not in config["output"]:
-        config["output"]["module"] = "out_netcdf"
     # skip_initial is default with warm start
     if "filename" in config["warm_start"] and "skip_initial" not in config["output"]:
         config["output"]["skip_initial"] = True

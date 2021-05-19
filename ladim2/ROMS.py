@@ -64,7 +64,6 @@ class Grid(BaseGrid):
         Vinfo=None,
         **args,
     ) -> None:
-
         logger.info("Initiating grid")
         logger.info("  Grid file: %s", filename)
 
@@ -395,15 +394,15 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        grid: Grid,
-        timer: TimeKeeper,
+        modules: dict,
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
-
-        self.grid = grid  # Get the grid object.
+        timer = modules['time']
+        self.modules = modules
+        self.grid = modules['grid']  # Get the grid object.
         # self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
@@ -488,10 +487,13 @@ class Forcing(BaseForce):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(
-        self, step: int, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
-    ) -> None:
+    def update(self) -> None:
         """Update the fields to given time step t"""
+
+        X = self.modules['state'].X
+        Y = self.modules['state'].Y
+        Z = self.modules['state'].Z
+        step = self.modules['time'].step
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
