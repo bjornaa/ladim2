@@ -64,8 +64,12 @@ class Tracker:
         if self.vertdiff:
             logger.info("  Vertical diffusion: %s m²/s", vertdiff)
 
-    def update(self, state: State, grid: BaseGrid, force: BaseForce) -> None:
+    def update(self) -> None:
         """Move the particles one time step"""
+
+        state = self.modules['state']
+        grid = self.modules['grid']
+        force = self.modules['forcing']
 
         X, Y, Z = state.X, state.Y, state.Z
 

@@ -73,7 +73,7 @@ class Model:
 
         # --- Update state to next time step
         # Improve: no need to update after last write
-        self.tracker.update(self.state, grid=self.grid, force=self.force)
+        self.tracker.update()
 
     def finish(self):
         """Clean-up after the model run"""

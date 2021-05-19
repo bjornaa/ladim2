@@ -57,7 +57,7 @@ def test_advection():
     Y = [40, 42, 45]
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update()
 
     assert all(state.X == [x + 3 for x in X])
     assert all(state.Y == [y + 6 for y in Y])
@@ -75,10 +75,10 @@ def test_vertical_diffusion_changes_z_coordinate():
     Z = [0, 5, 50] * 3
     state.append(X=[2] * 9, Y=[2] * 9, Z=Z)
 
-    tracker0.update(state, grid, forcing)
+    tracker0.update()
     assert state.Z.tolist() == Z
 
-    tracker1.update(state, grid, forcing)
+    tracker1.update()
     assert all(state.Z != Z)
     assert all(state.Z > 0)
     assert all(state.Z < 50)
@@ -101,7 +101,7 @@ def test_out_of_area():
 
     state.append(X=X, Y=Y, Z=5)
 
-    tracker.update(state, grid, forcing)
+    tracker.update()
 
     # Killed particle 1, out-of-area
     # Question: should tracker.update do a compactify?
