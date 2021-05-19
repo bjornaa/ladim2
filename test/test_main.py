@@ -164,7 +164,7 @@ def runladim(conf, gridforce, release):
 
         main(conf_fname)
 
-        with xr.open_dataset(out_fname) as dset:
+        with xr.open_dataset(out_fname, engine="netcdf4") as dset:
             yield dset
 
 
