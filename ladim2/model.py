@@ -55,9 +55,7 @@ class Model:
         logger.debug("step, model time: %4d %s", step, self.timer.time)
 
         # --- Particle release
-        if step in self.release.steps:
-            V = next(self.release)
-            self.state.append(**V)
+        self.release.update()
 
         # --- Update forcing ---
         self.force.update()

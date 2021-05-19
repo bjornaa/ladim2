@@ -135,6 +135,12 @@ class ParticleReleaser(Iterator):
         self._index = 0  # Index of next release
         self._particle_count = warm_particle_count
 
+    def update(self):
+        step = self.modules['time'].step
+        if step in self.steps:
+            V = next(self)
+            self.modules['state'].append(**V)
+
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release
 
