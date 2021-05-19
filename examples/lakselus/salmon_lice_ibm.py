@@ -2,28 +2,35 @@ import numpy as np
 
 from ladim.ibms import light
 
-from ladim2.ibm import BaseIBM
-from ladim2.timekeeper import TimeKeeper
-from ladim2.state import State
-from ladim2.forcing import BaseForce
-from ladim2.grid import BaseGrid
+# from ladim2.ibm import BaseIBM
+# from ladim2.timekeeper import TimeKeeper
+# from ladim2.state import State
+# from ladim2.forcing import BaseForce
+# from ladim2.grid import BaseGrid
 
 
-class IBM(BaseIBM):
-    def __init__(
-        self,
-        timer: TimeKeeper,
-        state: State,
-        forcing: BaseForce,
-        grid: BaseGrid,
-        vertical_mixing: float = 0,
-        salinity_model: str = "new",
-    ):
+# class IBM(BaseIBM):
+class IBM:
+    #def __init__(self, modules, **kwargs):
+    def __init__(self, modules, vertical_mixing=0, salinity_model="new"):
+    #     self,
+    #     timer: TimeKeeper,
+    #     state: State,
+    #     forcing: BaseForce,
+    #     grid: BaseGrid,
+    #     vertical_mixing: float = 0,
+    #     salinity_model: str = "new",
+    # ):
 
-        self.timer = timer
-        self.state = state
-        self.forcing = forcing
-        self.grid = grid
+        # Modules
+        self.timer = modules["time"]
+        self.state = modules["state"]
+        self.forcing = modules["forcing"]
+        self.grid = modules["grid"]
+
+        # Keyword arguments
+        self.vertical_mixing = vertical_mixing
+        self.new_salinity_model = salinity_model == "True"
 
         # Constants
         mortality = 0.17  # [days-1]
@@ -34,17 +41,14 @@ class IBM(BaseIBM):
 
         self.k = 0.2  # Light extinction coefficient
         self.swim_vel = 5e-4  # m/s
-        self.D = vertical_mixing  # Vertical mixing [m*2/s]
-        self.vertical_diffusion = self.D > 0
+        self.vertical_diffusion = self.vertical_mixing > 0
 
-        self.timer = timer
-        self.dt = timer.dt / np.timedelta64(1, 'D')  # Timestep in days
+        self.dt = self.timer.dt / np.timedelta64(1, 'D')  # Timestep in days
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
         # salinity_model = config["ibm"].get('salinity_model', 'new')
         # self.new_salinity_model = (salinity_model == 'new')
-        self.new_salinity_model = salinity_model == "new"
-
+        #
     def update(self):
 
         state = self.state

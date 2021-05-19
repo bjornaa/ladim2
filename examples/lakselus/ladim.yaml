@@ -10,12 +10,12 @@ time:
     dt: [10, m]
 
 grid:
-    module: ROMS
+    # module: ROMS
     # subgrid: [300, 500, 480, 600]
     subgrid: [300, -1000, 480, 600]
 
 forcing:
-    module: ROMS
+    module: ladim2.ROMS
     #filename: /scratch/Data/NK800/file_*.nc
     filename: /home/bjorn/data/NK800/file_*.nc
     ibm_forcing: [temp, salt]
