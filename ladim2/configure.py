@@ -243,23 +243,3 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
         conf2["output"]["particle_variables"][var]["attributes"] = D
 
     return conf2
-
-
-def load_module(module_name: str):
-    import os
-
-    if os.path.exists(module_name + '.py'):
-        module_name += '.py'
-
-    if os.path.exists(module_name):
-        import importlib.util
-        basename = os.path.basename(module_name).rsplit('.', 1)[0]
-        internal_name = 'ladim_custom_' + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(internal_name, module_name)
-        module_object = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module_object)
-        return module_object
-
-    else:
-        import importlib
-        return importlib.import_module(module_name)

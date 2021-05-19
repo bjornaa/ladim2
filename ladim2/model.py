@@ -1,7 +1,6 @@
 """Module containing the LADiM Model class definition"""
-
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 
 # from ladim2 import __version__, __file__
@@ -102,7 +101,6 @@ def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
     )
     main_class_name = main_class_names[module_name]
 
-    from ladim2.configure import load_module
     module_name = conf_dict.get('module', default_module_name)
     module_object = load_module(module_name)
     MainClass = getattr(module_object, main_class_name)
@@ -111,3 +109,23 @@ def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
         del conf_dict['module']
 
     return MainClass(modules=all_modules_dict, **conf_dict)
+
+
+def load_module(module_name: str):
+    import os
+
+    if os.path.exists(module_name + '.py'):
+        module_name += '.py'
+
+    if os.path.exists(module_name):
+        import importlib.util
+        basename = os.path.basename(module_name).rsplit('.', 1)[0]
+        internal_name = 'ladim_custom_' + basename  # To avoid naming collisions
+        spec = importlib.util.spec_from_file_location(internal_name, module_name)
+        module_object = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module_object)
+        return module_object
+
+    else:
+        import importlib
+        return importlib.import_module(module_name)
