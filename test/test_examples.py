@@ -23,6 +23,13 @@ def test_killer():
         run_animate('animate.py')
 
 
+def test_line_matrix():
+    with create_tempdir('line'):
+        run_module('make_release.py')
+        run_ladim('matrix.yaml')
+        run_animate('animate_matrix.py')
+
+
 def test_line():
     with create_tempdir('line'):
         run_module('make_release.py')
