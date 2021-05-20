@@ -10,7 +10,7 @@ from postladim import ParticleFile
 # ---------------
 
 # Files
-particle_file = "station1.nc"
+particle_file = "station.nc"
 grid_file = "../data/ocean_avg_0014.nc"
 
 # Subgrid definition
@@ -85,3 +85,5 @@ anim = FuncAnimation(
 )
 
 plt.show()
+
+pf.close()

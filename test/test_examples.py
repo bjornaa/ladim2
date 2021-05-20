@@ -9,6 +9,14 @@ from unittest.mock import patch
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 
 
+def test_station():
+    with create_tempdir('station'):
+        run_module('make_release.py')
+        run_ladim('ladim2.yaml')
+        run_pyplot('plot.py')
+        run_pyplot('animate.py')
+
+
 def test_restart():
     with create_tempdir('restart'):
         run_module('make_release.py')
