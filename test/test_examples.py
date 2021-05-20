@@ -9,6 +9,13 @@ from unittest.mock import patch
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 
 
+def test_gosouth():
+    with create_tempdir('gosouth'):
+        run_module('make_release.py')
+        run_ladim('ladim2.yaml')
+        run_pyplot('animate.py')
+
+
 def test_latlon():
     with create_tempdir('latlon'):
         run_module('make_release.py')
