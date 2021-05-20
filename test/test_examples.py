@@ -24,7 +24,8 @@ def create_tempdir(name):
 
     finally:
         os.chdir(curdir)
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(temp_dir, ignore_errors=False)
+        assert not os.path.exists(temp_dir)
 
 
 def run_module(path):
