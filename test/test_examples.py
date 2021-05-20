@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
-EXAMPLE_NAMES = ['killer']
+EXAMPLE_NAMES = ['line', 'killer']
 
 
 @contextmanager
