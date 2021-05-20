@@ -9,6 +9,13 @@ from unittest.mock import patch
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 
 
+def test_killer_matrix():
+    with create_tempdir('killer'):
+        run_module('make_release.py')
+        run_ladim('matrix.yaml')
+        run_animate('animate_matrix.py')
+
+
 def test_killer():
     with create_tempdir('killer'):
         run_module('make_release.py')
