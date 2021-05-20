@@ -1,14 +1,26 @@
 import os
-import pytest
 from contextlib import contextmanager
 import shutil
-from ladim2.main import main
+from ladim2.main import main as run_ladim
 import importlib.util
 from unittest.mock import patch
 
 
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
-EXAMPLE_NAMES = ['line', 'killer']
+
+
+def test_killer():
+    with create_tempdir('killer'):
+        run_module('make_release.py')
+        run_ladim('ladim2.yaml')
+        run_animate('animate.py')
+
+
+def test_line():
+    with create_tempdir('line'):
+        run_module('make_release.py')
+        run_ladim('ladim2.yaml')
+        run_animate('animate.py')
 
 
 @contextmanager
@@ -36,20 +48,8 @@ def run_module(path):
     spec.loader.exec_module(module_object)
 
 
-@pytest.mark.parametrize("name", EXAMPLE_NAMES)
-def test_example(name):
-    with create_tempdir(name):
-        # Create release file
-        if os.path.exists('make_release.py'):
-            run_module('make_release.py')
-
-        # Create output file
-        if os.path.exists('ladim2.yaml'):
-            main('ladim2.yaml')
-
-        # Create animation, except for showing it on screen
-        if os.path.exists('animate.py'):
-            import matplotlib.pyplot as plt
-            with patch.object(plt, 'show', return_value=None) as mock_method:
-                run_module('animate.py')
-                mock_method.assert_called_once()
+def run_animate(path):
+    import matplotlib.pyplot as plt
+    with patch.object(plt, 'show', return_value=None) as mock_method:
+        run_module(path)
+        mock_method.assert_called_once()
