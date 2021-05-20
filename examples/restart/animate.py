@@ -82,3 +82,5 @@ anim = FuncAnimation(
 )
 
 plt.show()
+
+pf.close()

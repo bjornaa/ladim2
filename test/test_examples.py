@@ -9,6 +9,17 @@ from unittest.mock import patch
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 
 
+def test_restart():
+    with create_tempdir('restart'):
+        run_module('make_release.py')
+        run_ladim('split.yaml')
+        run_pyplot('animate.py')
+        run_pyplot('animate_split.py')
+
+        run_ladim('unsplit.yaml')
+        run_ladim('restart.yaml')
+
+
 def test_gosouth():
     with create_tempdir('gosouth'):
         run_module('make_release.py')
