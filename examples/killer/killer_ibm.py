@@ -17,4 +17,4 @@ class IBM:
         self.state["age"] += self.dt
 
         # Add particles older than prescribed lifetime to dead
-        self.state["alive"] &= state["age"] < self.lifetime
+        self.state["alive"] &= self.state["age"] < self.lifetime
