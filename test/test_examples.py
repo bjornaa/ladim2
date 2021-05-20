@@ -9,32 +9,42 @@ from unittest.mock import patch
 EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 
 
+def test_latlon():
+    with create_tempdir('latlon'):
+        run_module('make_release.py')
+        run_ladim('ladim2.yaml')
+        run_module('make_coast.py')
+        run_pyplot('plot.py')
+        run_pyplot('plot0.py')
+        run_pyplot('animate.py')
+
+
 def test_killer_matrix():
     with create_tempdir('killer'):
         run_module('make_release.py')
         run_ladim('matrix.yaml')
-        run_animate('animate_matrix.py')
+        run_pyplot('animate_matrix.py')
 
 
 def test_killer():
     with create_tempdir('killer'):
         run_module('make_release.py')
         run_ladim('ladim2.yaml')
-        run_animate('animate.py')
+        run_pyplot('animate.py')
 
 
 def test_line_matrix():
     with create_tempdir('line'):
         run_module('make_release.py')
         run_ladim('matrix.yaml')
-        run_animate('animate_matrix.py')
+        run_pyplot('animate_matrix.py')
 
 
 def test_line():
     with create_tempdir('line'):
         run_module('make_release.py')
         run_ladim('ladim2.yaml')
-        run_animate('animate.py')
+        run_pyplot('animate.py')
 
 
 @contextmanager
@@ -62,8 +72,9 @@ def run_module(path):
     spec.loader.exec_module(module_object)
 
 
-def run_animate(path):
+def run_pyplot(path):
     import matplotlib.pyplot as plt
     with patch.object(plt, 'show', return_value=None) as mock_method:
         run_module(path)
+        plt.close()
         mock_method.assert_called_once()
