@@ -9,31 +9,23 @@
 
 import numpy as np
 
-from ladim2.ibm import BaseIBM
-from ladim2.timekeeper import TimeKeeper
-from ladim2.state import State
-from ladim2.grid import BaseGrid
 
-
-class IBM(BaseIBM):
+class IBM:
     """Adding a constant horizontal velocity to the particle tracking"""
 
     def __init__(
         self,
+        modules: dict,
         direction: float,  # clockwise degree from North
         speed: float,  # swimming speed [m/s]
-        timer: TimeKeeper,
-        state: State,
-        grid: BaseGrid,
-        forcing=None,  # This IBM does not use forcing
     ):
-        self.dt = timer.dtsec
-        self.state = state
-        self.grid = grid
+        self.dt = modules['time'].dtsec
+        self.state = modules['state']
+        self.grid = modules['grid']
 
         # Compute swimming velocity in grid coordinates
         azimuth = direction * np.pi / 180
-        angle = grid.angle  # type: ignore
+        angle = self.grid.angle  # type: ignore
         self.Xs = speed * np.sin(azimuth + angle)
         self.Ys = speed * np.cos(azimuth + angle)
 

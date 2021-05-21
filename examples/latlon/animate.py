@@ -135,3 +135,5 @@ anim = FuncAnimation(
 
 # anim.save('line.gif',  writer='imagemagick')
 plt.show()
+
+pf.close()

@@ -18,7 +18,7 @@ time:
     dt: 3600
 
 forcing:
-    module: ROMS
+    module: ladim2.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
@@ -28,7 +28,7 @@ release:
     release_file : line.rls
 
 output:
-    module: out_netcdf
+    module: ladim2.out_netcdf
     layout: matrix
     filename: out_matrix.nc
     ncargs: {data_model: NETCDF4_CLASSIC}

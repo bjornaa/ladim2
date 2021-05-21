@@ -13,10 +13,10 @@ time:
     dt: [1, h]
 
 grid:
-    module: ROMS
+    module: ladim2.ROMS
 
 forcing:
-    module: ROMS
+    module: ladim2.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 ibm:

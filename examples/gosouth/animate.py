@@ -97,3 +97,5 @@ anim = FuncAnimation(
 
 fig.canvas.mpl_connect("button_press_event", onClick)
 plt.show()
+
+pf.close()
