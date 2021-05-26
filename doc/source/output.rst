@@ -16,17 +16,19 @@ entries undefined. The ``postladim``<link> subpackage hides most of the complexi
 ragged format.
 
 
-:index:`Orthogonal array output format`
----------------------------------------
+:index:`Dense output layout`
+----------------------------
 
+The `dense` output layout may be termed `orhogonal array`.
 The dimensions are ``time``, ``particle``. Instance variables are indexed by ("time",
 "particle") while particle variables are indexed by the single dimension "particle".
 Undefined values, before birth or after death, have suitable fill values (NaN for float
 or double).
 
-:index:`Ragged array output format`
-------------------------------------
+:index:`Sparse output layout`
+-----------------------------
 
+The `sparse` output layout may also be called `ragged array representation`.
 This is the default output format of LADiM. For particle tracking, the CF-standard
 defines a format for "Ragged array representation of trajectories". This is not
 suitable for our purpose since we are more interested in the geographical distribution of

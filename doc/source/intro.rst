@@ -50,5 +50,10 @@ crucial in the "traffic light" system for management of the salmon aquaculture i
 in Norway. [Find good reference in English]. The Norwegian Current Information System,
 `NCIS <https://ncis.imr.no>`_, also uses ``LADiM`` to produce spreading maps.
 
-There are several scientific articles using ``LADiM`` output. For a list see ...., Please
-notify Bjørn Ådlandsvik <bjorn@hi.no> on new papers, so the list can be kept up to date.
+There are several scientific articles using ``LADiM`` output. A list is given below.
+Please notify Bjørn Ådlandsvik <bjorn@hi.no> on new papers, so the list can be kept up to
+date. LADiM may be cited as ....
+
+.. toctree::
+
+    Scientific articles using LADiM <articles.rst>

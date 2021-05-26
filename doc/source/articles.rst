@@ -1,7 +1,9 @@
-Articles where LADiM has a role
+Articles
+========
 
 
------ 2021 --------
+2021
+----
 
 B. Finstad, A.D. Sandvik, O. Ugedal, K.W. Vollset, Ø. Karlsen, J.G. Davidsen, H. Sægrov,
 and R.J. Lennox, 2021, Development of a risk assessment method for sea trout in coastal
@@ -12,18 +14,22 @@ Aglen, and T. Johansen, 2021, The making of a genetic cline: introgression of oc
 genes into coastal cod populations in the North East Atlantic, Can. J. Fish. Aquat. Sci.,
 doi:10.1139/cjfas-2020-0380,
 
-
 A.D. Sandvik, S. Bui, M. Huserbråten, Ø. Karlsen, M.S. Myksvoll, B. Ådlandsvik, and I.A.
 Johnsen, 2021, The development of a sustainability assessment indicator and its response
 to management changes as derived from salmon lice dispersal modelling, ICES J. Mar. Sci.,
 doi:10.1093/icesjms/fsab077,
+
+A.D. Sandvik, S. Dalvin, R. Skern-Mauritzen, M.D. Skogen, 2021,  The effect of a warmer
+climate on the salmon lice infection pressure from Norwegian aquaculture, ICES Journal of
+Marine Science, doi: 10.1093/icesjms/fsab069
 
 A. Coates, I.A. Johnsen, T. Dempster, and B.L. Phillips, 2021, Parasite management in
 aquaculture exerts selection on salmon louse behaviour, Evol. Appl.,
 doi:10.1111/eva.13255,
 
 
---------- 2020 ----------
+2020
+----
 
 L. Asplin, J. Albretsen, I.A. Johnsen, and A.D Sandvik, 2020, The hydrodynamic foundation
 for salmon lice dispersion modeling along the Norwegian coast, Ocean Dynamics, 70,
@@ -53,7 +59,6 @@ T. Kutti, I.A. Johnsen, K.S. Skaar, J.L. Ray, V. Husa, and T.G. Dahlgren, 2020,
 Quantification of eDNA to Map the Distribution of Cold-Water Coral Reefs, Front. Mar.
 Sci., 12, 446.
 
-
 M.S. Myksvoll, A.D. Sandvik, I.A. Johnsen, J. Skarðhamar, and J. Albretsen, 2020, Impact
 of variable physical conditions and future increased aquaculture production on lice
 infestation pressure and its sustainability in Norway, Aquacult. Environ. Interact., 12,
@@ -72,7 +77,8 @@ Vågseth, S. Dalvin, M. Skern-Mauritzen, and S. Bui, 2020, Parasite development 
 dispersal dynamics; infectivity, activity and energetic status in cohorts of salmon louse
 copepodids, J. Exp. Mar. Biol. Ecol., 530-531, 151429.
 
----------- 2019 -------------
+2019
+----
 
 T. Crosbie, D.W. Wright, F. Oppedal, I.A. Johnsen, F. Samsing, and T. Dempster, 2019,
 Effects of step salinity gradients on salmon lice larvae behaviour and dispersal,
@@ -87,18 +93,11 @@ fragment dispersal networks of a marine parasite, Int. J. Parasitology, 49, 277�
 J. Skarðhamar, M.N. Fagerli, M. Reigstad, A.D. Sandvik, and P.A. Bjørn , 2019, Sampling
 planktonic salmon lice in Norwegian fjords, Aquacult. Environ. Interact., 701–715.
 
-- Gamle ladim?
-K.O. Strand, F. Vikebø, S. Sundby, A.K. Sperrevik, and Ø. Breivik, 2019, Subsurface
-maxima in buoyant fish eggs indicate vertical velocity shear and spatially limited
-spawning grounds, Limnol. Oceanogr., 64, 1239–51.
-
-
-
 M.S. Myksvoll, A.D. Sandvik, J. Albretsen, L. Asplin, I.A. Johnsen, Ø. Karlsen, N.M.
 Kristensen, A. Melsom, J. Skarðhamar, and B. Ådlandsvik, 2018, Evaluation of a national
 operational salmon lice monitoring system—From physics to fish, PLoS ONE, 13, e0201338.
 
-J.Skarðhamar, J. Albretsen, A.D. Sandvik, V.S. Lien, M.S. Myksvoll, I.A. Johnsen, L.
+J. Skarðhamar, J. Albretsen, A.D. Sandvik, V.S. Lien, M.S. Myksvoll, I.A. Johnsen, L.
 Asplin, B. Ådlandsvik, E. Halttunen, and P.A. Bjørn, 2018, Modelled salmon lice
 dispersion and infestation patterns in a sub-arctic fjord, ICES J. Mar. Sci., 75,
 1733–1747.
