@@ -1,7 +1,10 @@
 """Module containing the LADiM Model class definition"""
+import os
+import importlib
+
+# import importlib.util
 import logging
 from typing import Dict, Any
-
 
 # from ladim2 import __version__, __file__
 from ladim2.state import State
@@ -28,20 +31,29 @@ class Model:
 
     def __init__(self, config: Dict[str, Any]) -> None:
         # Initialize submodules
-        self.modules = dict()
-        module_names = ['state', 'time', 'grid', 'forcing', 'release', 'tracker', 'ibm', 'output']
+        self.modules: Dict[str, Any] = dict()
+        module_names = [
+            "state",
+            "time",
+            "grid",
+            "forcing",
+            "release",
+            "tracker",
+            "ibm",
+            "output",
+        ]
         for name in module_names:
             self.modules[name] = init_module(name, config[name], self.modules)
 
         # Define shorthand for individual modules
-        self.state: State = self.modules['state']
-        self.timer: TimeKeeper = self.modules['time']
-        self.grid: BaseGrid = self.modules['grid']
-        self.force: BaseForce = self.modules['forcing']
-        self.tracker: Tracker = self.modules['tracker']
-        self.release: ParticleReleaser = self.modules['release']
-        self.output: BaseOutput = self.modules['output']
-        self.ibm: IBM = self.modules['ibm']
+        self.state: State = self.modules["state"]
+        self.timer: TimeKeeper = self.modules["time"]
+        self.grid: BaseGrid = self.modules["grid"]
+        self.force: BaseForce = self.modules["forcing"]
+        self.tracker: Tracker = self.modules["tracker"]
+        self.release: ParticleReleaser = self.modules["release"]
+        self.output: BaseOutput = self.modules["output"]
+        self.ibm: IBM = self.modules["ibm"]
 
         if config["warm_start"]:
             D = config["warm_start"]
@@ -72,63 +84,72 @@ class Model:
 
     def finish(self):
         """Clean-up after the model run"""
-        module_names = ['grid', 'forcing', 'release', 'tracker', 'ibm', 'output']
+        module_names = ["grid", "forcing", "release", "tracker", "ibm", "output"]
         for name in module_names:
             module = self.modules[name]
-            if hasattr(module, 'close') and callable(module.close):
+            if hasattr(module, "close") and callable(module.close):
                 module.close()
 
 
 def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
+    """Initiate the main class in one of the modules"""
     default_module_names = dict(
-        output='ladim2.out_netcdf',
-        release='ladim2.release',
-        grid='ladim2.ROMS',
-        time='ladim2.timekeeper',
-        forcing='ladim2.ROMS',
-        tracker='ladim2.tracker',
-        state='ladim2.state',
-        ibm='ladim2.ibm',
+        output="ladim2.out_netcdf",
+        release="ladim2.release",
+        grid="ladim2.ROMS",
+        time="ladim2.timekeeper",
+        forcing="ladim2.ROMS",
+        tracker="ladim2.tracker",
+        state="ladim2.state",
+        ibm="ladim2.ibm",
     )
     default_module_name = default_module_names[module_name]
 
     main_class_names = dict(
-        output='Output',
-        time='TimeKeeper',
-        release='ParticleReleaser',
-        grid='Grid',
-        forcing='Forcing',
-        tracker='Tracker',
-        state='State',
-        ibm='IBM',
+        output="Output",
+        time="TimeKeeper",
+        release="ParticleReleaser",
+        grid="Grid",
+        forcing="Forcing",
+        tracker="Tracker",
+        state="State",
+        ibm="IBM",
     )
     main_class_name = main_class_names[module_name]
 
-    module_name = conf_dict.get('module', default_module_name)
+    module_name = conf_dict.get("module", default_module_name)
     module_object = load_module(module_name)
     MainClass = getattr(module_object, main_class_name)
 
-    if 'module' in conf_dict:
-        del conf_dict['module']
+    if "module" in conf_dict:
+        del conf_dict["module"]
 
     return MainClass(modules=all_modules_dict, **conf_dict)
 
 
-def load_module(module_name: str):
-    import os
+def load_module(module_name: str) -> Any:
+    """Load LADiM module
 
-    if os.path.exists(module_name + '.py'):
-        module_name += '.py'
+    Modules are given as paths (absolute or releative to the working directory) to
+    python modules (without .py extension) or modules on the ordinary python search path.
+    The former takes presedence
+
+    """
+
+    if os.path.exists(module_name + ".py"):
+        module_name += ".py"
 
     if os.path.exists(module_name):
-        import importlib.util
-        basename = os.path.basename(module_name).rsplit('.', 1)[0]
-        internal_name = 'ladim_custom_' + basename  # To avoid naming collisions
+
+        basename = os.path.basename(module_name).rsplit(".", 1)[0]
+        internal_name = "ladim_custom_" + basename  # To avoid naming collisions
         spec = importlib.util.spec_from_file_location(internal_name, module_name)
         module_object = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module_object)
+        spec.loader.exec_module(module_object)   # type: ignore
         return module_object
 
-    else:
-        import importlib
+    try:
         return importlib.import_module(module_name)
+    except ModuleNotFoundError as err:
+        logging.critical("Can not find module %s", module_name)
+        raise SystemExit from err

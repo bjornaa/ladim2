@@ -12,7 +12,7 @@ LADiM Grid og Forcing form the Regional Ocean Model System (ROMS)
 
 from pathlib import Path
 import logging
-from typing import Union, Optional, List, Tuple, Dict
+from typing import Union, Optional, List, Tuple, Dict, Any
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
@@ -394,15 +394,15 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        modules: dict,
+        modules: Dict[str, Any],
         filename: Union[Path, str],
         ibm_forcing: Optional[List[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
-        timer = modules['time']
+        timer = modules["time"]
         self.modules = modules
-        self.grid = modules['grid']  # Get the grid object.
+        self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
@@ -490,10 +490,11 @@ class Forcing(BaseForce):
     def update(self) -> None:
         """Update the fields to given time step t"""
 
-        X = self.modules['state'].X
-        Y = self.modules['state'].Y
-        Z = self.modules['state'].Z
-        step = self.modules['time'].step
+        state = self.modules["state"]
+        X = state.X
+        Y = state.Y
+        Z = state.Z
+        step = self.modules["time"].step
 
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
@@ -757,7 +758,9 @@ def z2s(
 
 
 @numba.njit(parallel=parallel)  # type: ignore
-def z2s_kernel(I, J, Z, z_rho):
+def z2s_kernel(
+    I: ParticleArray, J: ParticleArray, Z: ParticleArray, z_rho: Field,
+) -> Tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
@@ -880,7 +883,7 @@ def sample3DUV(
     Y: ParticleArray,
     K: ParticleArray,
     A: ParticleArray,
-    method="bilinear",
+    method: str = "bilinear",
 ) -> Tuple[ParticleArray, ParticleArray]:
     """Samples a 3D velocity field"""
     return (

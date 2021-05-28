@@ -5,14 +5,15 @@ import re
 from pathlib import Path
 from datetime import date
 import logging
-from typing import Dict, Union, Optional, Sequence, Any, Generator, Tuple
+from typing import Dict, Union, Optional, Any, Generator, Tuple
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-from ladim2.timekeeper import TimeKeeper, normalize_period
+# from ladim2.timekeeper import TimeKeeper, normalize_period
+from ladim2.timekeeper import TimeDelta, normalize_period
 from ladim2.state import State  # For typing
-from ladim2.grid import BaseGrid
+# from ladim2.grid import BaseGrid
 from ladim2.output import BaseOutput
 
 Variable = Dict[str, Any]
@@ -24,15 +25,15 @@ if DEBUG:
 
 
 class Output(BaseOutput):
-    """LADiM output, contiguous ragged array representation in NetCDF
+    """LADiM output to NetCDF
 
     """
 
     def __init__(
         self,
-        modules: dict,
+        modules: Dict[str, Any],
         filename: Union[Path, str],
-        output_period: Union[int, np.timedelta64, Sequence],
+        output_period: TimeDelta,
         instance_variables: Dict[str, Variable],
         particle_variables: Optional[Dict[str, Variable]] = None,
         layout: str = "ragged",  # "ragged" or "matrix"
@@ -124,11 +125,11 @@ class Output(BaseOutput):
             self.lonlat = False
         if self.lonlat:
             try:
-                self.xy2ll = grid.xy2ll  # type: ignore
+                self.xy2ll = grid.xy2ll
             except AttributeError:
                 self.xy2ll = lambda x, y: (x, y)
 
-    def update(self):
+    def update(self) -> None:
         step = self.modules['time'].step
         if step % self.output_period_step == 0:
             self.write(self.modules['state'])

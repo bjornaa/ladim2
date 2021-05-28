@@ -144,7 +144,7 @@ def sample2D(
     Y: ParticleArray,
     mask: Optional[Field] = None,
     undef_value: float = 0.0,
-    outside_value: float = None,
+    outside_value: Optional[float] = None,
 ) -> ParticleArray:
     """Bilinear sample of a 2D field
 

@@ -30,7 +30,7 @@ class Grid:
 
 class Timer:
     def __init__(self):
-        self.dt = 600
+        self.dt = np.timedelta64(10, 'm')
 
 
 class Forcing:
@@ -51,7 +51,7 @@ def test_advection():
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
     modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
-    tracker = Tracker(modules=modules, advection="EF", dt=600)
+    tracker = Tracker(modules=modules, advection="EF")
 
     X = [30, 22.2, 11.1]
     Y = [40, 42, 45]
@@ -69,8 +69,8 @@ def test_vertical_diffusion_changes_z_coordinate():
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
     modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
-    tracker0 = Tracker(modules=modules, advection="EF", dt=600, vertdiff=0)
-    tracker1 = Tracker(modules=modules, advection="EF", dt=600, vertdiff=1e-7)
+    tracker0 = Tracker(modules=modules, advection="EF", vertdiff=0)
+    tracker1 = Tracker(modules=modules, advection="EF", vertdiff=1e-7)
 
     Z = [0, 5, 50] * 3
     state.append(X=[2] * 9, Y=[2] * 9, Z=Z)
@@ -92,7 +92,7 @@ def test_out_of_area():
     grid = Grid()
     timer = Timer()
     forcing = Forcing(grid=grid, timer=timer)
-    config = dict(advection="EF", dt=600)
+    config = dict(advection="EF")
     modules = dict(state=state, grid=grid, time=timer, forcing=forcing)
     tracker = Tracker(modules=modules, **config)
 

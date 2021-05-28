@@ -7,9 +7,10 @@ from typing import List, Optional, Union, Dict, Any
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
-from netCDF4 import Dataset
+from netCDF4 import Dataset  # type: ignore
 
-from ladim2.timekeeper import TimeKeeper, normalize_period
+# from ladim2.timekeeper import TimeKeeper, normalize_period
+from ladim2.timekeeper import normalize_period
 from ladim2.grid import BaseGrid
 
 
@@ -30,7 +31,7 @@ class ParticleReleaser(Iterator):
 
     def __init__(
         self,
-        modules: dict,
+        modules: Dict[str, Any],
         release_file: Union[Path, str],
         names: Optional[List[str]] = None,
         continuous: Optional[bool] = False,
@@ -38,9 +39,9 @@ class ParticleReleaser(Iterator):
         warm_start_file: Optional[str] = None,
         **args,
     ) -> None:
-        timer = modules['time']
-        grid = modules['grid']
-        datatypes = modules['state'].dtypes
+        timer = modules["time"]
+        grid = modules["grid"]
+        datatypes = modules["state"].dtypes
         self.modules = modules
         self.start_time = timer.start_time
         self.stop_time = timer.stop_time
@@ -121,7 +122,7 @@ class ParticleReleaser(Iterator):
 
         # Total number of particles released
         self.total_particle_count = self._df.mult.sum() + warm_particle_count
-        logger.info("  Total particle count: %d, self.total_particle_count")
+        logger.info("  Total particle count: %d", self.total_particle_count)
 
         # Release times
         self.times = self._df.index.unique()
@@ -135,11 +136,12 @@ class ParticleReleaser(Iterator):
         self._index = 0  # Index of next release
         self._particle_count = warm_particle_count
 
-    def update(self):
-        step = self.modules['time'].step
+    def update(self) -> None:
+        """Release new particles (if any)"""
+        step = self.modules["time"].step
         if step in self.steps:
             V = next(self)
-            self.modules['state'].append(**V)
+            self.modules["state"].append(**V)
 
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release
@@ -232,9 +234,9 @@ class ParticleReleaser(Iterator):
                 raise SystemExit(3)
             try:
                 X, Y = grid.ll2xy(df["lon"], df["lat"])  # type: ignore
-            except AttributeError:
+            except AttributeError as err:
                 logger.critical("Can not convert from lon/lat to grid coordinates")
-                raise SystemExit(3)
+                raise SystemExit(3) from err
 
             df["lon"] = X
             df["lat"] = Y
@@ -295,4 +297,8 @@ def mylen(df: pd.DataFrame) -> int:
     A workaround for len() which does not
     have the expected behaviour with itemizing,
     """
-    return df.shape[0] if df.ndim > 1 else 1
+    if df.ndim > 1:
+        length: int = df.shape[0]
+    else:
+        length = 1
+    return length

@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 from netCDF4 import Dataset
 
-from .state import State
+from ladim2.state import State
 
 DEBUG = False
 
@@ -21,9 +21,9 @@ def warm_start(
     """Initiate the state from a warm start"""
 
     logger.info("Warm start")
-    logger.info(f"  Warm start file {warm_start_file}")
+    logger.info("  Warm start file %s", warm_start_file)
 
-    logger.info(f"  warm start variables: {warm_start_variables}")
+    logger.info("  warm start variables: %s", warm_start_variables)
 
     # wvars = warm_start_variables.copy() + ["pid"]
     wvars: set = {"pid", "X", "Y", "Z", "alive", "active"}.union(warm_start_variables)
@@ -32,9 +32,9 @@ def warm_start(
     try:
         f = Dataset(warm_start_file)
         f.set_auto_mask(False)
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         # logging.critical(f"Can not open warm start file: {warm_start_file}")
-        raise SystemExit(1)
+        raise SystemExit(1) from err
 
     # Use last record in file
     pstart = f.variables["particle_count"][:-1].sum()
@@ -64,7 +64,7 @@ def warm_start(
                 shape = (pid_max,)
             values = np.full(shape, state.default_values[var])
         else:
-            logger.error(f"Warm start: No value for variable {var}")
+            logger.error("Warm start: No value for variable %s", var)
             raise SystemExit(1)
 
         state.variables[var] = values

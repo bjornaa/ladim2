@@ -9,11 +9,11 @@
 import logging
 import datetime
 import re
-from typing import Union, Tuple, Optional
+from typing import Union, Optional, Dict, Any, List
 import numpy as np
 
 Time = Union[str, np.datetime64, datetime.datetime]
-TimeDelta = Union[int, np.timedelta64, datetime.timedelta, Tuple[int, str], str]
+TimeDelta = Union[int, np.timedelta64, datetime.timedelta, List[Union[int, str]], str]
 
 
 DEBUG = False
@@ -53,7 +53,7 @@ class TimeKeeper:
         dt: TimeDelta,
         reference: Optional[Time] = None,
         time_reversal: bool = False,
-        modules: dict = None,
+        modules: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         start      start time
@@ -180,9 +180,9 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
     """Normalize different time period formats to np.timedelta64(-,"s")
 
     Accepted formats:
-       int:  numbe of seconds
+       int:  number of seconds
        np.timedelta64
-       [value, unit]:  np.timedelta(value, unit), unit = "h", "m", "s"
+       [value, unit]:  np.timedelta64(value, unit), unit = "h", "m", "s"
        ISO 8601 format: "PTxHyMzS", x hours, y minutes, z seconds
     """
 
@@ -190,10 +190,12 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
         return np.timedelta64(per, "s")
     # if isinstance(per, np.timedelta64):
     #    return per.astype("m8[s]")
-    if isinstance(per, (list, tuple)):
-        value, unit = per
+
+    if isinstance(per, list):  # [value, unit] from yaml
         try:
-            return np.timedelta64(np.timedelta64(value, unit), "s")
+            value, unit = per
+            if isinstance(value, int) and isinstance(unit, str):
+                return np.timedelta64(np.timedelta64(value, unit), "s")
         except (TypeError, ValueError) as exc:
             raise ValueError(f"{per} is not a valid time period") from exc
 

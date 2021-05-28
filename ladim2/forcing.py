@@ -6,21 +6,23 @@
 # November 2020
 # ----------------------------------
 
-import sys
-import os
-import importlib
-from pathlib import Path
+# import sys
+# import os
+# import importlib
+# from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict
 
 import numpy as np  # type: ignore
+
+ParticleArray = np.ndarray  # 1D array, one element per particle
 
 
 class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
 
     @abstractmethod
-    def __init__(self, modules: dict, **kwargs):
+    def __init__(self, modules: Dict[str, str], **kwargs):
         self.modules = modules
         self.variables: Dict[str, np.ndarray]
 
@@ -31,13 +33,13 @@ class BaseForce(ABC):
     @abstractmethod
     def velocity(
         self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        Z: np.ndarray,
+        X: ParticleArray,
+        Y: ParticleArray,
+        Z: ParticleArray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        "Estimate velocity at particle positions"
+    ) -> Tuple[ParticleArray, ParticleArray]:
+        """Estimate velocity at particle positions"""
 
     @abstractmethod
     def close(self) -> None:

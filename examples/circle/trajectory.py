@@ -1,20 +1,15 @@
 # Move particle in a circle (clockwise)
 
-# from collections import namedtuple
-from typing import Tuple, Sequence
-
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 from ladim2.state import State
 from ladim2 import analytical
 
-a: float = 0.01
-# dt: int = 0.3   # seconds    <1% error EF
-dt: int = 7  # seconds       <1% error RK2
-# dt: int = 30  # seconds      <1% error RK4
+a: float = 0.01  # Velocity scale factor
+# dt = 0.3   # seconds    <1% error EF
+dt: int = 7  # seconds    <1% error RK2
+# dt = 30    # seconds    <1% error RK4
 nsteps: int = 2000
-
-Trajectory = Tuple[Sequence[float], Sequence[float]]
 
 
 def main():
@@ -35,7 +30,7 @@ def main():
     plot2(trajectory)
 
 
-def sample_velocity(x: float, y: float) -> Tuple[float, float]:
+def sample_velocity(x, y):
     # Clockwise circular motion
     return a * y, -a * x
 
@@ -43,7 +38,7 @@ def sample_velocity(x: float, y: float) -> Tuple[float, float]:
 get_velocity = analytical.get_velocity2
 
 
-def advance(state: State, dt: int) -> None:
+def advance(state, dt) -> None:
     velocity = get_velocity(state, sample_velocity, dt)
     state["X"] += dt * velocity[0]
     state["Y"] += dt * velocity[1]
@@ -65,9 +60,7 @@ def plot2(trajectory):
     x = np.array(trajectory[0])
     y = np.array(trajectory[1])
     r = np.sqrt(x * x + y * y)
-    print(r[-1])
-    # plt.plot(r)
-    # plt.show()
+    print("Relative error [%]: ", 100 * (r[-1] / r[0] - 1))
 
 
 if __name__ == "__main__":

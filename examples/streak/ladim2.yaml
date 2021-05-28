@@ -30,7 +30,6 @@ release:
 state:
     particle_variables: {release_time: time}
 
-
 output:
     filename: out.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
@@ -58,18 +57,3 @@ output:
             attributes:
                 long_name: particle release time
                 units: seconds since reference_time
-
-
-
-
-
-# numerics:
-#     # Model time step, [value, unit]
-#     dt: [1, h]
-#     # Advection method: options =
-#     #        EF = Euler-Forward,
-#     #        RK2, RK4 = Runge-Kutta 2nd or 4th order
-#     advection: RK2
-#     # Horizontal diffusion coefficient [m2.s-1]
-#     #         zero = no diffusion
-#     diffusion: 5.0

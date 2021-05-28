@@ -83,7 +83,7 @@ def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]
     # Handle non-orthogonality
 
     # Use time step from time
-    config["tracker"]["dt"] = config["time"]["dt"]
+    # config["tracker"]["dt"] = config["time"]["dt"]
 
     # If grid["filename"] is missing, use forcing["filename"]
     if "module" not in config["grid"]:

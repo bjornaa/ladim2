@@ -1,40 +1,68 @@
-# Move particle in a circle (clockwise)
+"""Useful functions for analytically defined current fields in LADiM"""
 
-# from collections import namedtuple
-from typing import Tuple, Union, Callable
+from typing import Optional, Tuple, Union, Callable
 
 import numpy as np  # type: ignore
-from .state import State
 
-Vector = Union[float, np.ndarray]
+from ladim2.state import State
+
+ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
+Velocity = Tuple[ParticleArray, ParticleArray]
 
 
 def get_velocity1(
     state: State,
-    sample_func: Callable[[Vector, Vector], Tuple[Vector, Vector]],
-    dt: int,
-) -> Tuple[Vector, Vector]:
-    """Euler Forward"""
+    sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
+    dt: Optional[int] = None,
+) -> Velocity:
+    """Euler Forward velocity sampling
+
+    Args:
+        state:
+            LADiM state instance
+        sample_func:
+            Function, providing velocity from position
+        dt:
+            Optional, not used, for consistent interface with the higher order functions
+    Returns:
+        velocity:
+            Tuple of U- and V-components
+
+    """
     x0, y0 = state.X, state.Y
     return sample_func(x0, y0)
 
 
 def get_velocity2(
     state: State,
-    sample_func: Callable[[Vector, Vector], Tuple[Vector, Vector]],
+    sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
     dt: int,
-) -> Tuple[Vector, Vector]:
-    """2nd order Runge Kutta
+    s: float = 1.0
+) -> Velocity:
+    """2nd order Runge Kutta velocity sampling
+
+    Args:
+        state:
+            LADiM state instance
+        sample_func:
+            Function, providing velocity from position
+        dt:
+            integer, timestep in seconds
+        s:
+            Scheme defining parameter, optional, default = 1 = Heun scheme
+    Returns:
+        velocity:
+            Tuple of U- and V-components
+
+    Different values of `s` gives different schemes:
 
         s = 1/2  gives midpoint
         s = 2/3  gives Ralston
         s = 1    gives Heun
 
-    For circular motion, s is eliminated, all schemes gives same result
-    also elliptical.
+    For elliptical motion, s is eliminated, all schemes gives same result.
 
     """
-    s = 1.0
     m = 1.0 / (2 * s)
     x0, y0 = state.X, state.Y
     u0, v0 = sample_func(x0, y0)
@@ -45,10 +73,25 @@ def get_velocity2(
 
 def get_velocity4(
     state: State,
-    sample_func: Callable[[Vector, Vector], Tuple[Vector, Vector]],
+    sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
     dt: int,
-) -> Tuple[Vector, Vector]:
-    """4th order Runge Kutta"""
+) -> Velocity:
+
+    """4th order Runge Kutta velocity sampling
+
+    Args:
+        state:
+            LADiM state instance
+        sample_func:
+            Function, providing velocity from position
+        dt:
+            integer, timestep in seconds
+    Returns:
+        velocity:
+            Tuple of U- and V-components
+
+    """
+
     x0, y0 = state.X, state.Y
     u0, v0 = sample_func(x0, y0)
     x1, y1 = x0 + 0.5 * dt * u0, y0 + 0.5 * dt * v0

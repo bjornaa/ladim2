@@ -11,10 +11,11 @@ import os
 import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Dict, Any
 
 import numpy as np
 
-from .state import State
+from ladim2.state import State
 
 
 class BaseOutput(ABC):
@@ -23,7 +24,7 @@ class BaseOutput(ABC):
     output_period = np.timedelta64(0, "s")
 
     @abstractmethod
-    def __init__(self, modules: dict, **kwargs):
+    def __init__(self, modules: Dict[str, Any], **kwargs) -> None:
         self.modules = modules
 
     @abstractmethod
@@ -39,7 +40,7 @@ class BaseOutput(ABC):
         """Close (last) output file"""
 
 
-def init_output(module, **args) -> BaseOutput:
+def init_output(module: str, **args) -> BaseOutput:
     """Initiates an Output class
 
     Args:

@@ -9,15 +9,15 @@
 # ------------------------------------
 
 import logging
-from typing import Tuple
+from typing import Tuple, Dict, Any, Optional
 
 import numpy as np  # type:ignore
 import numba  # type: ignore
 
-from .state import State
-from .timekeeper import normalize_period
-from .forcing import BaseForce
-from .grid import BaseGrid
+# from .state import State
+from ladim2.forcing import BaseForce
+
+# from .grid import BaseGrid
 
 
 Velocity = Tuple[np.ndarray, np.ndarray]
@@ -34,13 +34,17 @@ class Tracker:
     """The physical particle tracking kernel"""
 
     def __init__(
-        self, dt, advection, diffusion=0.0, vertdiff=0.0, vertical_advection=False,
-        modules: dict = None,
-    ):
+        self,
+        advection: str,  # EF, RK2, or RK4
+        diffusion: float = 0.0,
+        vertdiff: float = 0.0,
+        vertical_advection: bool = False,
+        modules: Optional[Dict[str, Any]] = None,
+    ) -> None:
 
         logger.info("Initiating the particle tracker")
         self.modules = modules
-        self.dt = normalize_period(dt).astype("int")  # integer, unit = seconds
+        self.dt = modules["time"].dt / np.timedelta64(1, "s")
         self.advection = advection  # Name of advection method
         logger.info("  Advection method: %s", advection)
 
@@ -67,9 +71,9 @@ class Tracker:
     def update(self) -> None:
         """Move the particles one time step"""
 
-        state = self.modules['state']
-        grid = self.modules['grid']
-        force = self.modules['forcing']
+        state = self.modules["state"]
+        grid = self.modules["grid"]
+        force = self.modules["forcing"]
 
         X, Y, Z = state.X, state.Y, state.Z
 

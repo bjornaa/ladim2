@@ -79,7 +79,7 @@ class State(Sized):
         instance_variables: Optional[Dict[str, type]] = None,
         particle_variables: Optional[Dict[str, type]] = None,
         default_values: Optional[Dict[str, Scalar]] = None,
-        modules: dict = None,
+        modules: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Initialize the state
