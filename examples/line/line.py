@@ -1,20 +1,18 @@
-"""LADiM – the line example as a scipt including user settings"""
+"""Module containing the LADiM Model class definition"""
 
-# ------------------------------------
-# Bjørn Ådlandsvik <bjorn@imr.no>
-# Institue of Marine Research
-# 2020-04-04
-# ------------------------------------
+# rom ladim2.configure import configure
+# rom ladim2.model import init_module
+
+import sys
 
 import numpy as np
 
-# import ladim2
-from ladim2.state import State
-from ladim2.ROMS import init_grid
-from ladim2.timekeeper import TimeKeeper
-from ladim2.ROMS import init_force
-from ladim2.tracker import Tracker
-from ladim2.output import init_output
+import ladim2
+import ladim2.state
+import ladim2.timekeeper
+import ladim2.ROMS
+import ladim2.out_netcdf
+import ladim2.tracker
 
 # --------------
 # Settings
@@ -26,14 +24,11 @@ reference_time = "1970-01-01"
 
 data_file = "../data/ocean_avg_0014.nc"
 
+num_particles = 1000
+
 advection = "EF"
 dt = 3600  # seconds
 
-output_module = "out_nc_ragged"
-output_file = "out.nc"
-output_frequency = 3 * dt
-grid_module = "ladim2.grid_ROMS"
-num_particles = 1000
 output_variables = dict(
     pid=dict(
         encoding=dict(datatype="i4", zlib=True),
@@ -50,7 +45,7 @@ output_variables = dict(
     Z=dict(
         encoding=dict(datatype="f4", zlib=True),
         attributes=dict(
-            long_name="particle_depth",
+            long_name="particle depth",
             standard_name="depth below surface",
             units="m",
             positive="down",
@@ -58,41 +53,64 @@ output_variables = dict(
     ),
 )
 
-# Initiate LADiM
+# ------------
+# Initiate
+# ------------
 
-state = State()
-grid = init_grid(module=grid_module, filename=data_file)
-timer = TimeKeeper(start=start_time, stop=stop_time, dt=dt, reference=reference_time)
-force = init_force(grid=grid, timer=timer, filename=data_file)
-tracker = Tracker(dt=dt, advection=advection)
-output = init_output(
-    module=output_module,
-    timer=timer,
-    filename=output_file,
-    num_particles=num_particles,
-    output_period=output_frequency,
-    instance_variables=output_variables,
+state = ladim2.state.State()
+
+grid = ladim2.ROMS.Grid(filename=data_file)
+
+timer = ladim2.timekeeper.TimeKeeper(
+    start=start_time, stop=stop_time, dt=dt, reference=reference_time
 )
 
+force = ladim2.ROMS.Forcing(
+    filename=data_file, modules=dict(time=timer, grid=grid, state=state)
+)
 
-# Initiate particle distribution
+total_particle_count = num_particles  # For output
+output = ladim2.out_netcdf.Output(
+    filename="out.nc",
+    output_period=10800,  # 3 hours
+    instance_variables=output_variables,
+    modules=dict(state=state, time=timer, grid=grid, release=sys.modules["__main__"]),
+)
+
+tracker = ladim2.tracker.Tracker(
+    advection=advection, modules=dict(state=state, time=timer, grid=grid, forcing=force)
+)
+
+# --- Initiate particle distribution
 x0, x1 = 63.55, 123.45
 y0, y1 = 90.0, 90
 X0 = np.linspace(x0, x1, num_particles)
 Y0 = np.linspace(y0, y1, num_particles)
 Z0 = 5  # Fixed particle depth
 state.append(X=X0, Y=Y0, Z=Z0)
-# Write initial state
 
-# -------------
-# Time loop
-# -------------
+# ----------------
+# Time stepping
+# ----------------
 
-print("Time loop")
-for step in range(timer.Nsteps):
+for step in range(timer.Nsteps + 1):
+
     if step > 0:
         timer.update()
-    force.update(step, state.X, state.Y, state.Z)
-    if step % output.output_period_steps == 0:
-        output.write(state)
-    tracker.update(state, grid=grid, force=force)
+
+    # --- Update forcing ---
+    force.update()
+
+    # --- Output
+    output.update()
+
+    # --- Update state to next time step
+    # Improve: no need to update after last write
+    tracker.update()
+
+# -----------
+# Clean up
+# -----------
+
+force.close()
+output.close()
