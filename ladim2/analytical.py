@@ -37,7 +37,7 @@ def get_velocity2(
     state: State,
     sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
     dt: int,
-    s: float = 1.0
+    s: float = 1.0,
 ) -> Velocity:
     """2nd order Runge Kutta velocity sampling
 

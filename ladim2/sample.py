@@ -32,6 +32,7 @@ ParticleArray = np.ndarray  # 1D array of values per particle
 
 # ---------------------
 
+
 def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
     """Bilinear sample of a 2D field
 

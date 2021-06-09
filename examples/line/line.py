@@ -1,10 +1,5 @@
 """Module containing the LADiM Model class definition"""
 
-# rom ladim2.configure import configure
-# rom ladim2.model import init_module
-
-import sys
-
 import numpy as np
 
 import ladim2
@@ -69,12 +64,11 @@ force = ladim2.ROMS.Forcing(
     filename=data_file, modules=dict(time=timer, grid=grid, state=state)
 )
 
-total_particle_count = num_particles  # For output
 output = ladim2.out_netcdf.Output(
     filename="out.nc",
     output_period=10800,  # 3 hours
     instance_variables=output_variables,
-    modules=dict(state=state, time=timer, grid=grid, release=sys.modules["__main__"]),
+    modules=dict(state=state, time=timer, grid=grid),
 )
 
 tracker = ladim2.tracker.Tracker(

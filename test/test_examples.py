@@ -63,8 +63,8 @@ def test_latlon():
 def test_killer_matrix():
     with create_tempdir('killer'):
         run_module('make_release.py')
-        run_ladim('matrix.yaml')
-        run_pyplot('animate_matrix.py')
+        run_ladim('dense.yaml')
+        run_pyplot('animate_dense.py')
 
 
 def test_killer():
@@ -77,8 +77,8 @@ def test_killer():
 def test_line_matrix():
     with create_tempdir('line'):
         run_module('make_release.py')
-        run_ladim('matrix.yaml')
-        run_pyplot('animate_matrix.py')
+        run_ladim('dense.yaml')
+        run_pyplot('animate_dense.py')
 
 
 def test_line():

@@ -145,7 +145,7 @@ def load_module(module_name: str) -> Any:
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
         spec = importlib.util.spec_from_file_location(internal_name, module_name)
         module_object = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module_object)   # type: ignore
+        spec.loader.exec_module(module_object)  # type: ignore
         return module_object
 
     try:

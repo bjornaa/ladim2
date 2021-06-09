@@ -29,9 +29,8 @@ release:
 
 output:
     module: ladim2.out_netcdf
-    layout: matrix
-    filename: out_matrix.nc
-    ncargs: {data_model: NETCDF4_CLASSIC}
+    filename: out_dense.nc
+    layout: dense
     output_period: [3, h]
     instance_variables:
         X:

@@ -7,18 +7,15 @@
 version: 2.0
 
 time:
-    start:  1989-06-20T12
+    start:  1989-06-18T12
     stop: 1989-05-24 12:00:00
     reference: 1970-01-01 00
     # Time step
     dt: 3600
     time_reversal: True
 
-grid:
-    module: ROMS
-
 forcing:
-    module: ROMS
+    module: ladim2.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:

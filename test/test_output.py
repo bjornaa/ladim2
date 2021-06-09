@@ -26,7 +26,6 @@ config0 = dict(
     ),
     filename=NCFILE,
     output_period=np.timedelta64(12, "h"),
-    ncargs=dict(format="NETCDF4_CLASSIC"),
     instance_variables=dict(
         pid=dict(
             encoding=dict(datatype="i", zlib=True),
@@ -106,9 +105,9 @@ def test_file_creation():
 
     # Check some of the content
     with Dataset(NCFILE) as nc:
-        assert nc.data_model == "NETCDF4_CLASSIC"
+        assert nc.data_model == "NETCDF4"
         assert set(nc.dimensions) == {"time", "particle_instance", "particle"}
-        assert nc.dimensions["time"].size == 5  # two days, twelve-hourly
+        assert len(nc.dimensions["time"]) == 0  # Unlimited, presently 0
         assert set(nc.variables.keys()) == {"time", "particle_count", "pid", "X", "X0"}
         assert nc.variables["pid"].dimensions == ("particle_instance",)
         assert nc.variables["X0"].dimensions == ("particle",)
@@ -194,6 +193,7 @@ def test_write():
     out.write(state)
     assert out.record_count == 5
     assert out.instance_count == 9
+
 
     # Write particle variable
     # out.write_particle_variables(state)

@@ -1,5 +1,5 @@
 """
-LADiM Grid og Forcing form the Regional Ocean Model System (ROMS)
+LADiM Grid og Forcing for the Regional Ocean Model System (ROMS)
 
 """
 
@@ -429,6 +429,8 @@ class Forcing(BaseForce):
 
         self.time_reversal = timer.time_reversal
         steps, file_idx, frame_idx = forcing_steps(files, timer)
+        steps.sort()
+        # print("steps = ", steps)
         self.stepdiff = np.diff(steps)
         self.file_idx = file_idx
         self.frame_idx = frame_idx
@@ -448,13 +450,14 @@ class Forcing(BaseForce):
         # if True:
 
         i = steps.index(prestep)
-        if timer.time_reversal:
-            i = i - 1
+        # if timer.time_reversal:  # Riktig?
+        #    i = i - 1
+
+        print("i = ", i)
         stepdiff0 = self.stepdiff[i]
-        nextstep = prestep + stepdiff0
-        # print("stediff, nextstep = ", stepdiff0, nextstep)
-        if timer.time_reversal:
-            nextstep = prestep - stepdiff0
+        # nextstep = prestep + stepdiff0
+        nextstep = steps[i + 1]
+
         self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
         self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
         self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
@@ -512,15 +515,8 @@ class Forcing(BaseForce):
         else:
             if step - 1 in self.steps:  # Need new fields
                 i = self.steps.index(step - 1)
-                if self.time_reversal:
-                    i = i - 1
-                # print("i =", i)
+                nextstep = self.steps[i + 1]
                 stepdiff = self.stepdiff[i]
-                nextstep = step - 1 + stepdiff
-                if self.time_reversal:
-                    nextstep = step - 1 - stepdiff
-                # print("stediff, nextstep = ", stepdiff, nextstep)
-
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
@@ -645,8 +641,8 @@ class Forcing(BaseForce):
     ):
         """Interpolate forcing to particle positions"""
 
-        if DEBUG:
-            print("force_particles, n = ", len(X))
+        # if DEBUG:
+        #    print("force_particles, n = ", len(X))
 
         i0 = self.grid.i0
         j0 = self.grid.j0
@@ -677,8 +673,8 @@ class Forcing(BaseForce):
         method: str = "bilinear",
     ) -> Tuple[ParticleArray, ParticleArray]:
 
-        if DEBUG:
-            print("interpolating velocity")
+        # if DEBUG:
+        #    print("interpolating velocity")
 
         i0 = self.grid.i0
         j0 = self.grid.j0
