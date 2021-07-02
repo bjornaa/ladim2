@@ -9,18 +9,17 @@
 # ------------------------------------
 
 import logging
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any
 
 import numpy as np  # type:ignore
 import numba  # type: ignore
 
-# from .state import State
 from ladim2.forcing import BaseForce
 
 # from .grid import BaseGrid
 
-
-Velocity = Tuple[np.ndarray, np.ndarray]
+ParticleArray = np.ndarray  # 1D array, one element per particle
+Velocity = Tuple[ParticleArray, ParticleArray]
 
 PARALLEL = False
 DEBUG = False
@@ -39,7 +38,9 @@ class Tracker:
         diffusion: float = 0.0,
         vertdiff: float = 0.0,
         vertical_advection: bool = False,
-        modules: Optional[Dict[str, Any]] = None,
+        *,
+        modules: Dict[str, Any]
+        # modules: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         logger.info("Initiating the particle tracker")
@@ -158,7 +159,7 @@ class Tracker:
             state["Z"] = Z
 
     def EF(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
+        self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, force: BaseForce
     ) -> Velocity:
         """Euler-Forward advective velocity"""
 
@@ -167,7 +168,7 @@ class Tracker:
         return U, V
 
     def RK2(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
+        self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, force: BaseForce
     ) -> Velocity:
 
         """Runge-Kutta second order = Heun scheme
@@ -186,7 +187,7 @@ class Tracker:
         return force.velocity(X1, Y1, Z, fractional_step=0.5)
 
     def RK4(
-        self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, force: BaseForce
+        self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, force: BaseForce
     ) -> Velocity:
         """Runge-Kutta fourth order advection
 
@@ -244,13 +245,13 @@ def RKstep0(X, Y, U, V, frac, dtdx, dtdy):
 
 @numba.njit(parallel=False)
 def RKstep1(
-    X: np.ndarray,
-    Y: np.ndarray,
-    U: np.ndarray,
-    V: np.ndarray,
+    X: ParticleArray,
+    Y: ParticleArray,
+    U: ParticleArray,
+    V: ParticleArray,
     frac: float,
-    dtdx: np.ndarray,
-    dtdy: np.ndarray,
+    dtdx: ParticleArray,
+    dtdy: ParticleArray,
 ) -> Velocity:
     """Do a forward Runge-Kutta (partial) step"""
 
@@ -268,7 +269,12 @@ RKstep = RKstep1
 
 @numba.njit(parallel=PARALLEL)
 def clip(
-    X: np.ndarray, Y: np.ndarray, xmin: float, xmax: float, ymin: float, ymax: float
+    X: ParticleArray,
+    Y: ParticleArray,
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
 ) -> None:
     """Clip particle positions in place towards forcing domain boundary"""
     for p in numba.prange(len(X)):
@@ -278,7 +284,7 @@ def clip(
 
 @numba.njit(parallel=PARALLEL)
 def RK4avg(
-    U1: np.ndarray, U2: np.ndarray, U3: np.ndarray, U4: np.ndarray
-) -> np.ndarray:
+    U1: ParticleArray, U2: ParticleArray, U3: ParticleArray, U4: ParticleArray
+) -> ParticleArray:
     """Average velocity component for Runge-Kutta 4-th order"""
     return (U1 + 2 * U2 + 2 * U3 + U4) / 6.0

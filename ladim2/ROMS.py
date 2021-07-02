@@ -18,11 +18,14 @@ import numpy as np  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
 import numba  # type: ignore
 
-
+# from ladim2.state import State
 from ladim2.grid import BaseGrid
 from ladim2.forcing import BaseForce
 from ladim2.sample import sample2D, bilin_inv
 from ladim2.timekeeper import TimeKeeper
+
+# from ladim2.state import State
+
 
 DEBUG = False
 parallel = False
@@ -37,7 +40,6 @@ numba_logger.setLevel(logging.WARNING)
 # Type aliases
 Field = np.ndarray  # 3D or 2D gridded field
 ParticleArray = np.ndarray  # 1D array of values per particle
-
 
 # ---------------------------
 # Grid class
@@ -153,8 +155,6 @@ class Grid(BaseGrid):
         # Read some variables
         self.H = ncid.variables["h"][self.J, self.I]
         self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
-        # self.Mu = ncid.variables['mask_u'][self.Ju, self.Iu]
-        # self.Mv = ncid.variables['mask_v'][self.Jv, self.Iv]
         self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
         self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
         self.lon = ncid.variables["lon_rho"][self.J, self.I]
@@ -388,8 +388,6 @@ class Forcing(BaseForce):
         steps
         # Legg til ny = fields, fields["u"] = 3D field
 
-
-
     """
 
     def __init__(
@@ -401,7 +399,7 @@ class Forcing(BaseForce):
 
         logger.info("Initiating forcing")
         timer = modules["time"]
-        self.modules = modules
+        self.modules: Dict[str, Any] = modules
         self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
@@ -499,6 +497,7 @@ class Forcing(BaseForce):
         Z = state.Z
         step = self.modules["time"].step
 
+        # Local depth level and interpolation coefficient
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
         # Read from config?

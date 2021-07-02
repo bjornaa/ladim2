@@ -15,6 +15,8 @@ from typing import Tuple, Dict
 
 import numpy as np  # type: ignore
 
+# from .state import State
+
 ParticleArray = np.ndarray  # 1D array, one element per particle
 
 
