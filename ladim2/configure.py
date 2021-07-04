@@ -18,7 +18,7 @@ from typing import Union, Dict, Any
 
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
-import yaml
+import yaml  # type: ignore
 
 
 # from .timekeeper import normalize_period

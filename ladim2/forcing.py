@@ -18,6 +18,7 @@ import numpy as np  # type: ignore
 # from .state import State
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
+Velocity = Tuple[ParticleArray, ParticleArray]
 
 
 class BaseForce(ABC):
@@ -40,7 +41,7 @@ class BaseForce(ABC):
         Z: ParticleArray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> Velocity:
         """Estimate velocity at particle positions"""
 
     @abstractmethod

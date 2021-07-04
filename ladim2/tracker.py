@@ -19,7 +19,8 @@ from ladim2.forcing import BaseForce
 # from .grid import BaseGrid
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
-Velocity = Tuple[ParticleArray, ParticleArray]
+Velocity = Tuple[ParticleArray, ParticleArray]  # Version <= 3.9
+# Velocity = tuple[ParticleArray, ParticleArray]
 
 PARALLEL = False
 DEBUG = False

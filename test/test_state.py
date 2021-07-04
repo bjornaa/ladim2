@@ -53,7 +53,7 @@ def test_override_mandatory():
 def test_set_default_err1():
     """Trying to set default for an undefined variable"""
     with pytest.raises(ValueError):
-        S = State(particle_variables={"age": float}, default_values=dict(length=4.3))
+        State(particle_variables={"age": float}, default_values=dict(length=4.3))
 
 
 def test_set_default_err2():
@@ -132,7 +132,7 @@ def test_append_nonvariable():
 def test_append_missing_variable():
     state = State()
     # with pytest.raises(TypeError):
-    # Now Y becomes NaN, correct behaviuour??
+    # Now Y becomes NaN, correct behaviour??
     state.append(X=100, Z=10)
     assert state.Y[0] != state.Y[0]
 

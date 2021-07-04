@@ -12,7 +12,6 @@ from ladim2.ROMS import sdepth, s_stretch
 
 # ------------------------------------
 
-# Ta det under inn i eksemplene og gjør det enklere
 """Setup unstretched and stretched vertical scales"""
 N = 10
 # Make N uniformly distributed values from -1+0.5/N to -0.5/N

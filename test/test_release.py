@@ -453,7 +453,7 @@ def test_iterate2():
     """
     )
     freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(modules0,  f, continuous=True, release_frequency=freq)
+    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     for k in range(3):
         A = next(pr)

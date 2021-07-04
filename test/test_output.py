@@ -7,7 +7,7 @@ import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
-from ladim2.out_netcdf import fname_gnrt, Output
+from ladim2.out_netcdf import filename_generator, Output
 
 NCFILE = Path("output_test.nc")
 
@@ -39,7 +39,7 @@ config0 = dict(
     particle_variables=dict(
         X0=dict(
             encoding=dict(datatype="f4"),
-            attributes=dict(long_name="inital X-position"),
+            attributes=dict(long_name="initial X-position"),
         ),
     ),
     global_attributes=dict(institution="Institute of Marine Research", source="LADiM"),
@@ -49,28 +49,28 @@ config0 = dict(
 def test_filename():
     """Test the filename generator"""
     # No digits
-    g = fname_gnrt(Path("kake.nc"))
+    g = filename_generator(Path("kake.nc"))
     assert next(g) == Path("kake_000.nc")
     assert next(g) == Path("kake_001.nc")
     # Trailing underscore, no digits. Gives extra underscore.
-    g = fname_gnrt(Path("kake_.nc"))
+    g = filename_generator(Path("kake_.nc"))
     assert next(g) == Path("kake__000.nc")
     # Full file path with digits
-    g = fname_gnrt(Path("output/kake_0023.nc"))
+    g = filename_generator(Path("output/kake_0023.nc"))
     assert next(g) == Path("output/kake_0023.nc")
     assert next(g) == Path("output/kake_0024.nc")
     # Number width too small
     # should perhaps raise exception as filenames will not sort properly
-    g = fname_gnrt(Path("kake_8.nc"))
+    g = filename_generator(Path("kake_8.nc"))
     assert next(g) == Path("kake_8.nc")
     assert next(g) == Path("kake_9.nc")
     assert next(g) == Path("kake_10.nc")
     # Number and no underscore
-    g = fname_gnrt(Path("kake42.nc"))
+    g = filename_generator(Path("kake42.nc"))
     assert next(g) == Path("kake42_000.nc")
     assert next(g) == Path("kake42_001.nc")
     # Several numbers and underscores
-    g = fname_gnrt(Path("kake_42_007.nc"))
+    g = filename_generator(Path("kake_42_007.nc"))
     assert next(g) == Path("kake_42_007.nc")
     assert next(g) == Path("kake_42_008.nc")
 
@@ -193,7 +193,6 @@ def test_write():
     out.write(state)
     assert out.record_count == 5
     assert out.instance_count == 9
-
 
     # Write particle variable
     # out.write_particle_variables(state)

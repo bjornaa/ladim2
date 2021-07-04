@@ -14,7 +14,7 @@ configuration file. The class itself may optionally inherit from the Abstract Ba
 ``BaseIBM``. The class should have one method called ``update`` with the obvious task of
 updating the IBM to the next model step.
 
-[Dette er ikke korrekt]
+[Not correct anymore]
 Variables in the IBM module can be forcing variables from the ocean model, such as
 temperature, salinity and turbulence. Or they can be computed internally. Variables can
 be kept between updates as attributes of the IBM class itself or as state variables.
@@ -28,15 +28,15 @@ Example IBM
 .. code::
 
     # A simple IBM that kills the particles at fixed "age" in degree-days.
-    # age is configured as a state variable, inital value = 0
-    # temp is congigured as a state variable, also as ibm_forcing
+    # age is configured as a state variable, initial value = 0
+    # temp is configured as a state variable, also as ibm_forcing
 
     import numpy as np
     from ladim2.ibm import BaseIBM
     from ladim2.timekeeper import TimeKeeper
     from ladim2.state import State
 
-    [Sjekk opp, bruke forcing.temp vs. state.temp]
+    [check up, use forcing.temp vs. state.temp]
     class IBM(BaseIBM):
         def __init__(
             self,

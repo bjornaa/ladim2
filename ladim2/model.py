@@ -130,9 +130,9 @@ def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
 def load_module(module_name: str) -> Any:
     """Load LADiM module
 
-    Modules are given as paths (absolute or releative to the working directory) to
+    Modules are given as paths (absolute or relative to the working directory) to
     python modules (without .py extension) or modules on the ordinary python search path.
-    The former takes presedence
+    The former takes precedence
 
     """
 

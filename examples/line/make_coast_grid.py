@@ -71,7 +71,7 @@ for mp in coast:
         X, Y = grid.ll2xy(*p.boundary.xy)
         Xcoast = np.concatenate((Xcoast, X, [np.nan]))
         Ycoast = np.concatenate((Ycoast, Y, [np.nan]))
-# remove finan nans
+# remove final nans
 Xcoast, Ycoast = Xcoast[:-1], Ycoast[:-1]
 
 # Save the coastline to a npy file

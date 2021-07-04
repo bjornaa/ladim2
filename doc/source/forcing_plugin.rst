@@ -9,10 +9,10 @@ for idealized cases, the examples ....
 
 The forcing plug-in is defined by a class called Forcing. It should take arguments like a
 TimeKeeper class, a Grid class and the file name (or file name pattern) for the forcing
-files [IBM forcing eller extra forcing]. It can use more keywords arguments taken from
+files [IBM forcing or extra forcing]. It can use more keywords arguments taken from
 the configuration.
 
 The Forcing class should have an ``update`` method.
 
-The Forcing class should have a method, velocity, and an attribute variables [dårlig
-navn] estimating the velocity and providing scalar fields at the particle positions.
+The Forcing class should have a method, velocity, and an attribute variables [bad
+name] estimating the velocity and providing scalar fields at the particle positions.

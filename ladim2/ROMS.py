@@ -57,8 +57,6 @@ class Grid(BaseGrid):
 
     """
 
-    # Lagrer en del unødige attributter
-
     def __init__(
         self,
         filename: Union[Path, str],
@@ -140,8 +138,8 @@ class Grid(BaseGrid):
                 Vstretching=self.Vstretching,
             )
 
-        else:  # Verical info from the grid file
-            # Burde ha en test om mangler vertikal informasjon
+        else:  # Vertical info from the grid file
+            # Should have test for missing vertical information
             self.hc = ncid.variables["hc"].getValue()
             self.Cs_r = ncid.variables["Cs_r"][:]
             self.Cs_w = ncid.variables["Cs_w"][:]
@@ -267,7 +265,7 @@ def s_stretch(
 
     Args:
         N:
-            The mumber of vertical levels
+            The number of vertical levels
         theta_s:
             ROMS surface stretching factor
         theta_b:
@@ -380,13 +378,13 @@ class Forcing(BaseForce):
         __init__
         update
         velocity
-        force_particles (bedre interpolate2particles)
+        force_particles (better: interpolate2particles)
 
     Public attributes:
         ibm_forcing
         variables
         steps
-        # Legg til ny = fields, fields["u"] = 3D field
+        #  Add new= fields, fields["u"] = 3D field
 
     """
 
@@ -448,10 +446,7 @@ class Forcing(BaseForce):
         # if True:
 
         i = steps.index(prestep)
-        # if timer.time_reversal:  # Riktig?
-        #    i = i - 1
-
-        print("i = ", i)
+        # print("i = ", i)
         stepdiff0 = self.stepdiff[i]
         # nextstep = prestep + stepdiff0
         nextstep = steps[i + 1]

@@ -30,7 +30,7 @@ lon
   Float, longitude of release position
 
 lat
-  Float, latitute of release position
+  Float, latitude of release position
 
 Z
   Float, release depth in meters (positive downwards).

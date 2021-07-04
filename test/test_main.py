@@ -9,7 +9,7 @@ import shutil
 import contextlib
 from pathlib import Path
 from ladim2.main import main
-import yaml
+import yaml   # type: ignore
 import numpy as np
 
 
@@ -108,7 +108,7 @@ class Test_output_when_different_scenarios:
 
 @contextlib.contextmanager
 def tempfile(num):
-    """Creates an arbritary number of temporary files which are deleted upon exit"""
+    """Creates an arbitrary number of temporary files which are deleted upon exit"""
     d = Path(__file__).parent.joinpath("temp")
     d.mkdir(exist_ok=True)
     paths = [d.joinpath(uuid.uuid4().hex + ".tmp") for _ in range(num)]
@@ -226,7 +226,7 @@ def make_release(t, **params_or_funcs):
     minute = np.timedelta64(60, "s")
     dates = start_date + np.array(t) * minute
 
-    return pd.DataFrame(data={**dict(release_time=dates.astype(str)), **params,})
+    return pd.DataFrame(data={**dict(release_time=dates.astype(str)), **params})
 
 
 def make_conf() -> dict:

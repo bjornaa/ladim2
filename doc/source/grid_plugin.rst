@@ -1,7 +1,7 @@
 Grid plug-in
 ============
 
-Similar to the forcing plug-in, the grid plug-in is taylored for the particular ocean
+Similar to the forcing plug-in, the grid plug-in is tailored for the particular ocean
 used for the forcing. It consist of a class named Grid. The class can live in the same
 module as the Forcing.
 
@@ -12,6 +12,6 @@ It should have attributes xmin, xmax, ymin, ymax describing the limits of the co
 system.
 
 metric
-depth (eller sample_depth?)
+depth (or sample_depth?)
 
 ingrid, atsea

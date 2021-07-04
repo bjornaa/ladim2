@@ -72,7 +72,7 @@ class Output(BaseOutput):
         self.ncargs = ncargs if ncargs else dict()
         self.ncargs["format"] = "NETCDF4"  # Only accepted format
         if "mode" not in self.ncargs:
-            self.ncargs["mode"] = "w"  # Default = (ower)write
+            self.ncargs["mode"] = "w"  # Default = (over)write
 
         if global_attributes:
             self.global_attributes = global_attributes
@@ -103,7 +103,7 @@ class Output(BaseOutput):
 
         if self.numrec:
             self.multifile = True
-            self.filenames = fname_gnrt(Path(filename))
+            self.filenames = filename_generator(Path(filename))
             self.filename = next(self.filenames)
             logger.info("  Multifile output")
         else:
@@ -301,7 +301,7 @@ class Output(BaseOutput):
             self.nc.close()
 
 
-def fname_gnrt(filename: Path) -> Generator[Path, None, None]:
+def filename_generator(filename: Path) -> Generator[Path, None, None]:
     """Generate file names based on prototype
 
     Args:

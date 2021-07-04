@@ -4,7 +4,7 @@ Post processing
 ===============
 
 LADiM comes with a simple python package ``postladim`` that can be used for
-visualisation and analysis of LADiM output. It is based on the ``xarray`` package
+visualization and analysis of LADiM output. It is based on the ``xarray`` package
 http://xarray.pydata.org/en/stable/.
 
 
@@ -20,7 +20,7 @@ of a LADiM output file.
     pf = ParticleFile("output.nc")
 
 The ``ds`` method shows the underlying xarray Dataset, which is useful for a quick
-overview of the content and for more advenced data processing.
+overview of the content and for more advanced data processing.
 
 The time at a given time step n is given by:
 
@@ -37,7 +37,7 @@ The number of particles at time step n is given by:
   pf.count[n]
 
 For use in indexing ``pf.count`` is an integer array instead of an xarray DataArray.
-The DataArray is avaiable as ``pf.ds.particle_count``.
+The DataArray is available as ``pf.ds.particle_count``.
 
 Following pandas and xarray, an instance variable, like X,  is given both by
 attribute ``pf.X`` and item ``pf['X']`` notation. The NetCDF inspired notation
@@ -212,4 +212,3 @@ time.
 Supports item notation::
 
   ``V[p]`` is value of particle with ``pid = p``.
-

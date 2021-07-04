@@ -19,7 +19,7 @@ ragged format.
 :index:`Dense output layout`
 ----------------------------
 
-The `dense` output layout may be termed `orhogonal array`.
+The `dense` output layout may be termed `orthogonal array`.
 The dimensions are ``time``, ``particle``. Instance variables are indexed by ("time",
 "particle") while particle variables are indexed by the single dimension "particle".
 Undefined values, before birth or after death, have suitable fill values (NaN for float

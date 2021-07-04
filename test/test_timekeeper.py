@@ -9,7 +9,7 @@ from ladim2.timekeeper import TimeKeeper, normalize_period
 
 
 def test_init():
-    """Check that initalization works as expected"""
+    """Check that initialization works as expected"""
     start_time = "2020-04-04 12"
     stop_time = np.datetime64("2020-04-05 12")
     dt = 3600
@@ -118,7 +118,7 @@ def test_step2nctime():
 
 # Testing time_reversal
 def test_reverse_init():
-    """Check that initalization works as expected"""
+    """Check that initialization works as expected"""
     start_time = np.datetime64("2020-04-05 12")
     stop_time = "2020-04-04 12"
     dt = 3600

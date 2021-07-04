@@ -17,7 +17,7 @@ release module depend on the data analysis package
 
 The postprocessing library, :ref:`postladim<postladim>`, uses the `xarray
 <http://xarray.pydata.org>`_ framework. In addition the examples use the plotting
-package `matplotlib <http://matplotlib.org>`_ for visualisation.
+package `matplotlib <http://matplotlib.org>`_ for visualization.
 
 Testing is done using the `pytest <http://doc.pytest.org>`_-framework.
 

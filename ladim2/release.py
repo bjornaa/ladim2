@@ -68,7 +68,7 @@ class ParticleReleaser(Iterator):
         else:
             self._df = self._df[self._df.index <= self.stop_time]  # Use < ?
         if len(self._df) == 0:  # All release after simulation time
-            logger.critical("All particles released after similation stop")
+            logger.critical("All particles released after simulation stop")
             raise SystemExit(3)
 
         # Make the dataframe explicitly discrete

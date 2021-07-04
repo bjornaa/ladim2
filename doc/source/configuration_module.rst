@@ -61,7 +61,7 @@ particle_variables
 output_format
   NetCDF format for the output file
 skip_initial
-  Logical switch for skipping output of intitial field
+  Logical switch for skipping output of initial field
 output_numrec
   Number of time records per output file, zero means no output splitting
 output_period
