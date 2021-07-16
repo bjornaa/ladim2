@@ -1,0 +1,15 @@
+Curly vectors example
+=====================
+
+This example shows how the LADiM API can be used to provide plot of curly vectors in the
+style of NCAR Command Language (NCL). A class Curly is defined in curly.py that produces
+horizontal  plots with curly vectors given a ROMS data file, a record number into the
+file and the desired depth. The Curly object can be customized by the density argument
+(how many grid cells between curly vectors) and the length of the vector by dt and
+num_steps. The class tries to produce reasonable default values for these parameters.
+Line width and color can be given as arguments to the plot method. The method trajectory
+returns the data defining the trajectories. This can be used with other plot systems than
+matplotlib or be transformed to different map projections.
+
+Curly vectors can of course be produced more simply without using the LADiM machinery.
+The example is included to show the flexibility of the LADiM API.
