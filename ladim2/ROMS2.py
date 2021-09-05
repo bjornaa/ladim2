@@ -59,7 +59,12 @@ class Grid(BaseGrid):
 
     # Lagrer en del unødige attributter
 
-    def __init__(self, filename: Union[Path, str], Vinfo=None, **args,) -> None:
+    def __init__(
+        self,
+        filename: Union[Path, str],
+        Vinfo=None,
+        **args,
+    ) -> None:
 
         logger.info("Initiating grid")
 
@@ -545,40 +550,34 @@ class Forcing(BaseForce):
                         jj0 - self.j0 : jj1 - self.j0,
                         ii0 - self.i0 : ii1 - self.i0 + 1,
                     ] = (
-                        (
-                            self.fields["u_new"][
-                                :,
-                                jj0 - j0_new : jj1 - j0_new,
-                                ii0 - i0_new : ii1 - i0_new + 1,
-                            ]
-                            - self.fields["u"][
-                                :,
-                                jj0 - self.j0 : jj1 - self.j0,
-                                ii0 - self.i0 : ii1 - self.i0 + 1,
-                            ]
-                        )
-                        / stepdiff
-                    )
+                        self.fields["u_new"][
+                            :,
+                            jj0 - j0_new : jj1 - j0_new,
+                            ii0 - i0_new : ii1 - i0_new + 1,
+                        ]
+                        - self.fields["u"][
+                            :,
+                            jj0 - self.j0 : jj1 - self.j0,
+                            ii0 - self.i0 : ii1 - self.i0 + 1,
+                        ]
+                    ) / stepdiff
 
                     self.fields["dV"][
                         :,
                         jj0 - self.j0 : jj1 - self.j0 + 1,
                         ii0 - self.i1 : ii1 - self.i0,
                     ] = (
-                        (
-                            self.fields["v_new"][
-                                :,
-                                jj0 - j0_new : jj1 - j0_new + 1,
-                                ii0 - i0_new : ii1 - i0_new,
-                            ]
-                            - self.fields["v"][
-                                :,
-                                jj0 - self.j0 : jj1 - self.j0 + 1,
-                                ii0 - self.i0 : ii1 - self.i0,
-                            ]
-                        )
-                        / stepdiff
-                    )
+                        self.fields["v_new"][
+                            :,
+                            jj0 - j0_new : jj1 - j0_new + 1,
+                            ii0 - i0_new : ii1 - i0_new,
+                        ]
+                        - self.fields["v"][
+                            :,
+                            jj0 - self.j0 : jj1 - self.j0 + 1,
+                            ii0 - self.i0 : ii1 - self.i0,
+                        ]
+                    ) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
@@ -704,7 +703,9 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self, X: np.ndarray, Y: np.ndarray,
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
     ):
         """Interpolate forcing to particle positions"""
 

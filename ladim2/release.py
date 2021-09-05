@@ -146,8 +146,8 @@ class ParticleReleaser(Iterator):
     def __next__(self) -> pd.DataFrame:
         """Perform the next particle release
 
-           Return a DataFrame with the release info,
-           repeated mult times
+        Return a DataFrame with the release info,
+        repeated mult times
 
         """
 

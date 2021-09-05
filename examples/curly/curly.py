@@ -6,10 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 
-# import ladim2
 import ladim2.state
-
-# import ladim2.timekeeper
 import ladim2.tracker
 import ladim2.ROMS
 

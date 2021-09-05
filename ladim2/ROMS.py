@@ -631,7 +631,9 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self, X: ParticleArray, Y: ParticleArray,
+        self,
+        X: ParticleArray,
+        Y: ParticleArray,
     ):
         """Interpolate forcing to particle positions"""
 
@@ -749,7 +751,10 @@ def z2s(
 
 @numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(
-    I: ParticleArray, J: ParticleArray, Z: ParticleArray, z_rho: Field,
+    I: ParticleArray,
+    J: ParticleArray,
+    Z: ParticleArray,
+    z_rho: Field,
 ) -> Tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)

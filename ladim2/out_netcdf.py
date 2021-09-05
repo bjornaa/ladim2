@@ -26,9 +26,7 @@ if DEBUG:
 
 
 class Output(BaseOutput):
-    """LADiM output to NetCDF
-
-    """
+    """LADiM output to NetCDF"""
 
     def __init__(
         self,
@@ -195,7 +193,9 @@ class Output(BaseOutput):
                     )
                 else:
                     v = nc.createVariable(
-                        var, conf["encoding"]["datatype"], ("particle",),
+                        var,
+                        conf["encoding"]["datatype"],
+                        ("particle",),
                     )
                 for att, value in conf["attributes"].items():
                     # Replace string "reference_time" with actual reference time
