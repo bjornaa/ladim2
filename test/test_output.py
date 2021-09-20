@@ -3,7 +3,7 @@ import subprocess
 
 import numpy as np
 from netCDF4 import Dataset
-import pytest
+# import pytest
 
 from ladim2.state import State
 from ladim2.timekeeper import TimeKeeper
@@ -28,11 +28,11 @@ config0 = dict(
     output_period=np.timedelta64(12, "h"),
     instance_variables=dict(
         pid=dict(
-            encoding=dict(datatype="i", zlib=True),
+            encoding=dict(datatype="i"),
             attributes=dict(long_name="particle_identifier"),
         ),
         X=dict(
-            encoding=dict(datatype="f4"),
+            encoding=dict(datatype="f4", zlib=True),
             attributes=dict(long_name="particle X-coordinate"),
         ),
     ),

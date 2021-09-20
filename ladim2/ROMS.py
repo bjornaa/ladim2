@@ -14,17 +14,14 @@ from pathlib import Path
 import logging
 from typing import Union, Optional, List, Tuple, Dict, Any
 
-import numpy as np  # type: ignore
+import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
 import numba  # type: ignore
 
-# from ladim2.state import State
 from ladim2.grid import BaseGrid
-from ladim2.forcing import BaseForce
+from ladim2.forcing import BaseForce, ParticleArray, Field
 from ladim2.sample import sample2D, bilin_inv
 from ladim2.timekeeper import TimeKeeper
-
-# from ladim2.state import State
 
 
 DEBUG = False
@@ -37,9 +34,6 @@ if DEBUG:
 numba_logger = logging.getLogger("numba")
 numba_logger.setLevel(logging.WARNING)
 
-# Type aliases
-Field = np.ndarray  # 3D or 2D gridded field
-ParticleArray = np.ndarray  # 1D array of values per particle
 
 # ---------------------------
 # Grid class
@@ -81,10 +75,10 @@ class Grid(BaseGrid):
         jmax0, imax0 = ncid.variables["h"].shape
         limits = list(subgrid) if subgrid else [1, imax0 - 1, 1, jmax0 - 1]
         # Negative values are counting from right/upper end of model domain
-        for i in range(2):
+        for i in [0, 1]:
             if limits[i] < 0:
                 limits[i] = imax0 + limits[i]
-        for i in range(2, 4):
+        for i in [2, 3]:
             if limits[i] < 0:
                 limits[i] = jmax0 + limits[i]
         # Sanity check
@@ -198,7 +192,7 @@ class Grid(BaseGrid):
         return A, A
 
     def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
-        """Return the depth of grid cells"""
+        """Return the depth of grid cells containing the particles"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         return self.H[J, I]
@@ -631,9 +625,7 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self,
-        X: ParticleArray,
-        Y: ParticleArray,
+        self, X: ParticleArray, Y: ParticleArray,
     ):
         """Interpolate forcing to particle positions"""
 
@@ -751,10 +743,7 @@ def z2s(
 
 @numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(
-    I: ParticleArray,
-    J: ParticleArray,
-    Z: ParticleArray,
-    z_rho: Field,
+    I: ParticleArray, J: ParticleArray, Z: ParticleArray, z_rho: Field,
 ) -> Tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)

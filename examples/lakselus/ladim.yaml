@@ -25,7 +25,7 @@ state:
         super: float # Number of actual salmon lice per simulation particle
         age: float # Age of particle [degree*days]
         days: float # Age of particle [days]
-        temp: float # Particle ambient temperature [Celcius]
+        temp: float # Particle ambient temperature [Celsius]
         salt: float # Particle ambient salinity [1]
     particle_variables:
         farmid: int
@@ -66,55 +66,55 @@ output:
 
     instance_variables:
         pid:
-            encoding: { datatype: i4, zlib=True }
+            encoding: { datatype: i4, zlib: True }
             attributes: { long_name: particle identifier }
         X:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes: { long_name: particle X-coordinate }
         Y:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes: { long_name: particle Y-coordinate }
         Z:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
                 long_name: particle depth
                 standard_name: depth_below_surface
                 units: m
 
         temp:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
                 long_name: temperature
                 standard_name: sea_water_temperature
-                units: Celcius
+                units: Celsius
         salt:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
                 long_name: salinity
                 standard_name: sea_water_salinity
         super:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
                 long_name: number of individuals in instance
         age:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
                 long_name: particle age in degree-days
                 standard_name: integral_of_sea_water_temperature_wrt_time
-                units: Celcius days
+                units: Celsius days
         days:
-            encoding: { datatype: f4, zlib=True }
+            encoding: { datatype: f4, zlib: True }
             attributes:
-                long_name: Days after haching
+                long_name: Days after hatching
                 units: days
 
     particle_variables:
         farmid:
-            encoding: { datatype: i4, zlib=True }
+            encoding: { datatype: i4, zlib: True }
             attributes:
                 long_name: fish farm location number
         release_time:
-            encoding: { datatype: f8, zlib=True }
+            encoding: { datatype: f8, zlib: True }
             attributes:
                 long_name: particle release time
                 units: seconds since reference_time

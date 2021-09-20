@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from contextlib import contextmanager
 import shutil
 from ladim2.main import main as run_ladim
@@ -6,7 +7,8 @@ import importlib.util
 from unittest.mock import patch
 
 
-EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
+# EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
+EXAMPLE_DIR = Path(__file__).parents[1] / "examples"
 
 
 def test_streak():

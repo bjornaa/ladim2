@@ -9,11 +9,11 @@
 import logging
 import datetime
 import re
-from typing import Union, Optional, Dict, Any, List
+from typing import Union, Optional, Any
 import numpy as np
 
 Time = Union[str, np.datetime64, datetime.datetime]
-TimeDelta = Union[int, np.timedelta64, datetime.timedelta, List[Union[int, str]], str]
+TimeDelta = Union[int, np.timedelta64, datetime.timedelta, list[Union[int, str]], str]
 
 
 DEBUG = False
@@ -53,7 +53,7 @@ class TimeKeeper:
         dt: TimeDelta,
         reference: Optional[Time] = None,
         time_reversal: bool = False,
-        modules: Optional[Dict[str, Any]] = None,
+        modules: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         start      start time
@@ -68,8 +68,8 @@ class TimeKeeper:
 
         logger.info("Initiating the timekeeper")
         self.modules = modules
-        self.start_time = np.datetime64(start, "s")
-        self.stop_time = np.datetime64(stop, "s")
+        self.start_time: np.datetime64 = np.datetime64(start, "s")
+        self.stop_time: np.datetime64 = np.datetime64(stop, "s")
         self.time_reversal = time_reversal
         self.time = self.start_time  # Running clock
         self.step = 0

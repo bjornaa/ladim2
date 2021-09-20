@@ -11,23 +11,23 @@
 # import importlib
 # from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict
+# from typing import Tuple, Dict, NewType
 
 import numpy as np  # type: ignore
 
-# from .state import State
-
+# Type aliases
+Field = np.ndarray  # 3D or 2D gridded field
 ParticleArray = np.ndarray  # 1D array, one element per particle
-Velocity = Tuple[ParticleArray, ParticleArray]
+Velocity = tuple[ParticleArray, ParticleArray]
 
 
 class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
 
     @abstractmethod
-    def __init__(self, modules: Dict[str, str], **kwargs):
+    def __init__(self, modules: dict[str, str], **kwargs):
         self.modules = modules
-        self.variables: Dict[str, np.ndarray]
+        self.variables: dict[str, np.ndarray]
 
     @abstractmethod
     def update(self) -> None:

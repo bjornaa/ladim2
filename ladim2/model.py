@@ -1,12 +1,12 @@
 """Module containing the LADiM Model class definition"""
-import os
+
+from pathlib import Path
 import importlib
 
-# import importlib.util
 import logging
-from typing import Dict, Any
+import types
+from typing import Any, Optional
 
-# from ladim2 import __version__, __file__
 from ladim2.state import State
 from ladim2.grid import BaseGrid
 from ladim2.timekeeper import TimeKeeper
@@ -15,10 +15,7 @@ from ladim2.tracker import Tracker
 from ladim2.release import ParticleReleaser
 from ladim2.warm_start import warm_start
 from ladim2.output import BaseOutput
-
-# from ladim2.configure import configure
 from ladim2.ibm import IBM
-
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -29,9 +26,9 @@ if DEBUG:
 class Model:
     """A complete LADiM model"""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         # Initialize submodules
-        self.modules: Dict[str, Any] = dict()
+        self.modules: dict[str, Any] = dict()
         module_names = [
             "state",
             "time",
@@ -91,7 +88,9 @@ class Model:
                 module.close()
 
 
-def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
+def init_module(
+    module_name: str, conf_dict: dict[str, Any], all_modules_dict: Optional[dict] = None
+) -> Any:
     """Initiate the main class in one of the modules"""
     default_module_names = dict(
         output="ladim2.out_netcdf",
@@ -127,29 +126,34 @@ def init_module(module_name, conf_dict, all_modules_dict: dict = None) -> Any:
     return MainClass(modules=all_modules_dict, **conf_dict)
 
 
-def load_module(module_name: str) -> Any:
+def load_module(module_name: str) -> types.ModuleType:
     """Load LADiM module
 
     Modules are given as paths (absolute or relative to the working directory) to
-    python modules (without .py extension) or modules on the ordinary python search path.
-    The former takes precedence
+    python modules (with or without .py extension) or modules on the ordinary python
+    search path. The former takes precedence.
 
     """
 
-    if os.path.exists(module_name + ".py"):
-        module_name += ".py"
+    module_name = module_name.removesuffix(".py")
+    file_name = Path(module_name + ".py")
 
-    if os.path.exists(module_name):
+    # First try to load the module from a file
+    if file_name.exists():
 
-        basename = os.path.basename(module_name).rsplit(".", 1)[0]
+        # basename = os.path.basename(module_name).rsplit(".", 1)[0]
+        basename = file_name.stem
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(internal_name, module_name)
-        module_object = importlib.util.module_from_spec(spec)
+        spec = importlib.util.spec_from_file_location(internal_name, file_name)
+        module_object = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module_object)  # type: ignore
         return module_object
 
+    # Secondly, try ordinary importing module from sys.path
     try:
         return importlib.import_module(module_name)
+
+    # Nothing worked
     except ModuleNotFoundError as err:
         logging.critical("Can not find module %s", module_name)
         raise SystemExit from err

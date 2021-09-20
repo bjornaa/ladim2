@@ -39,16 +39,16 @@ output:
     numrec: 4
     instance_variables:
         pid:
-            encoding: {datatype: i4, zlib=True}
+            encoding: {datatype: i4, zlib: True}
             attributes: {long_name: particle_identifier}
         X:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: particle X-coordinate}
         Y:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: particle Y-coordinate}
         Z:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes:
                 long_name: particle depth
                 standard_name: depth_below_surface

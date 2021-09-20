@@ -44,20 +44,20 @@ output:
     output_period: [3, h]
     instance_variables:
         X:
-            encoding: {datatype: i2, zlib=True}
+            encoding: {datatype: i2, zlib: True}
             attributes: {long_name: particle X-coordinate, scale_factor: 0.01}
         Y:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: particle Y-coordinate}
         Z:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes:
                 long_name: particle depth
                 standard_name: depth_below_surface
                 units: m
                 positive: downq
         age:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes:
                 long_name: particle age
                 units: seconds

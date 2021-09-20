@@ -34,24 +34,24 @@ output:
     output_period: [2, h]
     instance_variables:
         pid:
-            encoding: {datatype: i4, zlib=True}
+            encoding: {datatype: i4, zlib: True}
             attributes: {long_name: particle_identifier}
         X:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: particle X-coordinate}
         Y:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: particle Y-coordinate}
         Z:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes:
                 long_name: particle depth
                 standard_name: depth_below_surface
                 units: m
                 positive: down
         lon:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: longitude, units: degree_east}
         lat:
-            encoding: {datatype: f4, zlib=True}
+            encoding: {datatype: f4, zlib: True}
             attributes: {long_name: latitude, units: degree_north}
