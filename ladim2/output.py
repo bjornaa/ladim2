@@ -11,7 +11,7 @@ import os
 import importlib
 from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class BaseOutput(ABC):
     output_period = np.timedelta64(0, "s")
 
     @abstractmethod
-    def __init__(self, modules: Dict[str, Any], **kwargs) -> None:
+    def __init__(self, modules: dict[str, Any], **kwargs) -> None:
         self.modules = modules
 
     @abstractmethod

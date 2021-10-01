@@ -7,7 +7,7 @@ from pathlib import Path
 import logging
 import datetime
 import argparse
-from typing import Union
+from typing import Union, Literal
 
 
 from ladim2 import __version__, __file__
@@ -21,7 +21,7 @@ from ladim2.timekeeper import duration2iso
 def main(
     configuration_file: Union[Path, str],
     loglevel: int = logging.INFO,
-    config_version: int = 2,
+    config_version: Literal[1, 2] = 2,
 ) -> None:
     """Main function for LADiM
 
@@ -59,7 +59,7 @@ def main(
     logger.info("python executable: %s", sys.executable)
     logger.info("python version: %s", sys.version.split()[0])
     logger.info("LADiM version: %s", __version__)
-    logger.debug("LADiM path: %s\n", Path(__file__).parent)
+    logger.debug("LADiM path: %s\n", Path(__file__).parents[1])
     logger.info("Configuration file: %s", configuration_file)
     logger.info("Loglevel: %s", logging.getLevelName(loglevel))
     logger.info("Wall clock start time: %s\n", str(wall_clock_start)[:-7])

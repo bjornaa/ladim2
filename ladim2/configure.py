@@ -14,7 +14,7 @@ with compability wrapper for LADiM version 1 configuration
 import sys
 from pathlib import Path
 import logging
-from typing import Union, Dict, Any
+from typing import Union, Literal, Any
 
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
@@ -29,7 +29,9 @@ if DEBUG:
     logger.setLevel(logging.DEBUG)
 
 
-def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]:
+def configure(
+    config_file: Union[Path, str], version: Literal[1, 2] = 2
+) -> dict[str, Any]:
     """Main configuration function of LADiM
 
     Args:
@@ -54,7 +56,7 @@ def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]
 
     try:
         with open(config_file) as fid:
-            config: Dict[str, Any] = yaml.safe_load(fid)
+            config: dict[str, Any] = yaml.safe_load(fid)
     except yaml.parser.ParserError:
         logger.critical("Not a valid yaml file: %s", config_file)
         raise SystemExit(3)
@@ -132,7 +134,7 @@ def configure(config_file: Union[Path, str], version: int = 2) -> Dict[str, Any]
 # --------------------------------------------------------------------
 
 
-def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
+def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
     """Tries to read version 1 configuration files
 
     This function may fail for valid configuration files for LADiM version 1.
@@ -140,7 +142,7 @@ def configure_v1(config: Dict[str, Any]) -> Dict[str, Any]:
 
     """
 
-    conf2: Dict[str, Any] = dict()  # output version 2 configuration
+    conf2: dict[str, Any] = dict()  # output version 2 configuration
 
     # time
     conf2["time"] = dict(

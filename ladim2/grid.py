@@ -6,9 +6,6 @@
 # from pathlib import Path
 from abc import ABC, abstractmethod
 
-# import importlib
-from typing import Tuple
-
 import numpy as np  # type: ignore
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
@@ -32,7 +29,7 @@ class BaseGrid(ABC):
     @abstractmethod
     def metric(
         self, X: ParticleArray, Y: ParticleArray
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Estimates grid spacing at particle positions"""
 
     @abstractmethod

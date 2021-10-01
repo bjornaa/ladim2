@@ -9,18 +9,15 @@
 # ------------------------------------
 
 import logging
-from typing import Tuple, Dict, Any
+from typing import Any
 
-import numpy as np  # type:ignore
-import numba  # type: ignore
+import numpy as np
+import numba
 
 from ladim2.forcing import BaseForce
 
-# from .grid import BaseGrid
-
 ParticleArray = np.ndarray  # 1D array, one element per particle
-Velocity = Tuple[ParticleArray, ParticleArray]  # Version <= 3.9
-# Velocity = tuple[ParticleArray, ParticleArray]
+Velocity = tuple[ParticleArray, ParticleArray]
 
 PARALLEL = False
 DEBUG = False
@@ -40,8 +37,8 @@ class Tracker:
         vertdiff: float = 0.0,
         vertical_advection: bool = False,
         *,
-        modules: Dict[str, Any]
-        # modules: Optional[Dict[str, Any]] = None,
+        modules: dict[str, Any]
+        # modules: Optional[dict[str, Any]] = None,
     ) -> None:
 
         logger.info("Initiating the particle tracker")

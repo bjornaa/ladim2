@@ -85,8 +85,8 @@ class TimeKeeper:
                 print("ERROR: Forward time and stop before start")
             raise SystemExit(3)
 
-        self.min_time = min(self.start_time, self.stop_time)
-        self.max_time = max(self.start_time, self.stop_time)
+        self.min_time = min(self.start_time, self.stop_time)  # type: ignore
+        self.max_time = max(self.start_time, self.stop_time)  # type: ignore
 
         if reference:
             self.reference_time = np.datetime64(reference, "s")

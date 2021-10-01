@@ -12,7 +12,7 @@ LADiM Grid og Forcing for the Regional Ocean Model System (ROMS)
 
 from pathlib import Path
 import logging
-from typing import Union, Optional, List, Tuple, Dict, Any
+from typing import Union, Optional, Any
 
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
@@ -54,7 +54,7 @@ class Grid(BaseGrid):
     def __init__(
         self,
         filename: Union[Path, str],
-        subgrid: Optional[Tuple[int, int, int, int]] = None,
+        subgrid: Optional[tuple[int, int, int, int]] = None,
         Vinfo=None,
         **args,
     ) -> None:
@@ -179,7 +179,7 @@ class Grid(BaseGrid):
 
     def metric(
         self, X: ParticleArray, Y: ParticleArray
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
@@ -199,7 +199,7 @@ class Grid(BaseGrid):
 
     def lonlat(
         self, X: ParticleArray, Y: ParticleArray, method: str = "bilinear"
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)
@@ -232,7 +232,7 @@ class Grid(BaseGrid):
 
     def xy2ll(
         self, X: ParticleArray, Y: ParticleArray
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Converts particle positions from grid coordinates to longitude/latitude"""
         return (
             sample2D(self.lon, X - self.i0, Y - self.j0),
@@ -241,7 +241,7 @@ class Grid(BaseGrid):
 
     def ll2xy(
         self, lon: ParticleArray, lat: ParticleArray
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Converts particle positions from longitude/latitude to grid coordinates"""
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
         return X + self.i0, Y + self.j0
@@ -384,14 +384,14 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        modules: Dict[str, Any],
+        modules: dict[str, Any],
         filename: Union[Path, str],
-        ibm_forcing: Optional[List[str]] = None,
+        ibm_forcing: Optional[list[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
         timer = modules["time"]
-        self.modules: Dict[str, Any] = modules
+        self.modules: dict[str, Any] = modules
         self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
@@ -558,7 +558,7 @@ class Forcing(BaseForce):
             else:
                 self.scaled[key] = False
 
-    def _read_velocity(self, time_step: int) -> Tuple[Field, Field]:
+    def _read_velocity(self, time_step: int) -> tuple[Field, Field]:
         """Read velocity fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
@@ -659,7 +659,7 @@ class Forcing(BaseForce):
         Z: ParticleArray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[ParticleArray, ParticleArray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
 
         # if DEBUG:
         #    print("interpolating velocity")
@@ -699,7 +699,7 @@ class Forcing(BaseForce):
 
 def z2s(
     z_rho: Field, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
-) -> Tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleArray, ParticleArray]:
     """
     Find s-level and coefficients for vertical interpolation
 
@@ -744,7 +744,7 @@ def z2s(
 @numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(
     I: ParticleArray, J: ParticleArray, Z: ParticleArray, z_rho: Field,
-) -> Tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
@@ -868,7 +868,7 @@ def sample3DUV(
     K: ParticleArray,
     A: ParticleArray,
     method: str = "bilinear",
-) -> Tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleArray, ParticleArray]:
     """Samples a 3D velocity field"""
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),
@@ -885,7 +885,7 @@ def find_files(
     file_pattern: Union[Path, str],
     first_file: Union[Path, str, None] = None,
     last_file: Union[Path, str, None] = None,
-) -> List[Path]:
+) -> list[Path]:
     """Find ordered sequence of files following a pattern
 
     The sequence can be limited by first_file and/or last_file
@@ -901,7 +901,7 @@ def find_files(
     return files
 
 
-def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
+def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:
@@ -936,8 +936,8 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
 
 
 def forcing_steps(
-    files: List[Path], timer: TimeKeeper
-) -> Tuple[List[int], Dict[int, Path], Dict[int, int]]:
+    files: list[Path], timer: TimeKeeper
+) -> tuple[list[int], dict[int, Path], dict[int, int]]:
     """Return time step numbers of the forcing and pointers to the data"""
 
     all_frames, num_frames = scan_file_times(files)

@@ -11,7 +11,7 @@ Class for the state of the model
 import logging
 from numbers import Number
 from collections.abc import Sized
-from typing import Dict, Union, Sequence, Optional, Any
+from typing import Union, Sequence, Optional, Any
 
 import numpy as np  # type: ignore
 
@@ -76,10 +76,10 @@ class State(Sized):
 
     def __init__(
         self,
-        instance_variables: Optional[Dict[str, type]] = None,
-        particle_variables: Optional[Dict[str, type]] = None,
-        default_values: Optional[Dict[str, Scalar]] = None,
-        modules: Optional[Dict[str, Any]] = None,
+        instance_variables: Optional[dict[str, type]] = None,
+        particle_variables: Optional[dict[str, type]] = None,
+        default_values: Optional[dict[str, Scalar]] = None,
+        modules: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Initialize the state
@@ -111,7 +111,7 @@ class State(Sized):
         logger.info("  Particle variables: %s", list(pvar))
 
         # Raises TypeError if overlap
-        self.dtypes: Dict[str, Dtype] = dict(**ivar, **pvar)
+        self.dtypes: dict[str, Dtype] = dict(**ivar, **pvar)
         # expand aliases (presently only "time")
         for var in self.dtypes:
             if self.dtypes[var] == "time":
@@ -163,7 +163,7 @@ class State(Sized):
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
-        b = np.broadcast(*value_vars.values())
+        b = np.broadcast(*value_vars.values())  # type: ignore
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
         # if b.ndim == 0:  # All arguments are scalar

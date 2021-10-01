@@ -1,7 +1,6 @@
 """Perform initialization for warm start in LADiM"""
 
 import logging
-from typing import List
 
 import numpy as np
 from netCDF4 import Dataset
@@ -16,7 +15,7 @@ if DEBUG:
 
 
 def warm_start(
-    warm_start_file: str, warm_start_variables: List[str], state: State
+    warm_start_file: str, warm_start_variables: list[str], state: State
 ) -> None:
     """Initiate the state from a warm start"""
 

@@ -1,13 +1,13 @@
 """Useful functions for analytically defined current fields in LADiM"""
 
-from typing import Optional, Tuple, Union, Callable
+from typing import Optional, Union, Callable
 
 import numpy as np  # type: ignore
 
 from ladim2.state import State
 
 ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
-Velocity = Tuple[ParticleArray, ParticleArray]
+Velocity = tuple[ParticleArray, ParticleArray]
 
 
 def get_velocity1(
@@ -26,7 +26,7 @@ def get_velocity1(
             Optional, not used, for consistent interface with the higher order functions
     Returns:
         velocity:
-            Tuple of U- and V-components
+            tuple of U- and V-components
 
     """
     x0, y0 = state.X, state.Y
@@ -52,7 +52,7 @@ def get_velocity2(
             Scheme defining parameter, optional, default = 1 = Heun scheme
     Returns:
         velocity:
-            Tuple of U- and V-components
+            tuple of U- and V-components
 
     Different values of `s` gives different schemes:
 
@@ -88,7 +88,7 @@ def get_velocity4(
             integer, timestep in seconds
     Returns:
         velocity:
-            Tuple of U- and V-components
+            tuple of U- and V-components
 
     """
 

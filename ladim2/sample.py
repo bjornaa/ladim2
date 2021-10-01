@@ -13,7 +13,6 @@ Horizontal sampling
   Sample a 2D field given at v-points
 
 """
-
 # -----------------------------------
 # Bjørn Ådlandsvik, bjorn@imr.no
 # Institute of Marine Research
@@ -21,7 +20,7 @@ Horizontal sampling
 # 2010-09-30
 # -----------------------------------
 
-from typing import Tuple, Optional
+from typing import Optional
 
 import numpy as np  # type: ignore
 
@@ -47,20 +46,10 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
 
     """
 
-    Z = np.add(X, Y)  # Test for compatibility
-    if np.isscalar(Z):  # Both X and Y are scalars
-        I = int(X)
-        J = int(Y)
-        P = X - I
-        Q = Y - J
-    else:
-        # Make arrays of common shape
-        X0 = X + np.zeros_like(Z)
-        Y0 = Y + np.zeros_like(Z)
-        I = X0.astype("int")
-        J = Y0.astype("int")
-        P = X0 - I
-        Q = Y0 - J
+    I = X.astype("int")
+    J = Y.astype("int")
+    P = X - I
+    Q = Y - J
 
     W00 = (1 - P) * (1 - Q)
     W01 = (1 - P) * Q
@@ -75,7 +64,7 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
 
 def sample2DUV(
     U: Field, V: Field, X: ParticleArray, Y: ParticleArray
-) -> Tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleArray, ParticleArray]:
     """2D interpolation of velocity"""
     return sample2D(U, X + 0.5, Y), sample2D(V, X, Y + 0.5)
 
@@ -100,20 +89,10 @@ def sample2D_masked(
 
     masked = True
 
-    Z = np.add(X, Y)  # Test for compatibility
-    if np.isscalar(Z):  # Both X and Y are scalars
-        I = int(X)
-        J = int(Y)
-        P = X - I
-        Q = Y - J
-    else:
-        # Make arrays of common shape
-        X0 = X + np.zeros_like(Z)
-        Y0 = Y + np.zeros_like(Z)
-        I = X0.astype("int")
-        J = Y0.astype("int")
-        P = X0 - I
-        Q = Y0 - J
+    I = X.astype("int")
+    J = Y.astype("int")
+    P = X - I
+    Q = Y - J
 
     W00 = M[J, I] * (1 - P) * (1 - Q)
     W01 = M[J + 1, I] * (1 - P) * Q
@@ -193,8 +172,8 @@ def sample2D(
     # Find integer I, J such that
     # 0 <= I <= X < I+1 <= imax-1, 0 <= J <= Y < J+1 <= jmax-1
     # and local increments P and Q
-    I = X0.astype("int")
-    J = Y0.astype("int")
+    I: ParticleArray = X0.astype("int")
+    J: ParticleArray = Y0.astype("int")
     P = X0 - I
     Q = Y0 - J
 
@@ -254,7 +233,7 @@ def bilin_inv(
     G: Field,
     maxiter: int = 7,
     tol: float = 1.0e-7,
-) -> Tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleArray, ParticleArray]:
     """Inverse bilinear interpolation
 
     f, g : Arrays of same shape

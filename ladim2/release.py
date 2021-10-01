@@ -3,7 +3,7 @@
 from collections.abc import Iterator
 from pathlib import Path
 import logging
-from typing import List, Optional, Union, Dict, Any
+from typing import Optional, Union, Any
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
@@ -31,10 +31,10 @@ class ParticleReleaser(Iterator):
 
     def __init__(
         self,
-        modules: Dict[str, Any],
+        modules: dict[str, Any],
         release_file: Union[Path, str],
-        names: Optional[List[str]] = None,
-        continuous: Optional[bool] = False,
+        names: Optional[list[str]] = None,
+        continuous: bool = False,
         release_frequency: int = 0,  # frequency in seconds
         warm_start_file: Optional[str] = None,
         **args,
@@ -101,7 +101,7 @@ class ParticleReleaser(Iterator):
 
         # # Optionally, remove everything outside a subgrid
         # try:
-        #     subgrid: List[int] = config["grid_args"]["subgrid"]
+        #     subgrid: list[int] = config["grid_args"]["subgrid"]
         # except KeyError:
         #     subgrid = []
         # if subgrid:
@@ -187,8 +187,8 @@ class ParticleReleaser(Iterator):
     @staticmethod
     def read_release_file(
         rls_file: Union[Path, str],
-        datatypes: Dict[str, Any],
-        names: Optional[List[str]] = None,
+        datatypes: dict[str, Any],
+        names: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Read the release file into a pandas DataFrame"""
 
@@ -283,7 +283,7 @@ class ParticleReleaser(Iterator):
         df = df.loc[J]
 
         # Set non-unique index
-        S: List[int] = []
+        S: list[int] = []
         for t in times:
             S.extend(num_entries_per_time[J[t]] * [t])
         df.index = S

@@ -5,19 +5,17 @@ import re
 from pathlib import Path
 from datetime import date
 import logging
-from typing import Dict, Union, Optional, Any, Generator, Tuple
+from typing import Union, Optional, Any, Generator, Literal
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-# from ladim2.timekeeper import TimeKeeper, normalize_period
 from ladim2.timekeeper import TimeDelta, normalize_period
 from ladim2.state import State  # For typing
 
-# from ladim2.grid import BaseGrid
 from ladim2.output import BaseOutput
 
-Variable = Dict[str, Any]
+Variable = dict[str, Any]
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -30,16 +28,16 @@ class Output(BaseOutput):
 
     def __init__(
         self,
-        modules: Dict[str, Any],
+        modules: dict[str, Any],
         filename: Union[Path, str],
         output_period: TimeDelta,
-        instance_variables: Dict[str, Variable],
-        particle_variables: Optional[Dict[str, Variable]] = None,
-        layout: str = "sparse",  # "sparse" or "dense"
-        ncargs: Optional[Dict[str, Any]] = None,
+        instance_variables: dict[str, Variable],
+        particle_variables: Optional[dict[str, Variable]] = None,
+        layout: Literal["sparse", "dense"] = "sparse",
+        ncargs: Optional[dict[str, Any]] = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
         skip_initial: Optional[bool] = False,
-        global_attributes: Optional[Dict[str, Any]] = None,
+        global_attributes: Optional[dict[str, Any]] = None,
     ) -> None:
 
         logger.info("Initializing output")
@@ -160,7 +158,7 @@ class Output(BaseOutput):
         nc.createDimension("time", None)
         nc.createDimension("particle", None)
         if self.layout == "dense":
-            instance_dim: Tuple[str, ...] = ("time", "particle")
+            instance_dim: tuple[str, ...] = ("time", "particle")
         else:
             nc.createDimension("particle_instance", None)  # Unlimited
             instance_dim = ("particle_instance",)
