@@ -2,122 +2,189 @@ import os
 from pathlib import Path
 from contextlib import contextmanager
 import shutil
+import runpy
+
+import yaml  # type: ignore
+from netCDF4 import Dataset
+
 from ladim2.main import main as run_ladim
-import importlib.util
-from unittest.mock import patch
 
 
-# EXAMPLE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples')
 EXAMPLE_DIR = Path(__file__).parents[1] / "examples"
 
 
 def test_streak():
-    with create_tempdir('streak'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_pyplot('plot.py')
-        run_pyplot('animate.py')
+    name = "streak"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim2.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
 def test_streak_ibm():
-    with create_tempdir('streak'):
-        run_module('make_release.py')
-        run_ladim('age_ibm.yaml')
-        run_pyplot('animate_ibm.py')
+    name = "streak"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "age_ibm.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        shutil.copy(example_dir / "age_ibm.py", temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
 def test_station():
-    with create_tempdir('station'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_pyplot('plot.py')
-        run_pyplot('animate.py')
+    name = "station"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim2.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
+# Improve this
 def test_restart():
-    with create_tempdir('restart'):
-        run_module('make_release.py')
-        run_ladim('split.yaml')
-        run_pyplot('animate.py')
-        run_pyplot('animate_split.py')
+    name = "restart"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file0 = "unsplit.yaml"
+    yaml_file1 = "split.yaml"
+    yaml_file2 = "restart.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file0, temp_dir)
+        shutil.copy(example_dir / yaml_file1, temp_dir)
+        shutil.copy(example_dir / yaml_file2, temp_dir)
+        shutil.copy(example_dir / "verify_restart.py", temp_dir)
+        runpy.run_path("make_release.py")
+        # Unsplit
+        run_ladim(yaml_file0)
+        verify_output(yaml_file0)
+        # Split and Restart
+        run_ladim(yaml_file1)
+        run_ladim(yaml_file2)
+        runpy.run_path("verify_restart.py")
 
-        run_ladim('unsplit.yaml')
-        run_ladim('restart.yaml')
+
 
 
 def test_gosouth():
-    with create_tempdir('gosouth'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_pyplot('animate.py')
+    name = "gosouth"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim2.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        shutil.copy(example_dir / "gosouth_ibm.py", temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
 def test_latlon():
-    with create_tempdir('latlon'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_module('make_coast.py')
-        run_pyplot('plot.py')
-        run_pyplot('plot0.py')
-        run_pyplot('animate.py')
-
-
-def test_killer_matrix():
-    with create_tempdir('killer'):
-        run_module('make_release.py')
-        run_ladim('dense.yaml')
-        run_pyplot('animate_dense.py')
+    name = "latlon"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim2.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
 def test_killer():
-    with create_tempdir('killer'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_pyplot('animate.py')
+    name = "killer"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim2.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        shutil.copy(example_dir / "killer_ibm.py", temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
-def test_line_matrix():
-    with create_tempdir('line'):
-        run_module('make_release.py')
-        run_ladim('dense.yaml')
-        run_pyplot('animate_dense.py')
+def test_killer_matrix():
+    name = "killer"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "dense.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        shutil.copy(example_dir / "killer_ibm.py", temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
 
 
 def test_line():
-    with create_tempdir('line'):
-        run_module('make_release.py')
-        run_ladim('ladim2.yaml')
-        run_pyplot('animate.py')
+    name = "line"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file1 = "ladim2.yaml"  # sparse output
+    yaml_file2 = "dense.yaml"  # dense output
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file1, temp_dir)
+        shutil.copy(example_dir / yaml_file2, temp_dir)
+        os.chdir(temp_dir)
+        runpy.run_path("make_release.py")
+        # Ordinary sparse output test
+        run_ladim(yaml_file1)
+        verify_output(yaml_file1)
+        # Dense output test
+        run_ladim(yaml_file2)
+        verify_output(yaml_file2)
+
+# ----------------------------------------------------
 
 
 @contextmanager
 def create_tempdir(name):
-    curdir = os.getcwd()
-    example_dir = os.path.join(EXAMPLE_DIR, name)
-    temp_dir = os.path.join(EXAMPLE_DIR, name + '_temp')
+    curdir = Path.cwd()
+    temp_dir = EXAMPLE_DIR / (name + "_temp")
 
     try:
-        shutil.copytree(example_dir, temp_dir)
+        Path.mkdir(temp_dir)
         os.chdir(temp_dir)
         yield temp_dir
 
     finally:
         os.chdir(curdir)
-        shutil.rmtree(temp_dir, ignore_errors=False)
+        shutil.rmtree(temp_dir, ignore_errors=True)
         assert not os.path.exists(temp_dir)
 
 
-def run_module(path):
-    from uuid import uuid4
-    internal_name = 'module_' + uuid4().hex
-    spec = importlib.util.spec_from_file_location(internal_name, path)
-    module_object = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module_object)
+def verify_output(yaml_file):
+    """Verify that LADiM has created a valid output file"""
+    # Get name of ladim output file
+    with open(yaml_file) as fid:
+        d = yaml.safe_load(fid)
+        out_file = Path(d["output"]["filename"])
 
+    # Assert that the result_file exists
+    assert out_file.exists()
 
-def run_pyplot(path):
-    import matplotlib.pyplot as plt
-    with patch.object(plt, 'show', return_value=None) as mock_method:
-        run_module(path)
-        plt.close()
-        mock_method.assert_called_once()
+    # Assert that the file is netcdf and probably OK
+    with Dataset(out_file) as nc:
+        # Common tests for sparse and dense
+        assert "time" in nc.dimensions
+        assert ("X" in nc.variables) or ("lon" in nc.variables)
+        assert ("Y" in nc.variables) or ("lat" in nc.variables)
+        # The dense file format is recognized by a global attribute "type"
+        # containing the substring "dense"
+        type_attribute = getattr(nc, "type", "")
+        if "dense" in type_attribute:
+            assert "particle" in nc.dimensions
+        else:  # Default sparse format
+            assert "particle_instance" in nc.dimensions
+            assert "particle_count" in nc.variables
+            assert "pid" in nc.variables
