@@ -6,13 +6,10 @@
 # November 2020
 # ----------------------------------
 
-# import sys
-# import os
-# import importlib
-# from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Any
 
-import numpy as np  # type: ignore
+import numpy as np
 
 # Type aliases
 Field = np.ndarray  # 3D or 2D gridded field
@@ -24,9 +21,9 @@ class BaseForce(ABC):
     """Abstract base class for LADiM forcing"""
 
     @abstractmethod
-    def __init__(self, modules: dict[str, str], **kwargs):
+    def __init__(self, modules: dict[str, Any], **kwargs: dict[str, Any]):
         self.modules = modules
-        self.variables: dict[str, np.ndarray]
+        self.variables: dict[str, ParticleArray]
 
     @abstractmethod
     def update(self) -> None:

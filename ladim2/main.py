@@ -106,7 +106,7 @@ def main(
     logger.info("Wall clock running time: %s", duration2iso(delta))
 
 
-def script():
+def script() -> None:
     """Function for running LADiM as a command line application"""
 
     parser = argparse.ArgumentParser(

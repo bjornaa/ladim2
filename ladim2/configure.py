@@ -21,8 +21,6 @@ from netCDF4 import Dataset, num2date  # type: ignore
 import yaml  # type: ignore
 
 
-# from .timekeeper import normalize_period
-
 DEBUG = False
 logger = logging.getLogger(__name__)
 if DEBUG:
@@ -55,11 +53,11 @@ def configure(
         raise SystemExit(3)
 
     try:
-        with open(config_file) as fid:
+        with open(config_file, encoding="utf-8") as fid:
             config: dict[str, Any] = yaml.safe_load(fid)
-    except yaml.parser.ParserError:
+    except yaml.parser.ParserError as err:
         logger.critical("Not a valid yaml file: %s", config_file)
-        raise SystemExit(3)
+        raise SystemExit(3) from err
 
     logger.info("  Configuration file version: %s", version)
 
@@ -84,9 +82,6 @@ def configure(
 
     # Handle non-orthogonality
 
-    # Use time step from time
-    # config["tracker"]["dt"] = config["time"]["dt"]
-
     # If grid["filename"] is missing, use forcing["filename"]
     if "module" not in config["grid"]:
         config["grid"]["module"] = config["forcing"]["module"]
@@ -104,9 +99,9 @@ def configure(
         # Warm start overrides start time
         try:
             nc = Dataset(warm_start_file)
-        except (FileNotFoundError, OSError):
+        except (FileNotFoundError, OSError) as err:
             logging.critical("Could not open warm start file:%s", warm_start_file)
-            raise SystemExit(1)
+            raise SystemExit(1) from err
         tvar = nc.variables["time"]
         # Use last record in restart file
         warm_start_time = np.datetime64(num2date(tvar[-1], tvar.units))

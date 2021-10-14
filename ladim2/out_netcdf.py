@@ -41,9 +41,9 @@ class Output(BaseOutput):
     ) -> None:
 
         logger.info("Initializing output")
+        super().__init__(modules)
         timer = modules["time"]
         grid = modules["grid"]
-        self.modules = modules
         self.filename = filename
         self.layout = layout
         self.timer = timer

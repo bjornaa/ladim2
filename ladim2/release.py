@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 from typing import Optional, Union, Any
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
@@ -26,7 +26,7 @@ if DEBUG:
     logger.setLevel(logging.DEBUG)
 
 
-class ParticleReleaser(Iterator):
+class ParticleReleaser(Iterator[pd.DataFrame]):
     """Particle Release Class"""
 
     def __init__(
@@ -37,7 +37,7 @@ class ParticleReleaser(Iterator):
         continuous: bool = False,
         release_frequency: int = 0,  # frequency in seconds
         warm_start_file: Optional[str] = None,
-        **args,
+        **args: dict[str, Any],
     ) -> None:
         timer = modules["time"]
         grid = modules["grid"]

@@ -13,7 +13,7 @@ from numbers import Number
 from collections.abc import Sized
 from typing import Union, Sequence, Optional, Any
 
-import numpy as np  # type: ignore
+import numpy as np
 
 DEBUG = False
 
@@ -124,7 +124,9 @@ class State(Sized):
 
         # Default values
         predef_default_values = dict(
-            alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
+            # alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
+            alive=True,
+            active=True,
         )
         dvals = default_values if default_values else dict()
         # Some quality control
@@ -163,7 +165,7 @@ class State(Sized):
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
-        b = np.broadcast(*value_vars.values())  # type: ignore
+        b = np.broadcast(*value_vars.values())
         if b.ndim > 1:
             raise ValueError("Arguments must be 1D or scalar")
         # if b.ndim == 0:  # All arguments are scalar

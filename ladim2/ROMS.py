@@ -55,24 +55,29 @@ class Grid(BaseGrid):
         self,
         filename: Union[Path, str],
         subgrid: Optional[tuple[int, int, int, int]] = None,
-        Vinfo=None,
-        **args,
+        Vinfo: Optional[dict[str, Any]] = None,
+        **args: dict[str, Any],
     ) -> None:
         logger.info("Initiating grid")
         logger.info("  Grid file: %s", filename)
 
+        super().__init__()
+
         try:
             ncid = Dataset(filename)
-        except OSError as ex:
+        except OSError as err:
             logger.critical("Could not open grid file %s", filename)
-            raise SystemExit(1) from ex
+            raise SystemExit(1) from err
         ncid.set_auto_maskandscale(False)
 
         # Subgrid, only considers internal grid cells
         # 1 <= i0 < i1 <= imax-1, default=end points
         # 1 <= j0 < j1 <= jmax-1, default=end points
         # Here, imax, jmax refers to whole grid
-        jmax0, imax0 = ncid.variables["h"].shape
+
+        # jmax0, imax0 = ncid.variables["h"].shape
+        shape: tuple[int, int] = ncid.variables["h"].shape
+        jmax0, imax0 = shape
         limits = list(subgrid) if subgrid else [1, imax0 - 1, 1, jmax0 - 1]
         # Negative values are counting from right/upper end of model domain
         for i in [0, 1]:
@@ -145,7 +150,7 @@ class Grid(BaseGrid):
                 self.Vtransform = 1  # Default = old way
 
         # Read some variables
-        self.H = ncid.variables["h"][self.J, self.I]
+        self.H: np.ndarray = ncid.variables["h"][self.J, self.I]
         self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
         self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
         self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
@@ -193,9 +198,10 @@ class Grid(BaseGrid):
 
     def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Return the depth of grid cells containing the particles"""
-        I = X.round().astype(int) - self.i0
-        J = Y.round().astype(int) - self.j0
-        return self.H[J, I]
+        I: np.ndarray = X.round().astype(int) - self.i0
+        J: np.ndarray = Y.round().astype(int) - self.j0
+        R: ParticleArray = self.H[J, I]
+        return R
 
     def lonlat(
         self, X: ParticleArray, Y: ParticleArray, method: str = "bilinear"
@@ -210,25 +216,35 @@ class Grid(BaseGrid):
 
     def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points inside the subgrid"""
-        return (
+        # return (
+        #     (self.xmin + 0.5 < X)
+        #     & (X < self.xmax - 0.5)
+        #     & (self.ymin + 0.5 < Y)
+        #     & (Y < self.ymax - 0.5)
+        # )
+        cond: ParticleArray = (
             (self.xmin + 0.5 < X)
             & (X < self.xmax - 0.5)
             & (self.ymin + 0.5 < Y)
             & (Y < self.ymax - 0.5)
         )
+        return cond
 
     def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points on land"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
-        return self.M[J, I] < 1
+        cond: ParticleArray = self.M[J, I] < 1
+        return cond
 
     # Error if point outside
-    def atsea(self, X, Y):
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for particles at sea"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
-        return self.M[J, I] > 0
+        # return self.M[J, I] > 0
+        cond: ParticleArray = self.M[J, I] > 0
+        return cond
 
     def xy2ll(
         self, X: ParticleArray, Y: ParticleArray
@@ -283,21 +299,23 @@ def s_stretch(
     if Vstretching == 1:
         cff1 = 1.0 / np.sinh(theta_s)
         cff2 = 0.5 / np.tanh(0.5 * theta_s)
-        return (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
+        C1: np.ndarray = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
             cff2 * np.tanh(theta_s * (S + 0.5)) - 0.5
         )
+        return C1
 
     if Vstretching == 2:
         a, b = 1.0, 1.0
         Csur = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
         Cbot = np.sinh(theta_b * (S + 1)) / np.sinh(theta_b) - 1
         mu = (S + 1) ** a * (1 + (a / b) * (1 - (S + 1) ** b))
-        return mu * Csur + (1 - mu) * Cbot
+        C2: np.ndarray = mu * Csur + (1 - mu) * Cbot
+        return C2
 
     if Vstretching == 4:
         C = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
-        C = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
-        return C
+        C4: np.ndarray = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
+        return C4
 
     # else:
     raise ValueError("Unknown Vstretching")
@@ -348,12 +366,14 @@ def sdepth(
     if Vtransform == 1:  # Default transform by Song and Haidvogel
         A = Hc * (S - C)[:, None]
         B = np.outer(C, H)
-        return (A + B).reshape(outshape)
+        R1: Field = (A + B).reshape(outshape)
+        return R1
 
     if Vtransform == 2:  # New transform by Shchepetkin
         N = Hc * S[:, None] + np.outer(C, H)
         D = 1.0 + Hc / H
-        return (N / D).reshape(outshape)
+        R2: Field = (N / D).reshape(outshape)
+        return R2
 
     # else:
     raise ValueError("Unknown Vtransform")
@@ -390,8 +410,9 @@ class Forcing(BaseForce):
     ) -> None:
 
         logger.info("Initiating forcing")
+        super().__init__(modules)
         timer = modules["time"]
-        self.modules: dict[str, Any] = modules
+        # self.modules: dict[str, Any] = modules
         self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
@@ -460,13 +481,6 @@ class Forcing(BaseForce):
         # Other forcing
         for name in self.ibm_forcing:
             self.fields[name] = self._read_field(name, prestep)
-            # self[name + "new"] = self._read_field(name, nextstep)
-            # self["d" + name] = (self[name + "new"] - self[name]) / prestep
-            # self[name] = self[name] - (prestep + 1) * self["d" + name]
-
-        # else:
-        #     # No forcing at start, should already be excluded
-        #     raise SystemExit(3)
 
         self.steps = steps
         # self.files = files
@@ -604,19 +618,21 @@ class Forcing(BaseForce):
         np.multiply(V, self.grid.Mv, out=V)
         return U, V
 
-    def _read_field(self, name, n):
+    def _read_field(self, name: str, n: int) -> Field:
         """Read a 3D field"""
         frame = self.frame_idx[n]
-        F = self._nc.variables[name][frame, :, self.grid.J, self.grid.I]
+        F0: Field = self._nc.variables[name][frame, :, self.grid.J, self.grid.I]
         if self.scaled[name]:
-            F = self.add_offset[name] + self.scale_factor[name] * F
+            F: Field = self.add_offset[name] + self.scale_factor[name] * F0
+        else:
+            F = F0
         return F
 
     # Allow item notation
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
     # ------------------
@@ -625,9 +641,11 @@ class Forcing(BaseForce):
         self._nc.close()
 
     def force_particles(
-        self, X: ParticleArray, Y: ParticleArray,
-    ):
-        """Interpolate forcing to particle positions"""
+        self,
+        X: ParticleArray,
+        Y: ParticleArray,
+    ) -> None:
+        """Interpolate velocity field to particle positions"""
 
         # if DEBUG:
         #    print("force_particles, n = ", len(X))
@@ -687,7 +705,9 @@ class Forcing(BaseForce):
     #     K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
     #     F = self[name]
     #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
-    def field(self, X, Y, Z, name):
+    def field(
+        self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, name: str
+    ) -> Field:
         """Dummy function for backwards compatibility of IBMs"""
         return self.variables[name]
 
@@ -738,12 +758,16 @@ def z2s(
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
     J = np.around(Y).astype("int")
-    return z2s_kernel(I, J, Z, z_rho)
+    K: tuple[ParticleArray, ParticleArray] = z2s_kernel(I, J, Z, z_rho)
+    return K
 
 
 @numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(
-    I: ParticleArray, J: ParticleArray, Z: ParticleArray, z_rho: Field,
+    I: ParticleArray,
+    J: ParticleArray,
+    Z: ParticleArray,
+    z_rho: Field,
 ) -> tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)
@@ -790,36 +814,13 @@ def sample3D(
     """
 
     if method == "bilinear":
-        # Find rho-point as lower left corner
-        # I = X.astype("int")
-        # J = Y.astype("int")
-        # P = X - I
-        # Q = Y - J
-        # W000 = (1 - P) * (1 - Q) * (1 - A)
-        # W010 = (1 - P) * Q * (1 - A)
-        # W100 = P * (1 - Q) * (1 - A)
-        # W110 = P * Q * (1 - A)
-        # W001 = (1 - P) * (1 - Q) * A
-        # W011 = (1 - P) * Q * A
-        # W101 = P * (1 - Q) * A
-        # W111 = P * Q * A
+        result: ParticleArray = trilinear(F, X, Y, K, A)
 
-        # return (
-        #     W000 * F[K, J, I]
-        #     + W010 * F[K, J + 1, I]
-        #     + W100 * F[K, J, I + 1]
-        #     + W110 * F[K, J + 1, I + 1]
-        #     + W001 * F[K - 1, J, I]
-        #     + W011 * F[K - 1, J + 1, I]
-        #     + W101 * F[K - 1, J, I + 1]
-        #     + W111 * F[K - 1, J + 1, I + 1]
-        # )
-        return trilinear(F, X, Y, K, A)
-
-    # else:  method == 'nearest'
-    I = X.round().astype("int")
-    J = Y.round().astype("int")
-    return F[K, J, I]
+    else:  # method == 'nearest'
+        I = X.round().astype("int")
+        J = Y.round().astype("int")
+        result = F[K, J, I]
+    return result
 
 
 @numba.njit(parallel=parallel)  # type: ignore

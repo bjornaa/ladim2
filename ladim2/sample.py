@@ -22,7 +22,7 @@ Horizontal sampling
 
 from typing import Optional
 
-import numpy as np  # type: ignore
+import numpy as np
 
 # Type aliases
 Field = np.ndarray  # 2D gridded field
@@ -56,7 +56,10 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
     W10 = P * (1 - Q)
     W11 = P * Q
 
-    return W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1]
+    result: np.ndarray = (
+        W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1]
+    )
+    return result
 
 
 # --------------------------------------------------
@@ -104,7 +107,7 @@ def sample2D_masked(
         W10 = M[J, I + 1] * W10
         W11 = M[J + 1, I + 1] * W11
     SW = W00 + W01 + W10 + W11
-    F_interp = np.where(
+    F_interp: ParticleArray = np.where(
         SW > 0,
         (W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1])
         / SW,
@@ -205,7 +208,7 @@ def sample2D(
         SW = W00 + W01 + W10 + W11
 
     SW = np.where(SW == 0, -1.0, SW)  # Avoid division by zero below
-    S = np.where(
+    result: ParticleArray = np.where(
         SW <= 0,
         undef_value,
         (W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1])
@@ -214,13 +217,9 @@ def sample2D(
 
     # Set in outside_values
     if outside_value:
-        S = np.where(outside, outside_value, S)
+        result = np.where(outside, outside_value, result)
 
-    #   Scalar input gives scalar output
-    # if scalar:
-    #    S = float(S)
-
-    return S
+    return result
 
 
 # -----------------------------------------
@@ -273,10 +272,6 @@ def bilin_inv(
 
     for t in range(maxiter):
 
-        # if scalar:
-        #     i = int(x)
-        #     j = int(y)
-        # else:
         i = x.astype("i")
         j = y.astype("i")
         p, q = x - i, y - j

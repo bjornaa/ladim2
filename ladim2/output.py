@@ -24,7 +24,7 @@ class BaseOutput(ABC):
     output_period = np.timedelta64(0, "s")
 
     @abstractmethod
-    def __init__(self, modules: dict[str, Any], **kwargs) -> None:
+    def __init__(self, modules: dict[str, Any], **kwargs: dict[str, Any]) -> None:
         self.modules = modules
 
     @abstractmethod
@@ -40,7 +40,7 @@ class BaseOutput(ABC):
         """Close (last) output file"""
 
 
-def init_output(module: str, **args) -> BaseOutput:
+def init_output(module: str, **args: dict[str, Any]) -> BaseOutput:
     """Initiates an Output class
 
     Args:

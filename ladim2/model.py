@@ -56,7 +56,7 @@ class Model:
             D = config["warm_start"]
             warm_start(D["filename"], D["variables"], self.state)
 
-    def update(self, step):
+    def update(self, step: int) -> None:
         """Update the model to the next time step"""
         if step > 0:
             self.timer.update()
@@ -68,7 +68,7 @@ class Model:
         # --- Update forcing ---
         self.force.update()
 
-        self.ibm.update()  # type: ignore
+        self.ibm.update()
 
         # self.state.compactify()
 
@@ -79,7 +79,7 @@ class Model:
         # Improve: no need to update after last write
         self.tracker.update()
 
-    def finish(self):
+    def finish(self) -> None:
         """Clean-up after the model run"""
         module_names = ["grid", "forcing", "release", "tracker", "ibm", "output"]
         for name in module_names:
@@ -89,7 +89,9 @@ class Model:
 
 
 def init_module(
-    module_name: str, conf_dict: dict[str, Any], all_modules_dict: Optional[dict] = None
+    module_name: str,
+    conf_dict: dict[str, Any],
+    all_modules_dict: Optional[dict[str, Any]] = None,
 ) -> Any:
     """Initiate the main class in one of the modules"""
     default_module_names = dict(
@@ -144,7 +146,9 @@ def load_module(module_name: str) -> types.ModuleType:
         # basename = os.path.basename(module_name).rsplit(".", 1)[0]
         basename = file_name.stem
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(internal_name, file_name)
+        spec = importlib.util.spec_from_file_location(
+            internal_name, file_name
+        )
         module_object = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module_object)  # type: ignore
         return module_object

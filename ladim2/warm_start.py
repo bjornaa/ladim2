@@ -3,7 +3,7 @@
 import logging
 
 import numpy as np
-from netCDF4 import Dataset
+from netCDF4 import Dataset  # type: ignore
 
 from ladim2.state import State
 
@@ -25,7 +25,9 @@ def warm_start(
     logger.info("  warm start variables: %s", warm_start_variables)
 
     # wvars = warm_start_variables.copy() + ["pid"]
-    wvars: set = {"pid", "X", "Y", "Z", "alive", "active"}.union(warm_start_variables)
+    wvars: set[str] = {"pid", "X", "Y", "Z", "alive", "active"}.union(
+        warm_start_variables
+    )
 
     # Open warm start file
     try:

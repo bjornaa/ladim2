@@ -1,3 +1,5 @@
+"""Tracker – physical particle tracker"""
+
 # ------------------------------------
 # tracker.py
 # Part of the LADiM Model
@@ -12,7 +14,7 @@ import logging
 from typing import Any
 
 import numpy as np
-import numba
+import numba  # type: ignore
 
 from ladim2.forcing import BaseForce
 
@@ -224,18 +226,26 @@ class Tracker:
 
         return U, V
 
-    def diffuse_vert(self, num_particles: int):
+    def diffuse_vert(self, num_particles: int) -> ParticleArray:
         """Random walk diffusion"""
 
         # Diffusive velocity
         stddev = (2 * self.Dz / self.dt) ** 0.5
-        W = stddev * np.random.normal(size=num_particles)
-
+        W: ParticleArray = stddev * np.random.normal(size=num_particles)
         return W
 
 
 @numba.njit(parallel=PARALLEL)
-def RKstep0(X, Y, U, V, frac, dtdx, dtdy):
+def RKstep0(
+    X: ParticleArray,
+    Y: ParticleArray,
+    U: ParticleArray,
+    V: ParticleArray,
+    frac: float,
+    dtdx: ParticleArray,
+    dtdy: ParticleArray,
+) -> tuple[ParticleArray, ParticleArray]:
+
     Xp = X + frac * U * dtdx
     Yp = Y + frac * V * dtdy
     return Xp, Yp

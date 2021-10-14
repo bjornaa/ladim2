@@ -5,8 +5,9 @@
 # import os
 # from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Any
 
-import numpy as np  # type: ignore
+import numpy as np
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
 
@@ -15,8 +16,7 @@ class BaseGrid(ABC):
     """Abstract Base Class for LADiM grid"""
 
     @abstractmethod
-    def __init__(self, modules: dict, **kwargs):
-        self.modules = modules
+    def __init__(self, **kwargs: dict[str, Any]):
         self.xmin: float
         self.xmax: float
         self.ymin: float

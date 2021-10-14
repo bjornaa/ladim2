@@ -1,7 +1,10 @@
+"""Abstract Base Class for IBMs"""
+from typing import Any
+
 class IBM:
     """Base class for Individual Based Model"""
 
-    def __init__(self, modules: dict, **kwargs):
+    def __init__(self, modules: dict[str, Any], **kwargs: dict[str, Any]):
         self.modules = modules
         self.opts = kwargs
 
