@@ -20,7 +20,7 @@ n = 1
 
 # Reference values from unsplit simulation
 with ParticleFile("unsplit.nc") as pf:
-    time_ = pf.time(t)
+    time_ = pf.time[t]
     x = float(pf.X[t][pid])
     y = float(pf.Y[t][pid])
 
@@ -29,12 +29,12 @@ file_number, tsplit = divmod(t, numrec)
 
 # Check splitting
 with ParticleFile(f"split_{file_number:03d}.nc") as pf:
-    assert pf.time(tsplit) == time_
+    assert pf.time[tsplit] == time_
     assert float(pf.X[tsplit][pid]) == x
     assert float(pf.Y[tsplit][pid]) == y
 
 # Check restart
 with ParticleFile(f"split_{file_number:03d}.nc") as pf:
-    assert pf.time(tsplit) == time_
+    assert pf.time[tsplit] == time_
     assert float(pf.X[tsplit][pid]) == x
     assert float(pf.Y[tsplit][pid]) == y
