@@ -15,9 +15,11 @@ It is a goal to provide sane defaults in the configuration file, so that
 enhancements of the configuration setup do not break existing configuration
 files.
 
-The configuration file format is a subset of `yaml (YAML Ain't Markup
-Language) <http:yaml.org>`_. Knowledge of ``yaml`` is not necessary. The
-example configuration files are self-describing and can easily be modified.
+The configuration file format is self-describing and can easily be modified by the user.
+The format uses a subset of  `yaml (YAML Ain't Markup Language) <https:yaml.org>`_, but
+does not require extensive knowledge of the ``yaml`` standard. In fact, the format fits
+the simpler `StrictYAML <https://hitchdev.com/strictyaml/>`_ subset of ``yaml`` with
+flow-style entries allowed.
 
 .. note::
 
@@ -33,7 +35,7 @@ example configuration files are self-describing and can easily be modified.
 An example configuration file
 -----------------------------
 
-Below is an example configuration file, :file:`models/salmon_lice/ladim.yaml`.
+Below is an example configuration file, :file:`examples/line/ladim.yaml`.
 
-.. literalinclude:: ../../examples/lakselus/ladim2.yaml
+.. literalinclude:: ../../examples/line/ladim2.yaml
   :language: yaml
