@@ -16,13 +16,73 @@ Presently the dictionary is somewhat inconsistent to provide backwards compatibi
 Future versions will continue to separate the configuration info into separate
 directories for the gridforce, ibm and output modules.
 
-start_time
-  Start time for simulation,  [numpy.datetime64]
-stop_time
-  Stop time for simulation,   [numpy.datetime64]
-reference_time
-  Reference time for simulation,   [numpy.datetime64]
-  Used in the units attribute in the netCDF output file
+version [optional]
+  Version number for the configuration format. Te version descried here is 2.0 
+
+time
+  start_time
+    Start time for simulation,  [numpy.datetime64]
+  stop_time
+    Stop time for simulation,   [numpy.datetime64]
+  reference_time  [optional]
+    Reference time for simulation,   [numpy.datetime64]
+    Used in the units attribute in the netCDF output file.
+    The default value is the start_time
+
+grid:
+  module: [optional]
+    If not present, it is contained in the forcing module below
+    Configuration items required by the grid
+
+forcing
+  module
+    Name of forcing module
+    Must be in pythons `sys.path`` or be given by file path
+  Configuration items required by the forcing module
+
+release
+  release_file
+    Name of file with particle release schedule
+  continuous: 
+    True or False for discrete release
+  release_frequency
+    Needed for continuous release, format: [value, unit] 
+  release_variables: optional
+    Column names for the release file, overriden by header line in the release file
+
+state [optional]
+  State variables and their default values if needed.
+
+ibm  [optional]
+  module
+    path to IBM-module
+
+tracker
+  advection [optional?]
+    Advection method
+    EF: Euler Forward, RK2: Runge-Kutta 2nd order, RK4 Runge-Kutta 4th order
+  diffusion [optional]
+    Horizontal diffusion coeffient in m^2/s 
+    If missing or zero, there is enforced diffusion
+
+output
+  filename
+    name of output file or name pattern for multifile output
+  output_period:
+    time intervall between output, format [value, unit]
+  numrec: optional
+    number of records per output file. Default = 0 for no output file splitting
+  particle:
+    list of names of particle variables that should be written
+  instance:
+    list of names of instance variables that should be written
+  
+    
+
+
+
+
+
 particle_release_file
   Name of particle release file
 output_file

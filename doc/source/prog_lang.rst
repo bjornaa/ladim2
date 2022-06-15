@@ -15,9 +15,7 @@ release module depend on the data analysis package
 `pandas <http://pandas.pydata.org>`_. All these packages are available in the
 `anaconda <https://www.continuum.io/anaconda-overview>`_ bundle.
 
-The postprocessing library, :ref:`postladim<postladim>`, uses the `xarray
-<http://xarray.pydata.org>`_ framework. In addition the examples use the plotting
-package `matplotlib <http://matplotlib.org>`_ for visualization.
+The examples use the plotting packages, in particular `matplotlib <http://matplotlib.org>`_ for visualization.
 
 Testing is done using the `pytest <http://doc.pytest.org>`_-framework.
 
