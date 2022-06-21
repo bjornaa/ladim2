@@ -36,6 +36,9 @@ Yb = np.arange(j0 - 0.5, j1)
 pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
+def time(t):
+    return np.datetime64(pf.time[t].values, 'h')
+
 # Set up the plot area
 fig = plt.figure(figsize=(12, 10))
 ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
@@ -57,14 +60,14 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
 # title = ax.set_title(pf.time(0))
-timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.96, time(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     X, Y = pf.position(t)
     particle_dist.set_data(X, Y)
-    timestamp.set_text(pf.time(t))
+    timestamp.set_text(time(t))
     return particle_dist, timestamp
 
 

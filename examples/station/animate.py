@@ -48,6 +48,10 @@ ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.9)
 ax.contour(Xcell, Ycell, lat, levels=range(57, 64), colors="black", linestyles=":")
 ax.contour(Xcell, Ycell, lon, levels=range(-4, 10, 2), colors="black", linestyles=":")
 
+def time(t):
+    return np.datetime64(pf.time[t].values, 'h')
+
+
 # Landmask
 constmap = plt.matplotlib.colors.ListedColormap([0.2, 0.6, 0.4])
 M = np.ma.masked_where(M > 0, M)
@@ -62,14 +66,14 @@ cb = plt.colorbar(particle_dist)
 cb.ax.invert_yaxis()
 cb.set_label("Particle depth", fontsize=14)
 # Time stamp
-timestamp = ax.text(0.01, 0.96, pf.time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.96, time(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     X, Y = pf.position(time=t)
     particle_dist.set_offsets(np.vstack((X, Y)).T)
-    timestamp.set_text(pf.time(t))
+    timestamp.set_text(time(t))
     return particle_dist, timestamp
 
 

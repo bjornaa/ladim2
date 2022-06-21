@@ -59,6 +59,10 @@ ax.contour(
     alpha=0.5,
 )
 
+def time(t):
+    return np.datetime64(pf.time[t].values, 'h')
+
+
 # Landmask
 constmap = plt.matplotlib.colors.ListedColormap([0.2, 0.6, 0.4])
 M = np.ma.masked_where(M > 0, M)
@@ -68,7 +72,7 @@ plt.pcolormesh(Xb, Yb, M, cmap=constmap)
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
 timestamp = ax.text(
-    0.02, 0.95, pf.time(0), fontsize=15, backgroundcolor="white", transform=ax.transAxes
+    0.02, 0.95, time(0), fontsize=15, backgroundcolor="white", transform=ax.transAxes
 )
 
 
@@ -76,7 +80,7 @@ timestamp = ax.text(
 def animate(t):
     X, Y = pf.position(t)
     particle_dist.set_data(X, Y)
-    timestamp.set_text(pf.time(t))
+    timestamp.set_text(time(t))
     return particle_dist, timestamp
 
 

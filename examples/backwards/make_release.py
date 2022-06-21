@@ -14,7 +14,7 @@ rls_file = "backwards.rls"
 
 try:
     with ParticleFile(pfile) as pf:
-        release_time = pf.time(record_nr)
+        release_time = pf.time[record_nr].values
         X = pf.X[record_nr]
         Y = pf.Y[record_nr]
         Z = pf.Z[record_nr]

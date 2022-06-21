@@ -44,6 +44,8 @@ with Dataset(grid_file) as nc:
     lon_grid = nc.variables["lon_rho"][:, :]
     lat_grid = nc.variables["lat_rho"][:, :]
 
+def time(t):
+    return np.datetime64(pf.time[t].values, 'h')
 
 # Make background map
 
@@ -90,7 +92,7 @@ lat = pf["lat"][0]
 timestamp = ax.text(
     x=0.12,
     y=0.91,
-    s=str(pf.time(0))[:-6],
+    s=str(time(0)),
     fontsize=13,
     backgroundcolor="white",
     transform=ax.transAxes,
@@ -102,7 +104,7 @@ def animate(t):
     lon = pf["lon"][t]
     lat = pf["lat"][t]
     particle_dist.set_data(lon, lat)
-    timestamp.set_text(str(pf.time(t))[:-6])
+    timestamp.set_text(str(time(t)))
     return particle_dist, timestamp
 
 
