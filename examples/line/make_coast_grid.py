@@ -11,7 +11,7 @@ import numpy as np
 from shapely import geometry
 import cartopy.io.shapereader as shapereader
 
-from ladim2.ROMS import Grid
+from ladim.ROMS import Grid
 
 # Choose between c, l, i, h, f resolutions
 GSHHS_resolution = "i"

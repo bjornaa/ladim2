@@ -1,10 +1,10 @@
 """Module containing the LADiM Model class definition"""
 
-from ladim2.configure import configure
-from ladim2.model import init_module
+from ladim.configure import configure
+from ladim.model import init_module
 
 
-configuration_file = "ladim2.yaml"
+configuration_file = "ladim.yaml"
 config_version = 2
 config = configure(configuration_file, config_version)
 

@@ -10,12 +10,12 @@ To improve the graphics, the output is coloured by the age of the particles.  Th
 calculated in two ways. Both versions use the same release file, streak.rls, computed by
 make_release.py.
 
-The first version is run by the command ladim2 and is defined by ladim2.yaml, the output
+The first version is run by the command ladim and is defined by ladim.yaml, the output
 is out.nc. Here the release time of the particles are stored in a particle variable
 release_time. The animation script, animate.py, computes the age of the particles using
 this piece of information.
 
-The second version is defined by age_ibm.yaml and is run by the command ladim2
+The second version is defined by age_ibm.yaml and is run by the command ladim
 age_ibm.yaml and the result is stored in out_ibm.py. Here age is an instance variable
 computed by the simple IBM module age_ibm in age_ibm.py and saved to the output file. The
 corresponding animation script, animate_ibm.py, reads the age directly from the output.

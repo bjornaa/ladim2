@@ -2,8 +2,8 @@
 
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
-from ladim2.state import State
-from ladim2 import analytical
+from ladim.state import State
+from ladim import analytical
 
 a: float = 0.01  # Velocity scale factor
 # dt = 0.3   # seconds    <1% error EF

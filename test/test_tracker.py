@@ -1,6 +1,6 @@
 import numpy as np
-from ladim2.state import State
-from ladim2.tracker import Tracker
+from ladim.state import State
+from ladim.tracker import Tracker
 
 
 class Grid:

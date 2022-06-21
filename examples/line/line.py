@@ -2,12 +2,12 @@
 
 import numpy as np
 
-import ladim2
-import ladim2.state
-import ladim2.timekeeper
-import ladim2.ROMS
-import ladim2.out_netcdf
-import ladim2.tracker
+import ladim
+import ladim.state
+import ladim.timekeeper
+import ladim.ROMS
+import ladim.out_netcdf
+import ladim.tracker
 
 # --------------
 # Settings
@@ -52,26 +52,26 @@ output_variables = dict(
 # Initiate
 # ------------
 
-state = ladim2.state.State()
+state = ladim.state.State()
 
-grid = ladim2.ROMS.Grid(filename=data_file)
+grid = ladim.ROMS.Grid(filename=data_file)
 
-timer = ladim2.timekeeper.TimeKeeper(
+timer = ladim.timekeeper.TimeKeeper(
     start=start_time, stop=stop_time, dt=dt, reference=reference_time
 )
 
-force = ladim2.ROMS.Forcing(
+force = ladim.ROMS.Forcing(
     filename=data_file, modules=dict(time=timer, grid=grid, state=state)
 )
 
-output = ladim2.out_netcdf.Output(
+output = ladim.out_netcdf.Output(
     filename="out.nc",
     output_period=10800,  # 3 hours
     instance_variables=output_variables,
     modules=dict(state=state, time=timer, grid=grid),
 )
 
-tracker = ladim2.tracker.Tracker(
+tracker = ladim.tracker.Tracker(
     advection=advection, modules=dict(state=state, time=timer, grid=grid, forcing=force)
 )
 

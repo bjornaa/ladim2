@@ -2,11 +2,11 @@ import numpy as np
 
 from ladim.ibms import light
 
-# from ladim2.ibm import BaseIBM
-# from ladim2.timekeeper import TimeKeeper
-# from ladim2.state import State
-# from ladim2.forcing import BaseForce
-# from ladim2.grid import BaseGrid
+# from ladim.ibm import BaseIBM
+# from ladim.timekeeper import TimeKeeper
+# from ladim.state import State
+# from ladim.forcing import BaseForce
+# from ladim.grid import BaseGrid
 
 
 # class IBM(BaseIBM):

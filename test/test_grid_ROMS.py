@@ -3,12 +3,12 @@ from pathlib import Path
 from netCDF4 import Dataset
 import pytest
 
-# import ladim2
-# from ladim2.grid_ROMS import init_grid
-from ladim2.ROMS import Grid
+# import ladim
+# from ladim.grid_ROMS import init_grid
+from ladim.ROMS import Grid
 
-ladim2_root = Path(__file__).parent.parent
-grid_file = ladim2_root / "examples/data/ocean_avg_0014.nc"
+ladim_root = Path(__file__).parent.parent
+grid_file = ladim_root / "examples/data/ocean_avg_0014.nc"
 
 
 def test_ok():

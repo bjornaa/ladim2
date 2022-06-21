@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-# from ladim2.timekeeper import TimeKeeper, normalize_period
-from ladim2.timekeeper import normalize_period
-from ladim2.grid import BaseGrid
+# from ladim.timekeeper import TimeKeeper, normalize_period
+from ladim.timekeeper import normalize_period
+from ladim.grid import BaseGrid
 
 
 # ----------------------------------

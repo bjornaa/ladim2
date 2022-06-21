@@ -1,8 +1,5 @@
 """
-
-LADiM Grid og Forcing form the Regional Ocean Model System (ROMS)
-
-Adaptive version
+LADiM Grid og Forcing for the Regional Ocean Model System (ROMS)
 
 """
 
@@ -10,22 +7,22 @@ Adaptive version
 # Bjørn Ådlandsvik, <bjorn@imr.no>
 # Institute of Marine Research
 # Bergen, Norway
-# April, 2021
+# February, 2021
 # -----------------------------------
 
 from pathlib import Path
 import logging
-from typing import Union, Optional, List, Tuple, Dict
+from typing import Union, Optional, Any
 
-import numpy as np  # type: ignore
+import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
-import numba
+import numba  # type: ignore
 
+from ladim.grid import BaseGrid
+from ladim.forcing import BaseForce, ParticleArray, Field
+from ladim.sample import sample2D, bilin_inv
+from ladim.timekeeper import TimeKeeper
 
-from ladim2.grid import BaseGrid
-from ladim2.forcing import BaseForce
-from ladim2.sample import sample2D, bilin_inv
-from ladim2.timekeeper import TimeKeeper
 
 DEBUG = False
 parallel = False
@@ -37,13 +34,10 @@ if DEBUG:
 numba_logger = logging.getLogger("numba")
 numba_logger.setLevel(logging.WARNING)
 
+
 # ---------------------------
 # Grid class
 # ---------------------------
-
-
-def init_grid(**args) -> BaseGrid:
-    return Grid(**args)
 
 
 class Grid(BaseGrid):
@@ -57,155 +51,216 @@ class Grid(BaseGrid):
 
     """
 
-    # Lagrer en del unødige attributter
-
     def __init__(
         self,
         filename: Union[Path, str],
-        Vinfo=None,
-        **args,
+        subgrid: Optional[tuple[int, int, int, int]] = None,
+        Vinfo: Optional[dict[str, Any]] = None,
+        **args: dict[str, Any],
     ) -> None:
-
         logger.info("Initiating grid")
+        logger.info("  Grid file: %s", filename)
 
-        # logging.info("Initializing ROMS-type grid object")
+        super().__init__()
 
-        # Grid file
-        # if "file" in config:
-        #     filename = config["file"]
-        # else:
-        #     # logging.error("No grid file specified")
-        #     print("No grid file specified")
-        #     raise SystemExit(1)
         try:
             ncid = Dataset(filename)
-        except OSError:
-            logger.critical(f"Could not open grid file {filename}")
-            raise SystemExit(1)
+        except OSError as err:
+            logger.critical("Could not open grid file %s", filename)
+            raise SystemExit(1) from err
         ncid.set_auto_maskandscale(False)
 
-        # Grid limits
-        jmax, imax = ncid.variables["h"].shape
-        self.imax, self.jmax = imax, jmax
+        # Subgrid, only considers internal grid cells
+        # 1 <= i0 < i1 <= imax-1, default=end points
+        # 1 <= j0 < j1 <= jmax-1, default=end points
+        # Here, imax, jmax refers to whole grid
+
+        # jmax0, imax0 = ncid.variables["h"].shape
+        shape: tuple[int, int] = ncid.variables["h"].shape
+        jmax0, imax0 = shape
+        limits = list(subgrid) if subgrid else [1, imax0 - 1, 1, jmax0 - 1]
+        # Negative values are counting from right/upper end of model domain
+        for i in [0, 1]:
+            if limits[i] < 0:
+                limits[i] = imax0 + limits[i]
+        for i in [2, 3]:
+            if limits[i] < 0:
+                limits[i] = jmax0 + limits[i]
+        # Sanity check
+        if (not 1 <= limits[0] < limits[1] <= imax0 - 1) or (
+            not 1 <= limits[2] < limits[3] <= jmax0 - 1
+        ):
+            logger.critical("Illegal subgrid specification: %s", limits)
+            raise SystemExit(1)
+
+        self.i0, self.i1, self.j0, self.j1 = limits
+        self.imax = self.i1 - self.i0
+        self.jmax = self.j1 - self.j0
+        if subgrid:
+            logger.info("  Subgrid: %d, %d, %d, %d", self.i0, self.i1, self.j0, self.j1)
 
         # Limits for where velocities are defined
-        self.xmin = 0.5
-        self.xmax = imax - 1.5
-        self.ymin = 0.5
-        self.ymax = jmax - 1.5
+        self.xmin = float(self.i0)
+        self.xmax = float(self.i1 - 1)
+        self.ymin = float(self.j0)
+        self.ymax = float(self.j1 - 1)
 
-        # Vertical grid
+        # Slices
+        #   rho-points
+        self.I = slice(self.i0, self.i1)
+        self.J = slice(self.j0, self.j1)
+        #   U and V-points
+        self.Iu = slice(self.i0 - 1, self.i1)
+        self.Ju = self.J
+        self.Iv = self.I
+        self.Jv = slice(self.j0 - 1, self.j1)
+
+        # Explicit Vinfo
+
         if Vinfo is not None:
-            N = Vinfo["N"]
-            hc = Vinfo["hc"]
-            Vstretching = Vinfo.get("Vstretching", 1)
-            Vtransform = Vinfo.get("Vtransform", 1)
+            self.N = Vinfo["N"]
+            self.hc = Vinfo["hc"]
+            self.Vstretching = Vinfo.get("Vstretching", 1)
+            self.Vtransform = Vinfo.get("Vtransform", 1)
             self.Cs_r = s_stretch(
-                N,
+                self.N,
                 Vinfo["theta_s"],
                 Vinfo["theta_b"],
                 stagger="rho",
-                Vstretching=Vstretching,
+                Vstretching=self.Vstretching,
             )
             self.Cs_w = s_stretch(
-                N,
+                self.N,
                 Vinfo["theta_s"],
                 Vinfo["theta_b"],
                 stagger="w",
-                Vstretching=Vstretching,
+                Vstretching=self.Vstretching,
             )
 
         else:  # Vertical info from the grid file
-            hc = ncid.variables["hc"].getValue()
+            # Should have test for missing vertical information
+            self.hc = ncid.variables["hc"].getValue()
             self.Cs_r = ncid.variables["Cs_r"][:]
             self.Cs_w = ncid.variables["Cs_w"][:]
-            N = len(self.Cs_r)
+            self.N = len(self.Cs_r)
             # Vertical transform
             try:
-                Vtransform = ncid.variables["Vtransform"].getValue()
+                self.Vtransform = ncid.variables["Vtransform"].getValue()
             except KeyError:
-                Vtransform = 1  # Default = old way
+                self.Vtransform = 1  # Default = old way
 
         # Read some variables
-        self.H = ncid.variables["h"][:, :]
-        self.M = ncid.variables["mask_rho"][:, :].astype(int)
-        self.Mu = self.M[:, :-1] * self.M[:, 1:]
-        self.Mv = self.M[:-1, :] * self.M[1:, :]
-        # self.Mu = ncid.variables['mask_u'][self.Ju, self.Iu]
-        # self.Mv = ncid.variables['mask_v'][self.Jv, self.Iv]
-        self.dx = 1.0 / ncid.variables["pm"][:, :]
-        self.dy = 1.0 / ncid.variables["pn"][:, :]
-        self.lon = ncid.variables["lon_rho"][:, :]
-        self.lat = ncid.variables["lat_rho"][:, :]
-        # self.angle = ncid.variables["angle"][:, :]   # Not used
+        self.H: np.ndarray = ncid.variables["h"][self.J, self.I]
+        self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
+        self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
+        self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
+        self.lon = ncid.variables["lon_rho"][self.J, self.I]
+        self.lat = ncid.variables["lat_rho"][self.J, self.I]
+        self.angle = ncid.variables["angle"][self.J, self.I]
 
-        # Vertical coordinate structure
-        self.z_r = sdepth(self.H, hc, self.Cs_r, stagger="rho", Vtransform=Vtransform)
-        self.z_w = sdepth(self.H, hc, self.Cs_w, stagger="w", Vtransform=Vtransform)
+        self.z_r = sdepth(
+            self.H, self.hc, self.Cs_r, stagger="rho", Vtransform=self.Vtransform
+        )
+        self.z_w = sdepth(
+            self.H, self.hc, self.Cs_w, stagger="w", Vtransform=self.Vtransform
+        )
 
-        # Close the file
+        # Land masks at u- and v-points
+        M = self.M
+        Mu = np.zeros((self.jmax, self.imax + 1), dtype=int)
+        Mu[:, 1:-1] = M[:, :-1] * M[:, 1:]
+        Mu[:, 0] = M[:, 0]
+        Mu[:, -1] = M[:, -1]
+        self.Mu = Mu
+
+        Mv = np.zeros((self.jmax + 1, self.imax), dtype=int)
+        Mv[1:-1, :] = M[:-1, :] * M[1:, :]
+        Mv[0, :] = M[0, :]
+        Mv[-1, :] = M[-1, :]
+        self.Mv = Mv
+
+        # Close the file(s)
         ncid.close()
 
-    def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def metric(
+        self, X: ParticleArray, Y: ParticleArray
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
         """
-        I = X.round().astype(int)
-        J = Y.round().astype(int)
+        I = X.round().astype(int) - self.i0
+        J = Y.round().astype(int) - self.j0
 
         # Metric is conform for PolarStereographic
         A = self.dx[J, I]
         return A, A
 
-    def depth(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
-        """Return the depth of grid cells"""
-        I = X.round().astype(int)
-        J = Y.round().astype(int)
-        return self.H[J, I]
+    def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+        """Return the depth of grid cells containing the particles"""
+        I: np.ndarray = X.round().astype(int) - self.i0
+        J: np.ndarray = Y.round().astype(int) - self.j0
+        R: ParticleArray = self.H[J, I]
+        return R
 
     def lonlat(
-        self, X: np.ndarray, Y: np.ndarray, method: str = "bilinear"
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, X: ParticleArray, Y: ParticleArray, method: str = "bilinear"
+    ) -> tuple[ParticleArray, ParticleArray]:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)
         # else: containing grid cell, less accurate
-        I = X.round().astype("int")
-        J = Y.round().astype("int")
+        I = X.round().astype("int") - self.i0
+        J = Y.round().astype("int") - self.j0
         return self.lon[J, I], self.lat[J, I]
 
-    def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points inside the subgrid"""
-        return (
+        # return (
+        #     (self.xmin + 0.5 < X)
+        #     & (X < self.xmax - 0.5)
+        #     & (self.ymin + 0.5 < Y)
+        #     & (Y < self.ymax - 0.5)
+        # )
+        cond: ParticleArray = (
             (self.xmin + 0.5 < X)
             & (X < self.xmax - 0.5)
             & (self.ymin + 0.5 < Y)
             & (Y < self.ymax - 0.5)
         )
+        return cond
 
-    def onland(self, X, Y):
+    def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Returns True for points on land"""
-        I = X.round().astype(int)
-        J = Y.round().astype(int)
-        return self.M[J, I] < 1
+        I = X.round().astype(int) - self.i0
+        J = Y.round().astype(int) - self.j0
+        cond: ParticleArray = self.M[J, I] < 1
+        return cond
 
     # Error if point outside
-    def atsea(self, X, Y):
-        """Returns True for points at sea"""
-        I = X.round().astype(int)
-        J = Y.round().astype(int)
-        return self.M[J, I] > 0
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+        """Returns True for particles at sea"""
+        I = X.round().astype(int) - self.i0
+        J = Y.round().astype(int) - self.j0
+        # return self.M[J, I] > 0
+        cond: ParticleArray = self.M[J, I] > 0
+        return cond
 
-    def xy2ll(self, X, Y):
+    def xy2ll(
+        self, X: ParticleArray, Y: ParticleArray
+    ) -> tuple[ParticleArray, ParticleArray]:
+        """Converts particle positions from grid coordinates to longitude/latitude"""
         return (
-            sample2D(self.lon, X, Y),
-            sample2D(self.lat, X, Y),
+            sample2D(self.lon, X - self.i0, Y - self.j0),
+            sample2D(self.lat, X - self.i0, Y - self.j0),
         )
 
-    def ll2xy(self, lon, lat):
+    def ll2xy(
+        self, lon: ParticleArray, lat: ParticleArray
+    ) -> tuple[ParticleArray, ParticleArray]:
+        """Converts particle positions from longitude/latitude to grid coordinates"""
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
-        return X, Y
+        return X + self.i0, Y + self.j0
 
 
 # ------------------------------------------------
@@ -213,18 +268,24 @@ class Grid(BaseGrid):
 # ------------------------------------------------
 
 
-def s_stretch(N, theta_s, theta_b, stagger="rho", Vstretching=1):
-    """Compute a s-level stretching array
+def s_stretch(
+    N: int, theta_s: float, theta_b: float, stagger: str = "rho", Vstretching: int = 1
+) -> np.ndarray:
+    """Computes the ROMS s-level stretching array
 
-    *N* : Number of vertical levels
-
-    *theta_s* : Surface stretching factor
-
-    *theta_b* : Bottom stretching factor
-
-    *stagger* : "rho"|"w"
-
-    *Vstretching* : 1|2|4
+    Args:
+        N:
+            The number of vertical levels
+        theta_s:
+            ROMS surface stretching factor
+        theta_b:
+            ROMS bottom stretching factor
+        stagger: "rho"|"w"
+            Choose "rho" or "w" points in the vertical staggering
+        Vstretching: 1|2|4
+            ROMS vertical stretching parameter
+    Returns:
+        1D vertical s-level stretching array
 
     """
 
@@ -238,48 +299,49 @@ def s_stretch(N, theta_s, theta_b, stagger="rho", Vstretching=1):
     if Vstretching == 1:
         cff1 = 1.0 / np.sinh(theta_s)
         cff2 = 0.5 / np.tanh(0.5 * theta_s)
-        return (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
+        C1: np.ndarray = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
             cff2 * np.tanh(theta_s * (S + 0.5)) - 0.5
         )
+        return C1
 
     if Vstretching == 2:
         a, b = 1.0, 1.0
         Csur = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
         Cbot = np.sinh(theta_b * (S + 1)) / np.sinh(theta_b) - 1
         mu = (S + 1) ** a * (1 + (a / b) * (1 - (S + 1) ** b))
-        return mu * Csur + (1 - mu) * Cbot
+        C2: np.ndarray = mu * Csur + (1 - mu) * Cbot
+        return C2
 
     if Vstretching == 4:
         C = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
-        C = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
-        return C
+        C4: np.ndarray = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
+        return C4
 
     # else:
     raise ValueError("Unknown Vstretching")
 
 
-def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
-    """Return depth of rho-points in s-levels
+def sdepth(
+    H: Field, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
+) -> Field:
+    """Return depth of grid cells
 
-    *H* : arraylike
-      Bottom depths [meter, positive]
+    Args:
+        H: array of floats
+            Bottom depth
+        Hc:
+            ROMS reference depth
+        C:
+            1D sorted array, -1 <= C[i] < C[i+1] <= 0
+        stagger: "rho"|"w"
+            Choose "rho" or "w" points in the vertical staggering
+        Vtransform: 1|2
+            ROMS vertical s-level transform
+    Returns:
+        z_rho or z_w, depth of rho or w points
+        Array of floats, ndim = H.ndim + 1 and shape = C.shape + H.shape
 
-    *Hc* : scalar
-       Critical depth
-
-    *cs_r* : 1D array
-       s-level stretching curve
-
-    *stagger* : [ 'rho' | 'w' ]
-
-    *Vtransform* : [ 1 | 2 ]
-       defines the transform used, defaults 1 = Song-Haidvogel
-
-    Returns an array with ndim = H.ndim + 1 and
-    shape = cs_r.shape + H.shape with the depths of the
-    mid-points in the s-levels.
-
-    Typical usage::
+    Typical usage:
 
     >>> fid = Dataset(roms_file)
     >>> H = fid.variables['h'][:, :]
@@ -304,12 +366,14 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
     if Vtransform == 1:  # Default transform by Song and Haidvogel
         A = Hc * (S - C)[:, None]
         B = np.outer(C, H)
-        return (A + B).reshape(outshape)
+        R1: Field = (A + B).reshape(outshape)
+        return R1
 
     if Vtransform == 2:  # New transform by Shchepetkin
         N = Hc * S[:, None] + np.outer(C, H)
         D = 1.0 + Hc / H
-        return (N / D).reshape(outshape)
+        R2: Field = (N / D).reshape(outshape)
+        return R2
 
     # else:
     raise ValueError("Unknown Vtransform")
@@ -320,10 +384,6 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
 # -----------------------------------
 
 
-def init_force(**args) -> BaseForce:
-    return Forcing(**args)
-
-
 class Forcing(BaseForce):
     """
     Class for ROMS forcing
@@ -332,30 +392,28 @@ class Forcing(BaseForce):
         __init__
         update
         velocity
-        force_particles (bedre interpolate2particles)
+        force_particles (better: interpolate2particles)
 
     Public attributes:
         ibm_forcing
         variables
         steps
-        # Legg til ny = fields, fields["u"] = 3D field
-
-
+        #  Add new= fields, fields["u"] = 3D field
 
     """
 
     def __init__(
         self,
-        grid: Grid,
-        timer: TimeKeeper,
+        modules: dict[str, Any],
         filename: Union[Path, str],
-        pad: int = 30,
-        ibm_forcing: Optional[List[str]] = None,
+        ibm_forcing: Optional[list[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
-
-        self.grid = grid  # Get the grid object.
+        super().__init__(modules)
+        timer = modules["time"]
+        # self.modules: dict[str, Any] = modules
+        self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
@@ -369,23 +427,21 @@ class Forcing(BaseForce):
             var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
         }
 
-        # Sub grid padding, make configurable
-        self.pad = pad  # number of grid cell around bounding box
-        print("forcing: pad = ", pad)
-
         # Input files and times
 
+        logger.info("  Forcing file name (pattern): %s", filename)
         files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
-            logger.error("No input file: {}".format(filename))
+            logger.error("No input file: %s", filename)
             raise SystemExit(3)
-        logger.info("Number of forcing files = {}".format(numfiles))
-
+        logger.info("  Number of forcing files = %s", numfiles)
         self.files = files
 
         self.time_reversal = timer.time_reversal
         steps, file_idx, frame_idx = forcing_steps(files, timer)
+        steps.sort()
+        # print("steps = ", steps)
         self.stepdiff = np.diff(steps)
         self.file_idx = file_idx
         self.frame_idx = frame_idx
@@ -398,186 +454,86 @@ class Forcing(BaseForce):
         # --------------
         # prestep = last forcing step < 0
         #
-        # First read, do not know particle positions
-        self.i0 = 1
-        self.i1 = self.grid.imax - 1
-        self.j0 = 1
-        self.j1 = self.grid.jmax - 1
-        self.i0_new = 1
-        self.i1_new = self.i1
-        self.j0_new = 1
-        self.j1_new = self.j1
 
-        # print("steps = ", steps)
         V = [step for step in steps if step < 0]
         prestep = max(V) if V else 0
         # if V:  # Forcing available before start time
-        if True:
-            # prestep = max(V)
-            print("prestep", prestep)
+        # if True:
 
-            i = steps.index(prestep)
-            if timer.time_reversal:
-                i = i - 1
-            stepdiff0 = self.stepdiff[i]
-            nextstep = prestep + stepdiff0
-            if timer.time_reversal:
-                nextstep = prestep - stepdiff0
+        i = steps.index(prestep)
+        # print("i = ", i)
+        stepdiff0 = self.stepdiff[i]
+        # nextstep = prestep + stepdiff0
+        nextstep = steps[i + 1]
 
-            self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
+        self.fields["u"], self.fields["v"] = self._read_velocity(prestep)
+        self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
+        self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
+        self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
 
-            self.fields["u_new"], self.fields["v_new"] = self._read_velocity(nextstep)
+        if prestep == 0:
+            self.fields["u_new"] = self.fields["u"].copy()
+            self.fields["v_new"] = self.fields["v"].copy()
 
-            self.fields["dU"] = (self.fields["u_new"] - self.fields["u"]) / stepdiff0
-            self.fields["dV"] = (self.fields["v_new"] - self.fields["v"]) / stepdiff0
-
-            if prestep == 0:
-                self.fields["u_new"] = self.fields["u"].copy()
-                self.fields["v_new"] = self.fields["v"].copy()
-
-            # Interpolate to time step = -1
-            # Skal virke i revers også
-            self.fields["u"] -= (prestep + 1) * self.fields["dU"]
-            self.fields["v"] -= (prestep + 1) * self.fields["dV"]
-
-            # Other forcing
-            for name in self.ibm_forcing:
-                self.fields[name] = self._read_field(name, prestep)
-                # self[name + "new"] = self._read_field(name, nextstep)
-                # self["d" + name] = (self[name + "new"] - self[name]) / prestep
-                # self[name] = self[name] - (prestep + 1) * self["d" + name]
-
-        else:
-            # No forcing at start, should already be excluded
-            raise SystemExit(3)
+        # Interpolate to time step = -1
+        self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
+        self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
+        # Other forcing
+        for name in self.ibm_forcing:
+            self.fields[name] = self._read_field(name, prestep)
 
         self.steps = steps
+        # self.files = files
+
+        # print("Init: finished")
 
     # ===================================================
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    def update(self) -> None:
         """Update the fields to given time step t"""
 
-        # self.K, self.A = z2s(self.grid.z_r, X, Y, Z)  # OK
-        self.K, self.A = z2s(
-            self.grid.z_r[:, self.j0 : self.j1, self.i0 : self.i1],
-            X - self.i0,
-            Y - self.j0,
-            Z,
-        )
+        state = self.modules["state"]
+        X = state.X
+        Y = state.Y
+        Z = state.Z
+        step = self.modules["time"].step
+
+        # Local depth level and interpolation coefficient
+        self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
         # Read from config?
         interpolate_velocity_in_time = True
         # interpolate_ibm_forcing_in_time = False
 
-        logging.debug("Updating forcing, time step = {}".format(step))
         if step in self.steps:  # No time interpolation
-            self.fields["u"] = self.fields["u_new"].copy()
-            self.fields["v"] = self.fields["v_new"].copy()
-            # Update to correct subgrid
-            # self.i0_old = self.i0
-            # self.i1_old = self.i1
-            # self.j0_old = self.j0
-            # self.j1_old = self.j1|
-            self.i0 = self.i0_new
-            self.i1 = self.i1_new
-            self.j0 = self.j0_new
-            self.j1 = self.j1_new
-            # Add dummy values for dU and dV, used by Runge Kutta
-            self.fields["dU"] = np.zeros_like(self.fields["u"])
-            self.fields["dV"] = np.zeros_like(self.fields["v"])
-            # print(self.fields["u"].shape)
-            # print(self.fields["dU"].shape)
-
+            self.fields["u"] = self.fields["u_new"]
+            self.fields["v"] = self.fields["v_new"]
             # Read other forcing variables with no time interpolation
             for name in self.ibm_forcing:
                 self.fields[name] = self._read_field(name, step)
             # self.force_particles(X, Y)
-            #   self[name] = self[name + "new"]
         else:
-            if step - 1 in self.steps:  # Need new fields for time interpolation
+            if step - 1 in self.steps:  # Need new fields
                 i = self.steps.index(step - 1)
-                if self.time_reversal:
-                    i = i - 1
-                # print("i =", i)
+                nextstep = self.steps[i + 1]
                 stepdiff = self.stepdiff[i]
-                nextstep = step - 1 + stepdiff
-                if self.time_reversal:
-                    nextstep = step - 1 - stepdiff
-                # print("stediff, nextstep = ", stepdiff, nextstep)
-
-                # i0_old, i1_old = self.i0, self.i1
-                # j0_old, j1_old = self.j0, self.j1
-
-                # Update adaptive subdomain
-                i0_new = max(1, int(X.min()) - self.pad)
-                i1_new = min(self.grid.imax - 1, int(X.max()) + 1 + self.pad)
-                j0_new = max(1, int(Y.min()) - self.pad)
-                j1_new = min(self.grid.jmax - 1, int(Y.max()) + 1 + self.pad)
-                logging.debug(
-                    f"new grid limits: {i0_new}, {i1_new}, {j0_new}, {j1_new}"
-                )
-                # Save the new grid limits
-                self.i0_new = i0_new
-                self.i1_new = i1_new
-                self.j0_new = j0_new
-                self.j1_new = j1_new
-
-                # Overlap box between new and old subgrid
-                ii0 = max(self.i0, i0_new)
-                ii1 = min(self.i1, i1_new)
-                jj0 = max(self.j0, j0_new)
-                jj1 = min(self.j1, j1_new)
-
-                # Read next velocity field
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
-
-                # print("===>", self.fields["u_new"][-1,90-self.j0,68-self.i0])
-
                 # for name in self.ibm_forcing:
                 #    self[name + "new"] = self._read_field(name, nextstep)
-                self.fields["dU"] = np.zeros_like(self.fields["u"])
-                self.fields["dV"] = np.zeros_like(self.fields["v"])
-
-                interpolate_velocity_in_time = True
                 if interpolate_velocity_in_time:
-                    self.fields["dU"][
-                        :,
-                        jj0 - self.j0 : jj1 - self.j0,
-                        ii0 - self.i0 : ii1 - self.i0 + 1,
-                    ] = (
-                        self.fields["u_new"][
-                            :,
-                            jj0 - j0_new : jj1 - j0_new,
-                            ii0 - i0_new : ii1 - i0_new + 1,
-                        ]
-                        - self.fields["u"][
-                            :,
-                            jj0 - self.j0 : jj1 - self.j0,
-                            ii0 - self.i0 : ii1 - self.i0 + 1,
-                        ]
+                    self.fields["dU"] = (
+                        self.fields["u_new"] - self.fields["u"]
                     ) / stepdiff
-
-                    self.fields["dV"][
-                        :,
-                        jj0 - self.j0 : jj1 - self.j0 + 1,
-                        ii0 - self.i1 : ii1 - self.i0,
-                    ] = (
-                        self.fields["v_new"][
-                            :,
-                            jj0 - j0_new : jj1 - j0_new + 1,
-                            ii0 - i0_new : ii1 - i0_new,
-                        ]
-                        - self.fields["v"][
-                            :,
-                            jj0 - self.j0 : jj1 - self.j0 + 1,
-                            ii0 - self.i0 : ii1 - self.i0,
-                        ]
+                    self.fields["dV"] = (
+                        self.fields["v_new"] - self.fields["v"]
                     ) / stepdiff
+                # if interpolate_ibm_forcing_in_time:
+                #    for name in self.ibm_forcing:
+                #        self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
@@ -587,8 +543,8 @@ class Forcing(BaseForce):
             #    for name in self.ibm_forcing:
             #        self[name] += self["d" + name]
 
-        # Update forcing values to particle positions
-
+        # Update forcing values at particles
+        # print("force_particles")
         self.force_particles(X, Y)
 
     # ==============================================
@@ -597,8 +553,7 @@ class Forcing(BaseForce):
 
         """Open forcing file and get scaling info given time step"""
 
-        logger.info(f"Open forcing file: {self.file_idx[time_step]}")
-
+        logger.debug("Open forcing file: %s", self.file_idx[time_step])
         # Open the correct forcing file
         nc = Dataset(self.file_idx[time_step])
         nc.set_auto_maskandscale(False)
@@ -617,14 +572,14 @@ class Forcing(BaseForce):
             else:
                 self.scaled[key] = False
 
-    def _read_velocity(self, time_step: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_velocity(self, time_step: int) -> tuple[Field, Field]:
         """Read velocity fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logger.debug("Reading velocity for time step = {}".format(time_step))
+        logger.debug("Reading velocity for time step = %s", time_step)
 
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
@@ -646,12 +601,8 @@ class Forcing(BaseForce):
         #     print("   data time:   ", data_time)
 
         # Read the velocity
-        U = self._nc.variables["u"][
-            frame, :, self.j0_new : self.j1_new, self.i0_new - 1 : self.i1_new
-        ]
-        V = self._nc.variables["v"][
-            frame, :, self.j0_new - 1 : self.j1_new, self.i0_new : self.i1_new
-        ]
+        U = self._nc.variables["u"][frame, :, self.grid.Ju, self.grid.Iu]
+        V = self._nc.variables["v"][frame, :, self.grid.Jv, self.grid.Iv]
 
         # Scale if needed
         # Assume offset = 0 for velocity
@@ -661,41 +612,28 @@ class Forcing(BaseForce):
             # U = self.add_offset['u'] + self.scale_factor['u']*U
             # V = self.add_offset['v'] + self.scale_factor['v']*V
 
-        # Ensure land and coast values are zero
-        np.multiply(
-            U,
-            self.grid.Mu[self.j0_new : self.j1_new, self.i0_new - 1 : self.i1_new],
-            out=U,
-        )
-        np.multiply(
-            V,
-            self.grid.Mv[self.j0_new - 1 : self.j1_new, self.i0_new : self.i1_new],
-            out=V,
-        )
-
-        if np.any(U < -10):
-            print("Undef U")
-        if np.any(V < -10):
-            print("Undef V")
-        # U[U < -10000] = 0
-        # V[V < -10000] = 0
-
+        # If necessary put U,V = zero on land and land boundaries
+        # Stay as float32
+        np.multiply(U, self.grid.Mu, out=U)
+        np.multiply(V, self.grid.Mv, out=V)
         return U, V
 
-    def _read_field(self, name, n):
+    def _read_field(self, name: str, n: int) -> Field:
         """Read a 3D field"""
         frame = self.frame_idx[n]
-        F = self._nc.variables[name][frame, :, self.j0 : self.j1, self.i0 : self.i1]
+        F0: Field = self._nc.variables[name][frame, :, self.grid.J, self.grid.I]
         if self.scaled[name]:
-            F = self.add_offset[name] + self.scale_factor[name] * F
+            F: Field = self.add_offset[name] + self.scale_factor[name] * F0
+        else:
+            F = F0
         return F
 
     # Allow item notation
-    # def __setitem__(self, key, value):
-    #     setattr(self, key, value)
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
 
-    # def __getitem__(self, key):
-    #     return getattr(self, key)
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
 
     # ------------------
 
@@ -704,34 +642,48 @@ class Forcing(BaseForce):
 
     def force_particles(
         self,
-        X: np.ndarray,
-        Y: np.ndarray,
-    ):
-        """Interpolate forcing to particle positions"""
+        X: ParticleArray,
+        Y: ParticleArray,
+    ) -> None:
+        """Interpolate velocity field to particle positions"""
 
-        i0 = self.i0
-        j0 = self.j0
+        # if DEBUG:
+        #    print("force_particles, n = ", len(X))
+
+        i0 = self.grid.i0
+        j0 = self.grid.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         for name in self.ibm_forcing:
             self.variables[name] = sample3D(
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )
-        # print(len(self.variables["temp"]))
-        # print(self.variables["temp"][-1])
+        self.variables["u"], self.variables["v"] = sample3DUV(
+            self.fields["u"],
+            self.fields["v"],
+            X - i0,
+            Y - j0,
+            self.K,
+            self.A,
+            method="bilinear",
+        )
+        if self.time_reversal:
+            self.variables["u"] = -self.variables["u"]
+            self.variables["v"] = -self.variables["v"]
 
     def velocity(
         self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        # K: np.ndarray,
-        # A: np.ndarray,
-        Z: np.ndarray,
+        X: ParticleArray,
+        Y: ParticleArray,
+        Z: ParticleArray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[ParticleArray, ParticleArray]:
 
-        i0 = self.i0
-        j0 = self.j0
+        # if DEBUG:
+        #    print("interpolating velocity")
+
+        i0 = self.grid.i0
+        j0 = self.grid.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         if fractional_step < 0.001:
             U = self.fields["u"]
@@ -741,8 +693,7 @@ class Forcing(BaseForce):
             V = self.fields["v"] + fractional_step * self.fields["dV"]
         if self.time_reversal:
             return sample3DUV(-U, -V, X - i0, Y - j0, self.K, self.A, method=method)
-        else:
-            return sample3DUV(U, V, X - i0, Y - j0, self.K, self.A, method=method)
+        return sample3DUV(U, V, X - i0, Y - j0, self.K, self.A, method=method)
 
     # Simplify to grid cell
     # def field(
@@ -754,7 +705,10 @@ class Forcing(BaseForce):
     #     K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
     #     F = self[name]
     #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
-    def field(self, X, Y, Z, name):
+    def field(
+        self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, name: str
+    ) -> Field:
+        """Dummy function for backwards compatibility of IBMs"""
         return self.variables[name]
 
 
@@ -764,19 +718,24 @@ class Forcing(BaseForce):
 
 
 def z2s(
-    z_rho: np.ndarray, X: np.ndarray, Y: np.ndarray, Z: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+    z_rho: Field, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
+) -> tuple[ParticleArray, ParticleArray]:
     """
     Find s-level and coefficients for vertical interpolation
 
-    input:
-        z_rho  3D array with vertical s-coordinate structure at rho-points
-        X, Y   1D arrays, horizontal position in grid coordinates
-        Z      1D array, particle depth, meters, positive
+    Args:
+        z_rho:  3D float array
+            Vertical s-coordinate structure at rho-points
+        X, Y:   1D float arrays
+            Horizontal position in grid coordinates
+        Z:      1D float array
+            particle depth in meters, positive downwards
 
     Returns
-        K      1D integer array
-        A      1D float array
+        K:      1D integer array
+            Vertical index
+        A:     1D float array
+            Vertical interpolation weight
 
     With:
         1 <= K < kmax = z_rho.shape[0]
@@ -796,16 +755,21 @@ def z2s(
 
     """
 
-    # print("--- z2s")
-
     # Find rho-based horizontal grid cell (rho-point)
     I = np.around(X).astype("int")
     J = np.around(Y).astype("int")
-    return z2s_kernel(I, J, Z, z_rho)
+    K: tuple[ParticleArray, ParticleArray] = z2s_kernel(I, J, Z, z_rho)
+    return K
 
 
-@numba.njit(parallel=parallel)
-def z2s_kernel(I, J, Z, z_rho):
+@numba.njit(parallel=parallel)  # type: ignore
+def z2s_kernel(
+    I: ParticleArray,
+    J: ParticleArray,
+    Z: ParticleArray,
+    z_rho: Field,
+) -> tuple[ParticleArray, ParticleArray]:
+    """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
     A = np.ones(N, dtype=np.float64)
@@ -823,13 +787,13 @@ def z2s_kernel(I, J, Z, z_rho):
 
 
 def sample3D(
-    F: np.ndarray,
-    X: np.ndarray,
-    Y: np.ndarray,
-    K: np.ndarray,
-    A: np.ndarray,
+    F: Field,
+    X: ParticleArray,
+    Y: ParticleArray,
+    K: ParticleArray,
+    A: ParticleArray,
     method: str = "bilinear",
-) -> np.ndarray:
+) -> ParticleArray:
     """
     Sample a 3D field on the (sub)grid
 
@@ -850,16 +814,34 @@ def sample3D(
     """
 
     if method == "bilinear":
-        return trilinear(F, X, Y, K, A)
+        result: ParticleArray = trilinear(F, X, Y, K, A)
 
-    # else:  method == 'nearest'
-    I = X.round().astype("int")
-    J = Y.round().astype("int")
-    return F[K, J, I]
+    else:  # method == 'nearest'
+        I = X.round().astype("int")
+        J = Y.round().astype("int")
+        result = F[K, J, I]
+    return result
 
 
-@numba.njit(parallel=parallel)
-def trilinear(F, X, Y, K, A):
+@numba.njit(parallel=parallel)  # type: ignore
+def trilinear(
+    F: Field, X: ParticleArray, Y: ParticleArray, K: ParticleArray, A: ParticleArray
+) -> ParticleArray:
+    """Performs 3D linear interpolation
+
+    Args:
+        F: 3D array
+            Field to interpolate
+        X, Y: 1D arrays
+            Horizontal particle positions
+        K: 1D integer array
+            Vertical index of particles in s-level structure
+        A: 1D array
+            Vertical interpolation weights
+    Returns:
+        1D array of values of F interpolated to the particle positions
+
+    """
     N = len(X)
     R = np.empty(N, dtype=np.float64)
     for n in numba.prange(N):
@@ -880,14 +862,15 @@ def trilinear(F, X, Y, K, A):
 
 
 def sample3DUV(
-    U: np.ndarray,
-    V: np.ndarray,
-    X: np.ndarray,
-    Y: np.ndarray,
-    K: np.ndarray,
-    A: np.ndarray,
-    method="bilinear",
-) -> Tuple[np.ndarray, np.ndarray]:
+    U: Field,
+    V: Field,
+    X: ParticleArray,
+    Y: ParticleArray,
+    K: ParticleArray,
+    A: ParticleArray,
+    method: str = "bilinear",
+) -> tuple[ParticleArray, ParticleArray]:
+    """Samples a 3D velocity field"""
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),
         sample3D(V, X, Y + 0.5, K, A, method=method),
@@ -903,7 +886,7 @@ def find_files(
     file_pattern: Union[Path, str],
     first_file: Union[Path, str, None] = None,
     last_file: Union[Path, str, None] = None,
-) -> List[Path]:
+) -> list[Path]:
     """Find ordered sequence of files following a pattern
 
     The sequence can be limited by first_file and/or last_file
@@ -919,16 +902,16 @@ def find_files(
     return files
 
 
-def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
+def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:
-    all_frames: List of all time frames
+    all_frames: 1D array of all time frames
     num_frames: Mapping: filename -> number of time frames in file
 
     """
     # print("scan starting")
-    all_frames = []  # All time frames
+    frames = []  # Expanding list of all time frames
     num_frames = {}  # Number of time frames in each file
     for fname in files:
         with Dataset(fname) as nc:
@@ -936,34 +919,34 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
             num_frames[fname] = len(new_times)
             units = nc.variables["ocean_time"].units
             new_frames = num2date(new_times, units)
-            all_frames.extend(new_frames)
+            frames.extend(new_frames)
+    all_frames = np.array([np.datetime64(tf) for tf in frames])
 
     # Check that time frames are strictly sorted
-    all_frames = np.array([np.datetime64(tf) for tf in all_frames])
-    I: np.ndarray = all_frames[1:] <= all_frames[:-1]
+    I = all_frames[1:] <= all_frames[:-1]
     if np.any(I):
-        i = I.nonzero()[0][0] + 1  # Index of first out-of-order frame
+        # Index of first out-of-order frame
+        i = I.nonzero()[0][0] + 1
         oooframe = str(all_frames[i]).split(".")[0]  # Remove microseconds
-        logger.info(f"Time frame {i} = {oooframe} out of order")
+        logger.info("Time frame %d = %s out of order", i, oooframe)
         logger.critical("Forcing time frames not strictly sorted")
         raise SystemExit(4)
 
-    logger.info(f"Number of available forcing times = {len(all_frames)}")
-    # print("scan finished")
+    logger.info("  Number of available forcing times = %d", len(all_frames))
     return all_frames, num_frames
 
 
 def forcing_steps(
-    files: List[Path], timer: TimeKeeper
-) -> Tuple[List[int], Dict[int, Path], Dict[int, int]]:
+    files: list[Path], timer: TimeKeeper
+) -> tuple[list[int], dict[int, Path], dict[int, int]]:
     """Return time step numbers of the forcing and pointers to the data"""
 
     all_frames, num_frames = scan_file_times(files)
 
     time0 = all_frames[0].astype("M8[s]")
     time1 = all_frames[-1].astype("M8[s]")
-    logger.info(f"First forcing time = {time0}")
-    logger.info(f"Last forcing time = {time1}")
+    logger.info("  First forcing time = %s", time0)
+    logger.info("  Last forcing time = %s", time1)
     # start_time = self.start_time)
     # stop_time = self.stop_time)
     # dt = np.timedelta64(self.timer.dt, "s")
@@ -973,11 +956,11 @@ def forcing_steps(
 
     if time0 > timer.min_time:
         error_string = "No forcing at minimum time"
-        logging.error(error_string)
+        # logger.error(error_string)
         raise SystemExit(error_string)
     if time1 < timer.max_time:
         error_string = "No forcing at maximum time"
-        logging.error(error_string)
+        # logger.error(error_string)
         raise SystemExit(error_string)
 
     # Make a list steps of the forcing time steps

@@ -1,13 +1,13 @@
 """Main function for running LADiM as an application"""
 
-from ladim2.configure import configure
-from ladim2.model import Model
+from ladim.configure import configure
+from ladim.model import Model
 
 # ----------------
 # Configuration
 # ----------------
 
-configuration_file = "ladim2.yaml"
+configuration_file = "ladim.yaml"
 config_version = 2
 config = configure(configuration_file, config_version)
 

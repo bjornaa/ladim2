@@ -10,10 +10,10 @@ from typing import Union, Optional, Any, Generator, Literal
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-from ladim2.timekeeper import TimeDelta, normalize_period
-from ladim2.state import State  # For typing
+from ladim.timekeeper import TimeDelta, normalize_period
+from ladim.state import State  # For typing
 
-from ladim2.output import BaseOutput
+from ladim.output import BaseOutput
 
 Variable = dict[str, Any]
 

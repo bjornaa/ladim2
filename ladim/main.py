@@ -10,12 +10,12 @@ import argparse
 from typing import Union, Literal
 
 
-from ladim2 import __version__, __file__
-from ladim2.configure import configure
-from ladim2.model import Model
+from ladim import __version__, __file__
+from ladim.configure import configure
+from ladim.model import Model
 
-# from ladim2.warm_start import warm_start
-from ladim2.timekeeper import duration2iso
+# from ladim.warm_start import warm_start
+from ladim.timekeeper import duration2iso
 
 
 def main(
@@ -134,7 +134,7 @@ def script() -> None:
         "-v", "--version", help="Configuration format version", type=int, default=2
     )
     parser.add_argument(
-        "config_file", nargs="?", help="Configuration file", default="ladim2.yaml"
+        "config_file", nargs="?", help="Configuration file", default="ladim.yaml"
     )
 
     args = parser.parse_args()

@@ -7,15 +7,15 @@ import logging
 import types
 from typing import Any, Optional
 
-from ladim2.state import State
-from ladim2.grid import BaseGrid
-from ladim2.timekeeper import TimeKeeper
-from ladim2.forcing import BaseForce
-from ladim2.tracker import Tracker
-from ladim2.release import ParticleReleaser
-from ladim2.warm_start import warm_start
-from ladim2.output import BaseOutput
-from ladim2.ibm import IBM
+from ladim.state import State
+from ladim.grid import BaseGrid
+from ladim.timekeeper import TimeKeeper
+from ladim.forcing import BaseForce
+from ladim.tracker import Tracker
+from ladim.release import ParticleReleaser
+from ladim.warm_start import warm_start
+from ladim.output import BaseOutput
+from ladim.ibm import IBM
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -95,14 +95,14 @@ def init_module(
 ) -> Any:
     """Initiate the main class in one of the modules"""
     default_module_names = dict(
-        output="ladim2.out_netcdf",
-        release="ladim2.release",
-        grid="ladim2.ROMS",
-        time="ladim2.timekeeper",
-        forcing="ladim2.ROMS",
-        tracker="ladim2.tracker",
-        state="ladim2.state",
-        ibm="ladim2.ibm",
+        output="ladim.out_netcdf",
+        release="ladim.release",
+        grid="ladim.ROMS",
+        time="ladim.timekeeper",
+        forcing="ladim.ROMS",
+        tracker="ladim.tracker",
+        state="ladim.state",
+        ibm="ladim.ibm",
     )
     default_module_name = default_module_names[module_name]
 

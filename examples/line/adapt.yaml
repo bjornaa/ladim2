@@ -1,5 +1,5 @@
 #
-# Configuration file for ladim2
+# Configuration file for ladim
 #
 # Line source example
 #
@@ -19,7 +19,7 @@ time:
     dt: 3600
 
 forcing:
-    module: ladim2.ROMS2
+    module: ladim.ROMS2
     filename: ../data/ocean_avg_0014.nc
     pad: 25
 

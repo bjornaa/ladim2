@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from ladim2.state import State
+from ladim.state import State
 
 
 class BaseOutput(ABC):
@@ -56,7 +56,7 @@ def init_output(module: str, **args: dict[str, Any]) -> BaseOutput:
     The working directory takes priority.
     The Output class in the module should be named "Output".
     """
-    # System path for ladim2.ladim2
+    # System path for ladim.ladim
     p = Path(__file__).parent
     sys.path.insert(0, str(p))
     # Working directory

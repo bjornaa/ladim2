@@ -5,7 +5,7 @@ import numpy as np
 
 import pytest
 
-from ladim2.timekeeper import TimeKeeper, normalize_period
+from ladim.timekeeper import TimeKeeper, normalize_period
 
 
 def test_init():

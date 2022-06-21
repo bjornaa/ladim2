@@ -4,7 +4,7 @@ from typing import Optional, Union, Callable
 
 import numpy as np  # type: ignore
 
-from ladim2.state import State
+from ladim.state import State
 
 ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
 Velocity = tuple[ParticleArray, ParticleArray]

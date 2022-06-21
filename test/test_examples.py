@@ -7,7 +7,7 @@ import runpy
 import yaml  # type: ignore
 from netCDF4 import Dataset
 
-from ladim2.main import main as run_ladim
+from ladim.main import main as run_ladim
 
 
 EXAMPLE_DIR = Path(__file__).parents[1] / "examples"
@@ -16,7 +16,7 @@ EXAMPLE_DIR = Path(__file__).parents[1] / "examples"
 def test_streak():
     name = "streak"
     example_dir = EXAMPLE_DIR / name
-    yaml_file = "ladim2.yaml"
+    yaml_file = "ladim.yaml"
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)
         shutil.copy(example_dir / yaml_file, temp_dir)
@@ -41,7 +41,7 @@ def test_streak_ibm():
 def test_station():
     name = "station"
     example_dir = EXAMPLE_DIR / name
-    yaml_file = "ladim2.yaml"
+    yaml_file = "ladim.yaml"
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)
         shutil.copy(example_dir / yaml_file, temp_dir)
@@ -78,7 +78,7 @@ def test_restart():
 def test_gosouth():
     name = "gosouth"
     example_dir = EXAMPLE_DIR / name
-    yaml_file = "ladim2.yaml"
+    yaml_file = "ladim.yaml"
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)
         shutil.copy(example_dir / yaml_file, temp_dir)
@@ -91,7 +91,7 @@ def test_gosouth():
 def test_latlon():
     name = "latlon"
     example_dir = EXAMPLE_DIR / name
-    yaml_file = "ladim2.yaml"
+    yaml_file = "ladim.yaml"
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)
         shutil.copy(example_dir / yaml_file, temp_dir)
@@ -103,7 +103,7 @@ def test_latlon():
 def test_killer():
     name = "killer"
     example_dir = EXAMPLE_DIR / name
-    yaml_file = "ladim2.yaml"
+    yaml_file = "ladim.yaml"
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)
         shutil.copy(example_dir / yaml_file, temp_dir)
@@ -129,7 +129,7 @@ def test_killer_matrix():
 def test_line():
     name = "line"
     example_dir = EXAMPLE_DIR / name
-    yaml_file1 = "ladim2.yaml"  # sparse output
+    yaml_file1 = "ladim.yaml"  # sparse output
     yaml_file2 = "dense.yaml"  # dense output
     with create_tempdir(name) as temp_dir:
         shutil.copy(example_dir / "make_release.py", temp_dir)

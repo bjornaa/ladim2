@@ -5,9 +5,9 @@ import numpy as np
 from netCDF4 import Dataset
 # import pytest
 
-from ladim2.state import State
-from ladim2.timekeeper import TimeKeeper
-from ladim2.out_netcdf import filename_generator, Output
+from ladim.state import State
+from ladim.timekeeper import TimeKeeper
+from ladim.out_netcdf import filename_generator, Output
 
 NCFILE = Path("output_test.nc")
 

@@ -1,4 +1,4 @@
-from ladim2.model import init_module
+from ladim.model import init_module
 
 def test_local():
     """Test the use of a local plug-in grid module"""

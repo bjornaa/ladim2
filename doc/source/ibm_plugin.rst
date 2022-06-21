@@ -32,9 +32,9 @@ Example IBM
     # temp is configured as a state variable, also as ibm_forcing
 
     import numpy as np
-    from ladim2.ibm import BaseIBM
-    from ladim2.timekeeper import TimeKeeper
-    from ladim2.state import State
+    from ladim.ibm import BaseIBM
+    from ladim.timekeeper import TimeKeeper
+    from ladim.state import State
 
     [check up, use forcing.temp vs. state.temp]
     class IBM(BaseIBM):

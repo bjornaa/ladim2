@@ -1,5 +1,5 @@
 #
-# Configuration file for ladim2
+# Configuration file for ladim
 #
 # Line source example
 #
@@ -18,7 +18,7 @@ time:
     dt: 3600
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
@@ -28,7 +28,7 @@ release:
     release_file : line.rls
 
 output:
-    module: ladim2.out_netcdf
+    module: ladim.out_netcdf
     filename: out_dense.nc
     layout: dense
     output_period: [3, h]

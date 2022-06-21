@@ -18,7 +18,7 @@ state:
     default_values: {lon: 5, lat: 60}
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:

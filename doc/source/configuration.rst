@@ -37,5 +37,5 @@ An example configuration file
 
 Below is an example configuration file, :file:`examples/line/ladim.yaml`.
 
-.. literalinclude:: ../../examples/line/ladim2.yaml
+.. literalinclude:: ../../examples/line/ladim.yaml
   :language: yaml

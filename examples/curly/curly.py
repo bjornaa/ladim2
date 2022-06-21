@@ -6,9 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 
-import ladim2.state
-import ladim2.tracker
-import ladim2.ROMS
+import ladim.state
+import ladim.tracker
+import ladim.ROMS
 
 
 class Curly:
@@ -26,7 +26,7 @@ class Curly:
     ):
 
         # Define grid
-        grid = ladim2.ROMS.Grid(filename=data_file, subgrid=subgrid)
+        grid = ladim.ROMS.Grid(filename=data_file, subgrid=subgrid)
         self.grid = grid
 
         if density is None:
@@ -49,8 +49,8 @@ class Curly:
         U2D, V2D = zslice(grid, U3D, V3D, depth)
         # force = FixedForcing(grid, U2D, V2D)
 
-        state = ladim2.state.State()
-        tracker = ladim2.tracker.Tracker(
+        state = ladim.state.State()
+        tracker = ladim.tracker.Tracker(
             advection="RK2",
             modules=dict(
                 state=state,
@@ -101,7 +101,7 @@ class Curly:
 
 
 def zslice(
-    grid: ladim2.ROMS.Grid, U3D: np.ndarray, V3D: np.ndarray, Z: float
+    grid: ladim.ROMS.Grid, U3D: np.ndarray, V3D: np.ndarray, Z: float
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Horizontal slice of 3D ROMS vector field, return fields are non-staggered"""
     i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
@@ -109,8 +109,8 @@ def zslice(
     Xc = Xc.ravel()
     Yc = Yc.ravel()
     Z = np.zeros_like(Xc) + Z  # Make a 1D array
-    K, A = ladim2.ROMS.z2s(grid.z_r, Xc - grid.i0, Yc - grid.j0, Z)
-    U2D, V2D = ladim2.ROMS.sample3DUV(
+    K, A = ladim.ROMS.z2s(grid.z_r, Xc - grid.i0, Yc - grid.j0, Z)
+    U2D, V2D = ladim.ROMS.sample3DUV(
         U3D, V3D, Xc - i0, Yc - j0, K, A, method="bilinear",
     )
     return U2D.reshape(j1 - j0, i1 - i0), V2D.reshape(j1 - j0, i1 - i0)
@@ -119,7 +119,7 @@ def zslice(
 class FixedForcing:
     """Fixed forcing from non-staggered U and V fields"""
 
-    def __init__(self, grid: ladim2.ROMS.Grid, U2D: np.ndarray, V2D: np.ndarray):
+    def __init__(self, grid: ladim.ROMS.Grid, U2D: np.ndarray, V2D: np.ndarray):
         self.grid = grid
         self.U2D = U2D
         self.V2D = V2D
@@ -132,8 +132,8 @@ class FixedForcing:
         Z and fractional_step are ignored, dummy input from tracker
         """
         i0, j0 = self.grid.i0, self.grid.j0
-        U = ladim2.ROMS.sample2D(self.U2D, X - i0, Y - j0)
-        V = ladim2.ROMS.sample2D(self.V2D, X - i0, Y - j0)
+        U = ladim.ROMS.sample2D(self.U2D, X - i0, Y - j0)
+        V = ladim.ROMS.sample2D(self.V2D, X - i0, Y - j0)
         return U, V
 
 

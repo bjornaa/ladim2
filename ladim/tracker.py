@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 import numba  # type: ignore
 
-from ladim2.forcing import BaseForce
+from ladim.forcing import BaseForce
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
 Velocity = tuple[ParticleArray, ParticleArray]

@@ -7,7 +7,7 @@
 
 import numpy as np
 
-from ladim2.ROMS import sdepth, s_stretch
+from ladim.ROMS import sdepth, s_stretch
 
 
 # ------------------------------------

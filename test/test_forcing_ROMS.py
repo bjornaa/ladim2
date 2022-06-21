@@ -4,8 +4,8 @@ from netCDF4 import Dataset
 
 import pytest
 
-import ladim2.ROMS as force
-from ladim2.timekeeper import TimeKeeper
+import ladim.ROMS as force
+from ladim.timekeeper import TimeKeeper
 
 
 @pytest.fixture(scope="module")

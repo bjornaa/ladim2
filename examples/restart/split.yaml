@@ -10,10 +10,10 @@ time:
     dt: [1, h]
 
 grid:
-    module: ladim2.ROMS
+    module: ladim.ROMS
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:

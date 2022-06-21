@@ -1,6 +1,6 @@
 import numpy as np
-from ladim2.ROMS import sdepth
-from ladim2.ROMS import z2s, sample3D
+from ladim.ROMS import sdepth
+from ladim.ROMS import z2s, sample3D
 
 
 # Make a module level fixture for these tests

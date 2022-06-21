@@ -13,7 +13,7 @@ longer converges to the forward initial line distribution.
 make_release.py
   Reads the forward file at record 200, perturbable, and writes a release file.
 
-ladim2 ladim2.yaml
+ladim ladim.yaml
   Backtracks the particles
 
 animate.py

@@ -1,38 +1,33 @@
+#
 # Configuration file for ladim
 #
-# Continuous  release example
+# Backwards version of the line example
 #
 
 version: 2.0
 
 time:
-    # Start and stop of simulation
-    start: 1989-05-24 12:00:00
-    stop:  1989-06-15 12:00:00
-    dt: 300
-
-grid:
-    module: ladim2.ROMS
+    start:  1989-06-18T12
+    stop: 1989-05-24 12:00:00
+    reference: 1970-01-01 00
+    # Time step
+    dt: 3600
+    time_reversal: True
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 tracker:
     advection: EF
 
 release:
-    release_file : streak.rls
-    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
-    continuous: True
-    release_frequency: 3600
-
-state:
-    particle_variables: {release_time: time}
+    release_file : backwards.rls
 
 output:
-    filename: out.nc
-    ncargs: {data_model: NETCDF4_CLASSIC}
+    # module: output
+    filename: backwards.nc
+    ncargs: {data_model: NETCDF3_CLASSIC}
     output_period: [3, h]
     instance_variables:
         pid:
@@ -51,9 +46,5 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
-    particle_variables:
-        release_time:
-            encoding: {datatype: f8}
-            attributes:
-                long_name: particle release time
-                units: seconds since reference_time
+    # particle_variables:
+    #     X0: {ncformat: f4, long_name: X-coordinate of particle release}

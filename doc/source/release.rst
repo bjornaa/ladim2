@@ -56,7 +56,7 @@ Using the configuration:
 .. code-block:: yaml
 
   particle_release:
-      release_file: ladim2.rls
+      release_file: ladim.rls
       # release_type, discrete or continuous
       release_type: continuous
       release_frequency: [1, h]   # Hourly release

@@ -1,7 +1,7 @@
 import numpy as np
 from netCDF4 import Dataset
 
-# from ladim2.timer import Timer
+# from ladim.timer import Timer
 
 
 class Output:

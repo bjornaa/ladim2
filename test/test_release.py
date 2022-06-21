@@ -4,10 +4,10 @@ import numpy as np  # type: ignore
 
 # import pandas as pd
 import pytest
-from ladim2.release import ParticleReleaser
-from ladim2.timekeeper import TimeKeeper
+from ladim.release import ParticleReleaser
+from ladim.timekeeper import TimeKeeper
 
-# from ladim2.state import State
+# from ladim.state import State
 
 
 class Dummy:

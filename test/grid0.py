@@ -1,4 +1,4 @@
-from ladim2.grid import BaseGrid
+from ladim.grid import BaseGrid
 
 import numpy as np
 

@@ -20,7 +20,7 @@ To make the release file, `killer.rls`::
 
 To run the model::
 
-  ladim2
+  ladim
 
 To animate the results::
 

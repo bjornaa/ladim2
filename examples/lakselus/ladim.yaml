@@ -15,7 +15,7 @@ grid:
     subgrid: [300, -1000, 480, 600]
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     #filename: /scratch/Data/NK800/file_*.nc
     filename: /home/bjorn/data/NK800/file_*.nc
     ibm_forcing: [temp, salt]

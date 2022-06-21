@@ -1,42 +1,37 @@
-
 # Configuration file for ladim
 #
-#  gosouth example
+# Continuous  release example
 #
 
 version: 2.0
 
 time:
+    # Start and stop of simulation
     start: 1989-05-24 12:00:00
-    stop:  1989-06-05T12
-    reference: 1970-01-01 00
-    dt: [1, h]
+    stop:  1989-06-15 12:00:00
+    dt: 300
 
 grid:
-    module: ladim2.ROMS
+    module: ladim.ROMS
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
-
-ibm:
-    module: gosouth_ibm
-    direction: 180    # Towards South
-    speed: 0.1       # [m/s]
-
-release:
-    release_file: line.rls
-    names: [release_time, X, Y, Z]
-    # Converters (if not float)
-    # release_time: time
-    # particle_variables: [release_time]
 
 tracker:
     advection: EF
-    diffusion: 0
+
+release:
+    release_file : streak.rls
+    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
+    continuous: True
+    release_frequency: 3600
+
+state:
+    particle_variables: {release_time: time}
 
 output:
-    filename: gosouth.nc
+    filename: out.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:
@@ -56,3 +51,9 @@ output:
                 standard_name: depth_below_surface
                 units: m
                 positive: down
+    particle_variables:
+        release_time:
+            encoding: {datatype: f8}
+            attributes:
+                long_name: particle release time
+                units: seconds since reference_time

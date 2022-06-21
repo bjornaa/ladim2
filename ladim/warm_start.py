@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from netCDF4 import Dataset  # type: ignore
 
-from ladim2.state import State
+from ladim.state import State
 
 DEBUG = False
 

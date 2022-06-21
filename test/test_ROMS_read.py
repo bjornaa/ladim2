@@ -4,8 +4,8 @@ import numpy as np
 from netCDF4 import Dataset
 import pytest
 
-from ladim2.timekeeper import TimeKeeper
-from ladim2 import ROMS
+from ladim.timekeeper import TimeKeeper
+from ladim import ROMS
 
 
 class Dummy:
@@ -15,7 +15,7 @@ class Dummy:
 
 
 filename = Path("examples/data/ocean_avg_0014.nc")
-# Can be run from test directory or ladim2 root
+# Can be run from test directory or ladim root
 cwd = Path.cwd()
 if cwd.stem == "test":
     filename = cwd.parent / filename

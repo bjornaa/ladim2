@@ -9,7 +9,7 @@ subgrid = [300, -1000, 450, 630], 1302*180 = 234360 grid celler
 Kontrollverdi: pf.X[42, 1000] = 391.55527
 
 ### profile, base case uten numba
-python -m cProfile -o ladim0.prof /opt/anaconda/envs/py38/bin/ladim2
+python -m cProfile -o ladim0.prof /opt/anaconda/envs/py38/bin/ladim
 snakevis ladim0.prof
 
 ROMS.py

@@ -8,7 +8,7 @@ import uuid
 import shutil
 import contextlib
 from pathlib import Path
-from ladim2.main import main
+from ladim.main import main
 import yaml   # type: ignore
 import numpy as np
 
@@ -235,8 +235,8 @@ def make_conf() -> dict:
     return dict(
         version=2,
         time=dict(dt=[30, "s"], start="2000-01-02T03", stop="2000-01-02T03:02",),
-        grid=dict(module="ladim2.ROMS",),
-        forcing=dict(module="ladim2.ROMS",),
+        grid=dict(module="ladim.ROMS",),
+        forcing=dict(module="ladim.ROMS",),
         release=dict(),
         state=dict(
             particle_variables=dict(release_time="time", weight="float",),

@@ -12,10 +12,10 @@ time:
     dt: [1, h]
 
 grid:
-    module: ladim2.ROMS
+    module: ladim.ROMS
 
 forcing:
-    module: ladim2.ROMS
+    module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
 
 state:
@@ -37,7 +37,7 @@ release:
     release_frequency: [1, h]
 
 output:
-    module: ladim2.out_netcdf
+    module: ladim.out_netcdf
     filename: out_dense.nc
     layout: dense
     ncargs: {data_model: NETCDF4_CLASSIC}
