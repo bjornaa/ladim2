@@ -27,9 +27,7 @@ if DEBUG:
     logger.setLevel(logging.DEBUG)
 
 
-def configure(
-    config_file: Union[Path, str], version: Literal[1, 2] = 2
-) -> dict[str, Any]:
+def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     """Main configuration function of LADiM
 
     Args:
@@ -59,16 +57,37 @@ def configure(
         logger.critical("Not a valid yaml file: %s", config_file)
         raise SystemExit(3) from err
 
+    # Determine configuration version
+    version = config.get("version", 0)  # zero for undetermined
+    if "time_control" in config: 
+        version = 1    
+    if "time" in config:  
+        version = 2
+
+
     logger.info("  Configuration file version: %s", version)
 
-    # Try old configure version
-    if version == 1:
-        if config.get("version", None) == 2:
-            logger.warning("Configuration format mismatch")
-            logger.warning("Trying version 1 as requested by command line")
-            config = configure_v1(config)
-    elif version != 2:
-        logger.warning("Configuration version should be 1 or 2, trying version 2")
+    if version == 2:
+        configure_v2(config)  
+    elif version == 1:
+        config = configure_v1(config)
+    else:
+        logger.critical("Not a valid configuration version")
+        raise(SystemExit(3))
+
+
+    # Possible improvement: write a yaml-file
+    if DEBUG:
+        yaml.dump(config, stream=sys.stdout)
+
+    return config
+
+
+# --------------------------------------------------------------------
+
+
+def configure_v2(config: dict[str, Any]) -> None:
+    """Read version 2 configuration file"""
 
     # Some sections may be missing
     if "state" not in config:
@@ -119,14 +138,6 @@ def configure(
     if "filename" in config["warm_start"] and "skip_initial" not in config["output"]:
         config["output"]["skip_initial"] = True
 
-    # Possible improvement: write a yaml-file
-    if DEBUG:
-        yaml.dump(config, stream=sys.stdout)
-
-    return config
-
-
-# --------------------------------------------------------------------
 
 
 def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
@@ -151,17 +162,37 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
     # grid and forcing
     conf2["grid"] = dict()
     conf2["forcing"] = dict()
-    if "ladim.gridforce.ROMS" in config["gridforce"]["module"]:
+    if "ladim1.gridforce.ROMS" in config["gridforce"]["module"]:
         conf2["grid"]["module"] = "ladim.ROMS"
-        if "gridfile" in config["gridforce"]:
-            conf2["grid"]["filename"] = config["gridforce"]["gridfile"]
-        elif "gridfile" in config["files"]:
-            conf2["grid"]["filename"] = config["files"]["gridfile"]
         conf2["forcing"]["module"] = "ladim.ROMS"
-        if "input_file" in config["gridforce"]:
-            conf2["forcing"]["filename"] = config["gridforce"]["input_file"]
-        elif "input_file" in config["files"]:
-            conf2["forcing"]["filename"] = config["files"]["input_file"]
+    else:
+        conf2["grid"]["module"] = config["gridforce"]["module"]
+        conf2["forcing"]["module"] = config["gridforce"]["module"]
+    
+    if "input_file" in config["gridforce"]:
+        conf2["forcing"]["filename"] = config["gridforce"]["input_file"]
+    elif "input_file" in config["files"]:
+        conf2["forcing"]["filename"] = config["files"]["input_file"]
+    else:
+        conf2["forcing"]["filename"] = ""
+    
+    if "gridfile" in config["gridforce"]:
+        conf2["grid"]["filename"] = config["gridforce"]["gridfile"]
+    elif "gridfile" in config["files"]:
+        conf2["grid"]["filename"] = config["files"]["gridfile"]
+    else:
+        conf2["grid"]["filename"] = ""
+            
+    if not conf2["grid"]["filename"] and conf2["forcing"]["filename"]:
+        filename = Path(conf2["forcing"]["filename"])
+        # glob if necessary and use first file
+        if ("*" in str(filename)) or ("?" in str(filename)):
+            directory = filename.parent
+            filename = sorted(directory.glob(filename.name))[0]
+            print("--", filename)
+        conf2["grid"]["filename"] = filename
+
+                
     if "subgrid" in config["gridforce"]:
         conf2["grid"]["subgrid"] = config["gridforce"]["subgrid"]
     if "ibm_forcing" in config["gridforce"]:
@@ -213,6 +244,12 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
                 continue
             if var != "variables":
                 conf2["ibm"][var] = config["ibm"][var]
+    else:
+        conf2["ibm"] = dict()
+
+
+    if "warm_start" not in config:
+        conf2["warm_start"] = dict()
 
     # output
     conf2["output"] = dict(

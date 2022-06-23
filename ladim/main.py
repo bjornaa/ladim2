@@ -68,7 +68,7 @@ def main(
     # Configuration
     # ----------------
 
-    config = configure(configuration_file, config_version)
+    config = configure(configuration_file)
 
     # -------------------
     # Initialization
@@ -146,4 +146,4 @@ def script() -> None:
     print(" ========================================================")
     print("")
 
-    main(args.config_file, loglevel=args.loglevel, config_version=args.version)
+    main(args.config_file, loglevel=args.loglevel)
