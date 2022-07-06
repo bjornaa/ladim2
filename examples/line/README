@@ -1,3 +1,6 @@
+import yaml
+
+
 Line source example
 ===================
 
@@ -8,18 +11,31 @@ This can be run in several ways, with varying degrees of control.
 1) ladim
 
 Uses configuration in ladim.yaml and release file line.rls and runs the LADiM
-application.
+application. Use python make_release.py with version != 1 to make line.rls
 
-2) python line2.py
+2) ladim ladim1.yaml
 
-A separate python script, using ladim.yaml and line.rls.
+Uses version 1 configuration file ladim1.yaml. Also old-style release file
+line1.rls made by removing header line in line.rls, or alternatively using
+python make_release.py with version = 1.
+
+3) python line2.py, python line3.py
+
+separate python scripts, using ladim.yaml and line.rls.
 This is a slightly modified version of ladim/main.py and can be used as a starting point
 for more customization than allowed with the yaml configuration.
 
-3) python line.py
+4) python line.py
 
 This is a more stand-alone script. It does *not* use ladim.yaml and line.rls.
-Instead these functions are handled internally. Uses the API of LADiM2, in particular
+Instead this information is handled internally. Uses the API of LADiM2, in particular
 the state, grid, timer, force, tracker, and output modules.
 
-4) A jupyter notebook example (not implemented yet)
+5) ladim dense.yaml
+
+Makes a dense output file. out_dense.nc
+
+6) ladim adapt.yaml
+
+Uses ROMS2.py as gridforce module. This uses an adaptive subgrid following the
+particle distribution.

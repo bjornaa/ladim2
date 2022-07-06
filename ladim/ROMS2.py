@@ -346,17 +346,18 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        grid: Grid,
-        timer: TimeKeeper,
+        modules, 
+        #grid: Grid,
+        #timer: TimeKeeper,
         filename: Union[Path, str],
         pad: int = 30,
         ibm_forcing: Optional[List[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
-
-        self.grid = grid  # Get the grid object.
-        # self.timer = timer
+        super().__init__(modules)
+        self.grid = modules["grid"]  # Get the grid object.
+        timer = modules["time"]
 
         self.ibm_forcing = ibm_forcing if ibm_forcing else []
 
@@ -457,8 +458,18 @@ class Forcing(BaseForce):
 
     # Turned off time interpolation of scalar fields
     # TODO: Implement a switch for turning it on again if wanted
-    def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    # def update(self, step: int, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> None:
+    def update(self) -> None:
         """Update the fields to given time step t"""
+
+
+        state = self.modules["state"]
+        X = state.X
+        Y = state.Y
+        Z = state.Z
+        step = self.modules["time"].step
+
+
 
         # self.K, self.A = z2s(self.grid.z_r, X, Y, Z)  # OK
         self.K, self.A = z2s(

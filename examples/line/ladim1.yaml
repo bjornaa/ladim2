@@ -15,7 +15,7 @@ time_control:
 
 files:
     particle_release_file : line1.rls
-    output_file           : line1.nc
+    output_file           : line.nc
     # With warm start, warm_start_file goes here
 
 particle_release:
@@ -28,7 +28,7 @@ particle_release:
 gridforce:
     # Content depend on the selected gridforce module
     # Gridforce module
-    module: ladim.gridforce.ROMS
+    module: ladim1.gridforce.ROMS
     # The grid file is now optional, defaults to first input file
     input_file            : ../data/ocean_avg_*.nc
 

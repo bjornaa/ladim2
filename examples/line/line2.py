@@ -8,8 +8,7 @@ from ladim.model import Model
 # ----------------
 
 configuration_file = "ladim.yaml"
-config_version = 2
-config = configure(configuration_file, config_version)
+config = configure(configuration_file)
 
 # -------------------
 # Initialization

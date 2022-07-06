@@ -59,16 +59,16 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
 
     # Determine configuration version
     version = config.get("version", 0)  # zero for undetermined
-    if "time_control" in config: 
-        version = 1    
-    if "time" in config:  
+    if "time_control" in config:
+        version = 1
+    if "time" in config:
         version = 2
 
 
     logger.info("  Configuration file version: %s", version)
 
     if version == 2:
-        configure_v2(config)  
+        configure_v2(config)
     elif version == 1:
         config = configure_v1(config)
     else:
@@ -168,21 +168,21 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
     else:
         conf2["grid"]["module"] = config["gridforce"]["module"]
         conf2["forcing"]["module"] = config["gridforce"]["module"]
-    
+
     if "input_file" in config["gridforce"]:
         conf2["forcing"]["filename"] = config["gridforce"]["input_file"]
     elif "input_file" in config["files"]:
         conf2["forcing"]["filename"] = config["files"]["input_file"]
     else:
         conf2["forcing"]["filename"] = ""
-    
+
     if "gridfile" in config["gridforce"]:
         conf2["grid"]["filename"] = config["gridforce"]["gridfile"]
     elif "gridfile" in config["files"]:
         conf2["grid"]["filename"] = config["files"]["gridfile"]
     else:
         conf2["grid"]["filename"] = ""
-            
+
     if not conf2["grid"]["filename"] and conf2["forcing"]["filename"]:
         filename = Path(conf2["forcing"]["filename"])
         # glob if necessary and use first file
@@ -192,7 +192,7 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
             print("--", filename)
         conf2["grid"]["filename"] = filename
 
-                
+
     if "subgrid" in config["gridforce"]:
         conf2["grid"]["subgrid"] = config["gridforce"]["subgrid"]
     if "ibm_forcing" in config["gridforce"]:
@@ -205,9 +205,11 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
     if "ibm" in config and "variables" in config["ibm"]:
         for var in config["ibm"]["variables"]:
             instance_variables[var] = "float"
-    for var in config["particle_release"]:
+    for var in config["particle_release"]["variables"]:
         if var in ["mult", "X", "Y", "Z"]:  # Ignore
             continue
+        if var in ["lon", "lat"]:
+            instance_variables[var] = "float"
         if (
             "particle_variables" in config["particle_release"]
             and var in config["particle_release"]["particle_variables"]

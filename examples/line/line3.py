@@ -5,8 +5,7 @@ from ladim.model import init_module
 
 
 configuration_file = "ladim.yaml"
-config_version = 2
-config = configure(configuration_file, config_version)
+config = configure(configuration_file)
 
 # The module names can be taken from the configuration file.
 # But, the order matters
