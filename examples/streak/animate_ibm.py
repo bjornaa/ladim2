@@ -64,7 +64,7 @@ vmax = pf.age[-1].max() / DAY  # Maximum  particle age
 pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
 cb = plt.colorbar(pdistr)
 cb.set_label("Particle age [days]", fontsize=14)
-timestamp = ax.text(0.01, 0.97, pf.time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.97, pf.ftime(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
@@ -76,7 +76,7 @@ def animate(t):
     # Particle age in days
     C = pf.age[t].values / DAY
     pdistr.set_array(C)
-    timestamp.set_text(pf.time(t))
+    timestamp.set_text(pf.ftime(t))
     return pdistr, timestamp
 
 

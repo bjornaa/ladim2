@@ -40,7 +40,7 @@ particle_files.sort()
 # Inital particle distribution
 pf = ParticleFile(particle_files[0])
 X, Y = pf.position(0)
-timestr = pf.time(0)
+timestr = pf.ftime(0)
 pf.close()
 # Suppose all files (except possible last) has same number of records
 numrec = pf.num_times
@@ -79,7 +79,7 @@ def animate(t):
         pf = ParticleFile(particle_files[n])
     X, Y = pf.position(s)
     particle_dist.set_data(X, Y)
-    timestamp.set_text(pf.time(s))
+    timestamp.set_text(pf.ftime(s))
     return particle_dist, timestamp
 
 

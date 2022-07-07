@@ -36,10 +36,6 @@ Yb = np.arange(j0 - 0.5, j1)
 pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
-def time(t):
-    return np.datetime64(pf.time[t].values, 'h')
-
-
 # Set up the plot area
 fig = plt.figure(figsize=(12, 10))
 ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
@@ -60,14 +56,14 @@ ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.3)
 # Plot initial particle distribution
 X, Y = pf.position(0)
 particle_dist, = ax.plot(X, Y, ".", color="red", markeredgewidth=0, markersize=20)
-timestamp = ax.text(0.01, 0.95, time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.95, pf.ftime(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     X, Y = pf.position(t)
     particle_dist.set_data(X, Y)
-    timestamp.set_text(time(t))
+    timestamp.set_text(pf.ftime(t))
     return particle_dist, timestamp
 
 

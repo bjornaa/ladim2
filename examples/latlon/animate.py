@@ -92,7 +92,7 @@ lat = pf["lat"][0]
 timestamp = ax.text(
     x=0.12,
     y=0.91,
-    s=str(time(0)),
+    s=pf.ftime(0),
     fontsize=13,
     backgroundcolor="white",
     transform=ax.transAxes,
@@ -104,7 +104,7 @@ def animate(t):
     lon = pf["lon"][t]
     lat = pf["lat"][t]
     particle_dist.set_data(lon, lat)
-    timestamp.set_text(str(time(t)))
+    timestamp.set_text(fp.ftime(t)))
     return particle_dist, timestamp
 
 

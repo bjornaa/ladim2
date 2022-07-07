@@ -37,8 +37,6 @@ Yb = np.arange(j0 - 0.5, j1)
 pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
-def time(t):
-    return np.datetime64(pf.time[t].values, 'h')
 
 def age(t):
     """Return age in days of the particles with time index t"""
@@ -70,7 +68,7 @@ vmax = (pf.time[-1] - pf.time[0]) / DAY  # Time span of output (in days)
 pdistr = ax.scatter(X, Y, c=C, vmin=0, vmax=vmax, cmap=plt.get_cmap("plasma_r"))
 cb = plt.colorbar(pdistr)
 cb.set_label("Particle age [days]", fontsize=14)
-timestamp = ax.text(0.01, 0.97, time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.97, pf.ftime(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
@@ -79,7 +77,7 @@ def animate(t):
     pdistr.set_offsets(np.vstack((X, Y)).T)
     C = age(t)
     pdistr.set_array(C)
-    timestamp.set_text(time(t))
+    timestamp.set_text(pf.ftime(t))
     return pdistr, timestamp
 
 

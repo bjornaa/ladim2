@@ -23,13 +23,13 @@ filenr, tsplit = divmod(t, numrec)
 
 print("\n --- unsplit ---")
 with ParticleFile("unsplit.nc") as pf:
-    print("time = ", pf.time(t))
+    print("time = ", pf.ftime(t))
     print(f"X[{pid}] = ", float(pf.X[t][pid]))
     print(f"Y[{pid}] = ", float(pf.Y[t][pid]))
 
 print("\n --- split ---")
 with ParticleFile(f"split_{filenr:03d}.nc") as pf:
-    print("time = ", pf.time(tsplit))
+    print("time = ", pf.ftime(tsplit))
     print(f"X[{pid}] = ", float(pf.X[tsplit][pid]))
     print(f"Y[{pid}] = ", float(pf.Y[tsplit][pid]))
 
@@ -38,6 +38,6 @@ if t < n * numrec:
     print(f"Restart has not started at t = {t} < {n*numrec}")
 else:
     with ParticleFile(f"restart_{filenr:03d}.nc") as pf:
-        print("time = ", pf.time(tsplit))
+        print("time = ", pf.ftime(tsplit))
         print(f"X[{pid}] = ", float(pf.X[tsplit][pid]))
         print(f"Y[{pid}] = ", float(pf.Y[tsplit][pid]))

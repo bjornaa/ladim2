@@ -58,11 +58,14 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         raise SystemExit(3) from err
 
     # Determine configuration version
+    # i) explicitly given
     version = config.get("version", 0)  # zero for undetermined
-    if "time_control" in config:
-        version = 1
-    if "time" in config:
-        version = 2
+    if version == 0:
+        # ii) infer version
+        if "time_control" in config:
+            version = 1
+        if "time" in config:
+            version = 2
 
 
     logger.info("  Configuration file version: %s", version)

@@ -38,9 +38,6 @@ Yb = np.arange(j0 - 0.5, j1)
 pf = ParticleFile(particle_file)
 num_times = pf.num_times
 
-def time(t):
-    return np.datetime64(pf.time[t].values, 'h')
-
 # Set up the plot area
 fig = plt.figure(figsize=(8, 8))
 ax = plt.axes(xlim=(i0 + 1, i1 - 1), ylim=(j0 + 1, j1 - 1), aspect="equal")
@@ -75,13 +72,13 @@ ax.plot(X, Y, ".", color="purple", markeredgewidth=0, lw=0.5)
 # Plot initial distribution of backwards particles
 X, Y = pf.position(0)
 (particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, lw=0.5)
-timestamp = ax.text(0.01, 0.95, time(0), fontsize=15, transform=ax.transAxes)
+timestamp = ax.text(0.01, 0.95, pf.ftime(0), fontsize=15, transform=ax.transAxes)
 
 
 # Update function
 def animate(t):
     particle_dist.set_data(*pf.position(t))
-    timestamp.set_text(time(t))
+    timestamp.set_text(pf.ftime(t))
     return particle_dist, timestamp
 
 
