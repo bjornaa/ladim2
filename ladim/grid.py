@@ -1,15 +1,12 @@
 """Abstract base class for LADiM grid"""
 
-
-# import sys
-# import os
-# from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = npt.NDArray[np.float64]  # 1D array, one element per particle
 
 
 class BaseGrid(ABC):
@@ -33,9 +30,9 @@ class BaseGrid(ABC):
         """Estimates grid spacing at particle positions"""
 
     @abstractmethod
-    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> npt.NDArray[np.bool_]:
         """Tests if particles are inside the grid"""
 
     @abstractmethod
-    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> npt.NDArray[np.bool_]:
         """Tests if particles are at sea"""

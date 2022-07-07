@@ -14,11 +14,12 @@ import logging
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import numba  # type: ignore
 
 from ladim.forcing import BaseForce
 
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = npt.NDArray[np.float64]  # 1D array, one element per particle
 Velocity = tuple[ParticleArray, ParticleArray]
 
 PARALLEL = False

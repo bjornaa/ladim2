@@ -7,8 +7,8 @@ from datetime import date
 import logging
 from typing import Union, Optional, Any, Generator, Literal
 
-import numpy as np  # type: ignore
-from netCDF4 import Dataset  # type: ignore
+import numpy as np
+from netCDF4 import Dataset # type: ignore
 
 from ladim.timekeeper import TimeDelta, normalize_period
 from ladim.state import State  # For typing

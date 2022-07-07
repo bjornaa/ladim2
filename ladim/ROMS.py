@@ -17,6 +17,7 @@ from typing import Union, Optional, Any
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
 import numba  # type: ignore
+import numpy.typing as npt
 
 from ladim.grid import BaseGrid
 from ladim.forcing import BaseForce, ParticleArray, Field
@@ -150,7 +151,8 @@ class Grid(BaseGrid):
                 self.Vtransform = 1  # Default = old way
 
         # Read some variables
-        self.H: np.ndarray = ncid.variables["h"][self.J, self.I]
+        #self.H: np.ndarray = ncid.variables["h"][self.J, self.I]
+        self.H = ncid.variables["h"][self.J, self.I]
         self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
         self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
         self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
@@ -198,8 +200,8 @@ class Grid(BaseGrid):
 
     def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Return the depth of grid cells containing the particles"""
-        I: np.ndarray = X.round().astype(int) - self.i0
-        J: np.ndarray = Y.round().astype(int) - self.j0
+        I = X.round().astype(int) - self.i0
+        J = Y.round().astype(int) - self.j0
         R: ParticleArray = self.H[J, I]
         return R
 
@@ -214,7 +216,7 @@ class Grid(BaseGrid):
         J = Y.round().astype("int") - self.j0
         return self.lon[J, I], self.lat[J, I]
 
-    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> npt.NDArray[np.bool_]:
         """Returns True for points inside the subgrid"""
         # return (
         #     (self.xmin + 0.5 < X)
@@ -222,7 +224,8 @@ class Grid(BaseGrid):
         #     & (self.ymin + 0.5 < Y)
         #     & (Y < self.ymax - 0.5)
         # )
-        cond: ParticleArray = (
+        # cond: ParticleArray = (
+        cond = (
             (self.xmin + 0.5 < X)
             & (X < self.xmax - 0.5)
             & (self.ymin + 0.5 < Y)
@@ -230,20 +233,20 @@ class Grid(BaseGrid):
         )
         return cond
 
-    def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def onland(self, X: ParticleArray, Y: ParticleArray) -> npt.NDArray[np.bool_]:
         """Returns True for points on land"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
-        cond: ParticleArray = self.M[J, I] < 1
+        cond: npt.NDArray[np.bool_] = self.M[J, I] < 1
         return cond
 
     # Error if point outside
-    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> npt.NDArray[np.bool_]:
         """Returns True for particles at sea"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         # return self.M[J, I] > 0
-        cond: ParticleArray = self.M[J, I] > 0
+        cond: npt.NDArray[np.bool_] = self.M[J, I] > 0
         return cond
 
     def xy2ll(
@@ -270,7 +273,7 @@ class Grid(BaseGrid):
 
 def s_stretch(
     N: int, theta_s: float, theta_b: float, stagger: str = "rho", Vstretching: int = 1
-) -> np.ndarray:
+) -> npt.NDArray[np.float64]:
     """Computes the ROMS s-level stretching array
 
     Args:
@@ -299,7 +302,7 @@ def s_stretch(
     if Vstretching == 1:
         cff1 = 1.0 / np.sinh(theta_s)
         cff2 = 0.5 / np.tanh(0.5 * theta_s)
-        C1: np.ndarray = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
+        C1: npt.NDArray[np.float64] = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
             cff2 * np.tanh(theta_s * (S + 0.5)) - 0.5
         )
         return C1
@@ -309,12 +312,12 @@ def s_stretch(
         Csur = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
         Cbot = np.sinh(theta_b * (S + 1)) / np.sinh(theta_b) - 1
         mu = (S + 1) ** a * (1 + (a / b) * (1 - (S + 1) ** b))
-        C2: np.ndarray = mu * Csur + (1 - mu) * Cbot
+        C2: npt.NDArray[np.float64] = mu * Csur + (1 - mu) * Cbot
         return C2
 
     if Vstretching == 4:
         C = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
-        C4: np.ndarray = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
+        C4: npt.NDArray[np.float64] = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
         return C4
 
     # else:
@@ -322,7 +325,7 @@ def s_stretch(
 
 
 def sdepth(
-    H: Field, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
+    H: Field, Hc: float, C: npt.NDArray[np.float64], stagger: str = "rho", Vtransform: int = 1
 ) -> Field:
     """Return depth of grid cells
 
@@ -370,9 +373,9 @@ def sdepth(
         return R1
 
     if Vtransform == 2:  # New transform by Shchepetkin
-        N = Hc * S[:, None] + np.outer(C, H)
+        N2 = Hc * S[:, None] + np.outer(C, H)
         D = 1.0 + Hc / H
-        R2: Field = (N / D).reshape(outshape)
+        R2: Field = (N2 / D).reshape(outshape)
         return R2
 
     # else:
@@ -768,7 +771,8 @@ def z2s_kernel(
     J: ParticleArray,
     Z: ParticleArray,
     z_rho: Field,
-) -> tuple[ParticleArray, ParticleArray]:
+) -> tuple[npt.NDArray[np.int64], ParticleArray]:
+# ) -> tuple[ParticleArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
@@ -902,7 +906,7 @@ def find_files(
     return files
 
 
-def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
+def scan_file_times(files: list[Path]) -> tuple[npt.NDArray[np.datetime64], dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:

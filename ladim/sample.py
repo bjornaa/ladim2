@@ -23,10 +23,11 @@ Horizontal sampling
 from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 
 # Type aliases
-Field = np.ndarray  # 2D gridded field
-ParticleArray = np.ndarray  # 1D array of values per particle
+Field = npt.NDArray[np.float64]  # 2D gridded field
+ParticleArray = npt.NDArray[np.float64]  # 1D array of values per particle
 
 
 # ---------------------
@@ -56,7 +57,7 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
     W10 = P * (1 - Q)
     W11 = P * Q
 
-    result: np.ndarray = (
+    result: npt.NDArray[np.float64] = (
         W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1]
     )
     return result
@@ -198,7 +199,7 @@ def sample2D(
     W01 = (1 - P) * Q
     W10 = P * (1 - Q)
     W11 = P * Q
-    SW = 1.0  # Sum of weights
+    SW: npt.ArrayLike = 1.0  # Sum of weights
 
     if mask is not None:
         W00 = mask[J, I] * W00

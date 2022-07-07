@@ -10,10 +10,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
-# Type aliases
-Field = np.ndarray  # 3D or 2D gridded field
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = npt.NDArray[np.float64]  # 1D array, one element per particle
+Field = npt.NDArray[np.float64]  # 3D or 2D gridded field
 Velocity = tuple[ParticleArray, ParticleArray]
 
 
