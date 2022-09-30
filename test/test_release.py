@@ -204,8 +204,8 @@ def test_remove_early_release():
     assert len(pr.steps) == 2
     assert pr.steps[0] == 0
     assert pr.steps[1] == 3 * 24 * 4  # 3 days, 4 steps per hour
-    assert df.index[0] == np.datetime64("2015-03-31 12")
-    assert df.index[1] == np.datetime64("2015-04-03 12")
+    assert df.index[0] == np.datetime64("2015-03-31 12:00:00")
+    assert df.index[1] == np.datetime64("2015-04-03 12", "s")
     assert all(df.X == [4.2, 3.9])
 
 
@@ -226,7 +226,7 @@ def test_remove_early_release2():
     assert pr.total_particle_count == 1
     assert len(pr.steps) == 1
     assert pr.steps[0] == 3 * 24 * 4  # 3 days, 4 steps per hour
-    assert df.index[0] == np.datetime64("2015-04-03 12")
+    assert df.index[0] == np.datetime64("2015-04-03 12:00:00")
     assert all(df.X == [3.9])
 
 
@@ -297,7 +297,7 @@ def test_continuous1():
 
     df = pr._df
     assert pr.total_particle_count == 7
-    assert df.index[3] == np.datetime64("2015-04-02")
+    assert df.index[3] == np.datetime64("2015-04-02", "s")
     assert all(df.Y == 3 * [400] + 4 * [401])
 
 
@@ -321,9 +321,9 @@ def test_continuous2():
 
     df = pr._df
     assert pr.total_particle_count == 14
-    assert df.index[5] == np.datetime64("2015-04-01 12")
-    assert df.index[6] == np.datetime64("2015-04-02")
-    assert df.index[7] == np.datetime64("2015-04-02")
+    assert df.index[5] == np.datetime64("2015-04-01 12:00:00")
+    assert df.index[6] == np.datetime64("2015-04-02", "s")
+    assert df.index[7] == np.datetime64("2015-04-02", "s")
     assert all(df.Y == 3 * [400, 410] + 2 * [401, 411, 421] + 2 * [402])
 
 
@@ -408,7 +408,7 @@ def test_release_time_column():
     pr = ParticleReleaser(modules, f, timer=timer)
     A = pr._df
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
-    assert A["release_time"][1] == np.datetime64("2015-04-01")
+    assert A["release_time"][1] == np.datetime64("2015-04-01", "s")
     assert A["release_time"][2] == np.datetime64("2015-04-03 12:00:00")
     assert A["release_time"].dtype == np.dtype("M8[ns]")
 
