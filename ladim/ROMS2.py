@@ -335,7 +335,7 @@ class Forcing(BaseForce):
         force_particles (bedre interpolate2particles)
 
     Public attributes:
-        ibm_forcing
+        extra_forcing
         variables
         steps
         # Legg til ny = fields, fields["u"] = 3D field
@@ -351,7 +351,7 @@ class Forcing(BaseForce):
         #timer: TimeKeeper,
         filename: Union[Path, str],
         pad: int = 30,
-        ibm_forcing: Optional[List[str]] = None,
+        extra_forcing: Optional[List[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
@@ -359,15 +359,15 @@ class Forcing(BaseForce):
         self.grid = modules["grid"]  # Get the grid object.
         timer = modules["time"]
 
-        self.ibm_forcing = ibm_forcing if ibm_forcing else []
+        self.extra_forcing = extra_forcing if extra_forcing else []
 
         # 3D forcing fields
         self.fields = {
-            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
         }
         # Forcing interpolated to particle positions
         self.variables = {
-            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
         }
 
         # Sub grid padding, make configurable
@@ -442,7 +442,7 @@ class Forcing(BaseForce):
             self.fields["v"] -= (prestep + 1) * self.fields["dV"]
 
             # Other forcing
-            for name in self.ibm_forcing:
+            for name in self.extra_forcing:
                 self.fields[name] = self._read_field(name, prestep)
                 # self[name + "new"] = self._read_field(name, nextstep)
                 # self["d" + name] = (self[name + "new"] - self[name]) / prestep
@@ -481,7 +481,7 @@ class Forcing(BaseForce):
 
         # Read from config?
         interpolate_velocity_in_time = True
-        # interpolate_ibm_forcing_in_time = False
+        # interpolate_extra_forcing_in_time = False
 
         logging.debug("Updating forcing, time step = {}".format(step))
         if step in self.steps:  # No time interpolation
@@ -503,7 +503,7 @@ class Forcing(BaseForce):
             # print(self.fields["dU"].shape)
 
             # Read other forcing variables with no time interpolation
-            for name in self.ibm_forcing:
+            for name in self.extra_forcing:
                 self.fields[name] = self._read_field(name, step)
             # self.force_particles(X, Y)
             #   self[name] = self[name + "new"]
@@ -549,7 +549,7 @@ class Forcing(BaseForce):
 
                 # print("===>", self.fields["u_new"][-1,90-self.j0,68-self.i0])
 
-                # for name in self.ibm_forcing:
+                # for name in self.extra_forcing:
                 #    self[name + "new"] = self._read_field(name, nextstep)
                 self.fields["dU"] = np.zeros_like(self.fields["u"])
                 self.fields["dV"] = np.zeros_like(self.fields["v"])
@@ -594,8 +594,8 @@ class Forcing(BaseForce):
             if interpolate_velocity_in_time:
                 self.fields["u"] += self.fields["dU"]
                 self.fields["v"] += self.fields["dV"]
-            # if interpolate_ibm_forcing_in_time:
-            #    for name in self.ibm_forcing:
+            # if interpolate_extra_forcing_in_time:
+            #    for name in self.extra_forcing:
             #        self[name] += self["d" + name]
 
         # Update forcing values to particle positions
@@ -619,7 +619,7 @@ class Forcing(BaseForce):
         self.scaled = dict()
         self.scale_factor = dict()
         self.add_offset = dict()
-        forcing_variables = ["u", "v"] + self.ibm_forcing
+        forcing_variables = ["u", "v"] + self.extra_forcing
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True
@@ -723,7 +723,7 @@ class Forcing(BaseForce):
         i0 = self.i0
         j0 = self.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
-        for name in self.ibm_forcing:
+        for name in self.extra_forcing:
             self.variables[name] = sample3D(
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )

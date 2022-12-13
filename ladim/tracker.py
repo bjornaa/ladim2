@@ -1,4 +1,4 @@
-"""Tracker – physical particle tracker"""
+"""Tracker - physical particle tracker"""
 
 # ------------------------------------
 # tracker.py

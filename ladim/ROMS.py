@@ -395,7 +395,7 @@ class Forcing(BaseForce):
         force_particles (better: interpolate2particles)
 
     Public attributes:
-        ibm_forcing
+        extra_forcing
         variables
         steps
         #  Add new= fields, fields["u"] = 3D field
@@ -406,7 +406,7 @@ class Forcing(BaseForce):
         self,
         modules: dict[str, Any],
         filename: Union[Path, str],
-        ibm_forcing: Optional[list[str]] = None,
+        extra_forcing: Optional[list[str]] = None,
     ) -> None:
 
         logger.info("Initiating forcing")
@@ -416,15 +416,15 @@ class Forcing(BaseForce):
         self.grid = modules["grid"]  # Get the grid object.
         # self.timer = timer
 
-        self.ibm_forcing = ibm_forcing if ibm_forcing else []
+        self.extra_forcing = extra_forcing if extra_forcing else []
 
         # 3D forcing fields
         self.fields = {
-            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
         }
         # Forcing interpolated to particle positions
         self.variables = {
-            var: np.array([], float) for var in ["u", "v"] + self.ibm_forcing
+            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
         }
 
         # Input files and times
@@ -479,7 +479,7 @@ class Forcing(BaseForce):
         self.fields["u"] = self.fields["u"] - (prestep + 1) * self.fields["dU"]
         self.fields["v"] = self.fields["v"] - (prestep + 1) * self.fields["dV"]
         # Other forcing
-        for name in self.ibm_forcing:
+        for name in self.extra_forcing:
             self.fields[name] = self._read_field(name, prestep)
 
         self.steps = steps
@@ -500,18 +500,19 @@ class Forcing(BaseForce):
         Z = state.Z
         step = self.modules["time"].step
 
+
         # Local depth level and interpolation coefficient
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
         # Read from config?
         interpolate_velocity_in_time = True
-        # interpolate_ibm_forcing_in_time = False
+        # interpolate_extra_forcing_in_time = False
 
         if step in self.steps:  # No time interpolation
             self.fields["u"] = self.fields["u_new"]
             self.fields["v"] = self.fields["v_new"]
             # Read other forcing variables with no time interpolation
-            for name in self.ibm_forcing:
+            for name in self.extra_forcing:
                 self.fields[name] = self._read_field(name, step)
             # self.force_particles(X, Y)
         else:
@@ -522,7 +523,7 @@ class Forcing(BaseForce):
                 self.fields["u_new"], self.fields["v_new"] = self._read_velocity(
                     nextstep
                 )
-                # for name in self.ibm_forcing:
+                # for name in self.extra_forcing:
                 #    self[name + "new"] = self._read_field(name, nextstep)
                 if interpolate_velocity_in_time:
                     self.fields["dU"] = (
@@ -531,21 +532,23 @@ class Forcing(BaseForce):
                     self.fields["dV"] = (
                         self.fields["v_new"] - self.fields["v"]
                     ) / stepdiff
-                # if interpolate_ibm_forcing_in_time:
-                #    for name in self.ibm_forcing:
+                # if interpolate_extra_forcing_in_time:
+                #    for name in self.extra_forcing:
                 #        self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
 
             # "Ordinary" time step (including self.steps+1)
             if interpolate_velocity_in_time:
                 self.fields["u"] += self.fields["dU"]
                 self.fields["v"] += self.fields["dV"]
-            # if interpolate_ibm_forcing_in_time:
-            #    for name in self.ibm_forcing:
+            # if interpolate_extra_forcing_in_time:
+            #    for name in self.extra_forcing:
             #        self[name] += self["d" + name]
 
         # Update forcing values at particles
         # print("force_particles")
         self.force_particles(X, Y)
+        #self.state["temp"] = self.fields["temp"]
+        #print("forcing.update: temp = ", self.state["temp"])
 
     # ==============================================
 
@@ -563,7 +566,7 @@ class Forcing(BaseForce):
         self.scaled = dict()
         self.scale_factor = dict()
         self.add_offset = dict()
-        forcing_variables = ["u", "v"] + self.ibm_forcing
+        forcing_variables = ["u", "v"] + self.extra_forcing
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True
@@ -653,10 +656,14 @@ class Forcing(BaseForce):
         i0 = self.grid.i0
         j0 = self.grid.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
-        for name in self.ibm_forcing:
+        for name in self.extra_forcing:
             self.variables[name] = sample3D(
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
             )
+            # OOPS: May not need self.variables[name]
+            #   Keep for backwards compability?
+            self.modules["state"][name] = self.variables[name]
+
         self.variables["u"], self.variables["v"] = sample3DUV(
             self.fields["u"],
             self.fields["v"],

@@ -159,6 +159,7 @@ class State(Sized):
 
         # Variables must have a value
         value_vars = dict(self.default_values, **args)
+        # This is repeated from above ??
         for name in state_vars:
             if name not in value_vars:
                 self.default_values[name] = np.nan

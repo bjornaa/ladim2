@@ -1,0 +1,59 @@
+# split.yaml – configuration file for LADiM v2
+# splits output into a sequence of files
+
+version: 2.0
+
+time:
+    start: 1989-05-24 12:00
+    stop: 1989-05-25 00:00
+    reference: 1989-01-01
+    dt: [1, h]
+
+grid:
+    module: ladim.ROMS
+
+forcing:
+    module: ladim.ROMS
+    filename: ../data/ocean_avg_0014.nc
+
+tracker:
+    advection: EF
+
+release:
+    release_file : restart.rls
+    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
+    continuous: True
+    release_frequency: 3600
+    particle_variables: [release_time]
+
+state:
+    particle_variables: {release_time: time}
+
+output:
+    filename: split.nc
+    ncargs: {data_model: NETCDF4_CLASSIC}
+    output_period: [1, h]
+    numrec: 4     # 4 records per file
+    instance_variables:
+        pid:
+            encoding: {datatype: i4, zlib: True}
+            attributes: {long_name: particle_identifier}
+        X:
+            encoding: {datatype: f4, zlib: True}
+            attributes: {long_name: particle X-coordinate}
+        Y:
+            encoding: {datatype: f4, zlib: True}
+            attributes: {long_name: particle Y-coordinate}
+        Z:
+            encoding: {datatype: f4, zlib: True}
+            attributes:
+                long_name: particle depth
+                standard_name: depth_below_surface
+                units: m
+                positive: down
+    particle_variables:
+        release_time:
+            encoding: {datatype: f8}
+            attributes:
+                long_name: particle release time
+                units: seconds since reference_time

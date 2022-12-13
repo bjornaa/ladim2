@@ -13,6 +13,9 @@ class Dummy:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def __setitem__(self, var, value):
+        pass
+
 
 filename = Path("examples/data/ocean_avg_0014.nc")
 # Can be run from test directory or ladim root
@@ -55,7 +58,7 @@ def test_prestep0(setup):
     grid = ROMS.Grid(filename, subgrid=subgrid,)
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])
 
     # First field
     force.update()
@@ -81,7 +84,7 @@ def test_midstep(setup):
     grid = ROMS.Grid(filename, subgrid=subgrid,)
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])
 
     # First field
     force.update()
@@ -110,7 +113,7 @@ def test_start_second(setup):
     grid = ROMS.Grid(filename, subgrid=subgrid,)
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS.Forcing(modules, filename, ibm_forcing=["temp"])
+    force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])
 
     # First field
     force.update()

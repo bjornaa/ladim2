@@ -68,16 +68,19 @@ class Model:
         # --- Update forcing ---
         self.force.update()
 
-        self.ibm.update()
-
-        # self.state.compactify()
+        # if "temp" in self.force.variables:
+        #     self.state["temp"] = self.force.variables["temp"]
+        # if "salt" in self.force.variables:
+        #     self.state["salt"] = self.force.variables["salt"]
 
         # --- Output
         self.output.update()
 
         # --- Update state to next time step
-        # Improve: no need to update after last write
+        # No need to do after last output
+        self.ibm.update()
         self.tracker.update()
+        # self.state.compactify()
 
     def finish(self) -> None:
         """Clean-up after the model run"""

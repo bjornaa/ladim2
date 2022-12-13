@@ -86,8 +86,9 @@ class Test_output_when_different_scenarios:
         rls = make_release(t=[0] * 4, X=2, Y=2, Z=[0, 1, 2, 3])
         conf = make_conf()
         conf["tracker"]["vertical_advection"] = "EF"
-        conf["forcing"]["ibm_forcing"] = ["w"]
-
+        conf["forcing"]["extra_forcing"] = ["w"]
+        conf["state"]["instance_variables"]["w"] = "float"
+        
         with runladim(conf, gf, rls) as result:
             assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
             assert result.Z.values.tolist() == [

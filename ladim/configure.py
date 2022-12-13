@@ -198,8 +198,8 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
 
     if "subgrid" in config["gridforce"]:
         conf2["grid"]["subgrid"] = config["gridforce"]["subgrid"]
-    if "ibm_forcing" in config["gridforce"]:
-        conf2["forcing"]["ibm_forcing"] = config["gridforce"]["ibm_forcing"]
+    if "extra_forcing" in config["gridforce"]:
+        conf2["forcing"]["extra_forcing"] = config["gridforce"]["extra_forcing"]
 
     # state
     conf2["state"] = dict()

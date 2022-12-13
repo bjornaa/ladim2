@@ -20,6 +20,8 @@ class Dummy:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def __setitem__(self, var, value):
+        pass
 
 @pytest.fixture(scope="module")
 def setup():
@@ -52,7 +54,7 @@ def test_prestep0(setup):
     state = Dummy(X=X, Y=Y, Z=Z)
     
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS2.Forcing(modules, filename, pad=10, ibm_forcing=["temp"])
+    force = ROMS2.Forcing(modules, filename, pad=10, extra_forcing=["temp"])
 
     # First field
     force.update()
@@ -78,7 +80,7 @@ def test_midstep(setup):
     grid = ROMS2.Grid(filename)
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS2.Forcing(modules, filename, pad=10, ibm_forcing=["temp"])
+    force = ROMS2.Forcing(modules, filename, pad=10, extra_forcing=["temp"])
 
     # First field
     force.update()
@@ -107,7 +109,7 @@ def test_start_second(setup):
     grid = ROMS2.Grid(filename)
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
-    force = ROMS2.Forcing(modules, filename, pad=10, ibm_forcing=["temp"])
+    force = ROMS2.Forcing(modules, filename, pad=10, extra_forcing=["temp"])
 
     # First field
     force.update()
