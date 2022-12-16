@@ -104,7 +104,7 @@ def animate(t):
     lon = pf["lon"][t]
     lat = pf["lat"][t]
     particle_dist.set_data(lon, lat)
-    timestamp.set_text(fp.ftime(t)))
+    timestamp.set_text(pf.ftime(t))
     return particle_dist, timestamp
 
 
