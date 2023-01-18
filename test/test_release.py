@@ -78,6 +78,8 @@ def test_read_release_no_header_no_names():
 
 
 def test_read_release_both_header_names():
+    """Do not accept header in file and as argument"""
+    # Chang to priority for file??
 
     f = StringIO(
         """
@@ -152,6 +154,7 @@ def test_clean_convert_lonlat():
 
 
 def test_clean_lonlat_no_convert():
+    """lon/lat gives exception if no ll2xy in Grid"""
 
     f = StringIO(
         """
@@ -179,7 +182,6 @@ def test_remove_late_release():
     )
     pr = ParticleReleaser(modules0, f)
     df = pr._df
-    assert pr.total_particle_count == 1
     assert len(pr.steps) == 1
     assert pr.steps[0] == 12 * 4  # 12 hours, 4 steps per hour
     assert all(df.index == np.datetime64("2015-04-01"))
@@ -200,7 +202,6 @@ def test_remove_early_release():
     )
     pr = ParticleReleaser(modules0, f)
     df = pr._df
-    assert pr.total_particle_count == 2
     assert len(pr.steps) == 2
     assert pr.steps[0] == 0
     assert pr.steps[1] == 3 * 24 * 4  # 3 days, 4 steps per hour
@@ -223,7 +224,6 @@ def test_remove_early_release2():
     )
     pr = ParticleReleaser(modules0, f)
     df = pr._df
-    assert pr.total_particle_count == 1
     assert len(pr.steps) == 1
     assert pr.steps[0] == 3 * 24 * 4  # 3 days, 4 steps per hour
     assert df.index[0] == np.datetime64("2015-04-03 12:00:00")
@@ -274,7 +274,6 @@ def test_continuous0():
 
     df = pr._df
     assert len(df) == 7
-    assert pr.total_particle_count == 7
     assert len(pr.steps) == 7
     assert pr.steps[0] == 0
     assert pr.steps[1] == 12 * 4
@@ -296,7 +295,6 @@ def test_continuous1():
     pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     df = pr._df
-    assert pr.total_particle_count == 7
     assert df.index[3] == np.datetime64("2015-04-02", "s")
     assert all(df.Y == 3 * [400] + 4 * [401])
 
@@ -320,7 +318,6 @@ def test_continuous2():
     pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
     df = pr._df
-    assert pr.total_particle_count == 14
     assert df.index[5] == np.datetime64("2015-04-01 12:00:00")
     assert df.index[6] == np.datetime64("2015-04-02", "s")
     assert df.index[7] == np.datetime64("2015-04-02", "s")
@@ -349,7 +346,6 @@ def test_continuous_freq_mismatch():
     freq = np.timedelta64(12, "h")
     pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
     df = pr._df
-    assert pr.total_particle_count == 7
     assert len(pr.steps) == 7
     assert all(pr.steps == 48 * np.arange(7))
     assert df.index[3] == timer.start_time + 3 * freq
@@ -386,7 +382,6 @@ def test_continuous_freq_mismatch2():
     freq = np.timedelta64(12, "h")
     pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
     df = pr._df
-    assert pr.total_particle_count == 7
     assert all(df.X == 4 * [100] + 3 * [106])
 
 

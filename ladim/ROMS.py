@@ -500,7 +500,6 @@ class Forcing(BaseForce):
         Z = state.Z
         step = self.modules["time"].step
 
-
         # Local depth level and interpolation coefficient
         self.K, self.A = z2s(self.grid.z_r, X - self.grid.i0, Y - self.grid.j0, Z)
 
@@ -547,8 +546,8 @@ class Forcing(BaseForce):
         # Update forcing values at particles
         # print("force_particles")
         self.force_particles(X, Y)
-        #self.state["temp"] = self.fields["temp"]
-        #print("forcing.update: temp = ", self.state["temp"])
+        # self.state["temp"] = self.fields["temp"]
+        # print("forcing.update: temp = ", self.state["temp"])
 
     # ==============================================
 
@@ -592,16 +591,6 @@ class Forcing(BaseForce):
             self.open_forcing_file(time_step)
 
         frame = self.frame_idx[time_step]
-
-        # if DEBUG:
-        #     print("_read_velocity")
-        #     print("   model time step =", time_step)
-        #     timevar = self._nc.variables["ocean_time"]
-        #     time_origin = np.datetime64(timevar.units.split("since")[1])
-        #     data_time = time_origin + np.timedelta64(int(timevar[frame]), "s")
-        #     print("   data file:   ", self.file_idx[time_step])
-        #     print("   data record: ", frame)
-        #     print("   data time:   ", data_time)
 
         # Read the velocity
         U = self._nc.variables["u"][frame, :, self.grid.Ju, self.grid.Iu]
@@ -649,9 +638,6 @@ class Forcing(BaseForce):
         Y: ParticleArray,
     ) -> None:
         """Interpolate velocity field to particle positions"""
-
-        # if DEBUG:
-        #    print("force_particles, n = ", len(X))
 
         i0 = self.grid.i0
         j0 = self.grid.j0

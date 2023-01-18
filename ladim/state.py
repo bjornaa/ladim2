@@ -140,11 +140,9 @@ class State(Sized):
 
         self.default_values = dict(predef_default_values, **dvals)
 
-        for var in self.variables:
-            if var not in self.default_values:
-                self.default_values[var] = np.nan
-
         self.npid: int = 0  # Total number of pids used
+
+        logger.debug("State initialized, number of particles = %d", len(self))
 
     def append(self, **args: Arraylike) -> None:
         """Append particles to the State object"""
@@ -159,10 +157,9 @@ class State(Sized):
 
         # Variables must have a value
         value_vars = dict(self.default_values, **args)
-        # This is repeated from above ??
         for name in state_vars:
             if name not in value_vars:
-                self.default_values[name] = np.nan
+                value_vars[name] = np.nan
 
         # Broadcast all variables to 1D arrays
         #    Raise ValueError if not compatible
@@ -172,7 +169,7 @@ class State(Sized):
         # if b.ndim == 0:  # All arguments are scalar
         #    b = np.broadcast([0])  # Make b.size = 1
         num_new_particles = b.size
-        logger.debug("Appending %d particles", num_new_particles)
+        # logger.debug("Appending %d particles", num_new_particles)
         values = {
             var: np.broadcast_to(v, shape=(num_new_particles,))
             for var, v in value_vars.items()
@@ -190,6 +187,8 @@ class State(Sized):
         # Concatenate the rest of the variables
         for var in state_vars:
             self.variables[var] = np.concatenate((self.variables[var], values[var]))
+
+        logger.debug("Total number of particles = %d", len(self))
 
     def compactify(self) -> None:
         """Remove dead particles from the instance variables"""

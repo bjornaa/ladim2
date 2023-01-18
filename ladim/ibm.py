@@ -1,6 +1,7 @@
 """Abstract Base Class for IBMs"""
 from typing import Any
 
+
 class IBM:
     """Base class for Individual Based Model"""
 

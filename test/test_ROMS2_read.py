@@ -112,6 +112,7 @@ def test_start_second(setup):
     force = ROMS2.Forcing(modules, filename, pad=10, extra_forcing=["temp"])
 
     # First field
+    timer.update()
     force.update()
     assert force.velocity(X, Y, Z)[0][0] == pytest.approx(U_dir[1])
     assert force.variables["temp"][0] == pytest.approx(temp_dir[1])

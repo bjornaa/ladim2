@@ -132,6 +132,7 @@ class Output(BaseOutput):
     def update(self) -> None:
         step = self.modules["time"].step
         if step % self.output_period_step == 0:
+            # logger.debug("Time for output")
             self.write(self.modules["state"])
 
     def create_netcdf(self) -> Dataset:
@@ -141,7 +142,7 @@ class Output(BaseOutput):
             An open NetCDF Dataset
         """
 
-        logging.debug("Creating new output file: %s", self.filename)
+        logging.info("Creating new output file: %s", self.filename)
 
         # Handle netcdf args
         ncargs = self.ncargs
@@ -220,6 +221,7 @@ class Output(BaseOutput):
         logger.debug("Writing output")
 
         # May skip initial output
+        self.skip_initial = False
         if self.skip_initial:
             self.skip_initial = False
             return

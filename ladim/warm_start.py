@@ -43,10 +43,16 @@ def warm_start(
     pend = pstart + pcount
     pid_max = np.max(f.variables["pid"][:]) + 1
 
+    print("warm start: antall partikler = ", pcount)
+
     state.npid = pid_max
 
+    # Should use state.append
+
     # Variable loop
+    # print(wvars)
     for var in wvars:
+        # print(var)
         if var in f.variables:
             ncvar = f.variables[var]
             if var in state.instance_variables:
@@ -59,6 +65,7 @@ def warm_start(
                 values = reftime + values * np.timedelta64(1, ncvar.units[0])
         # Variables not on file, but with defaults
         elif var in state.default_values:
+            # print("Med default", var)
             if var in state.instance_variables:
                 shape = (pcount,)
             else:

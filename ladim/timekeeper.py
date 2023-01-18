@@ -70,14 +70,19 @@ class TimeKeeper:
         self.modules = modules
         self.start_time: np.datetime64 = np.datetime64(start, "s")
         self.stop_time: np.datetime64 = np.datetime64(stop, "s")
-        self.time_reversal = time_reversal
-        self.time = self.start_time  # Running clock
-        self.step = 0
         logger.info("  Model start time: %s", self.start_time)
         logger.info("  Model stop time: %s", self.stop_time)
 
+        self.dt = normalize_period(dt)  # np.timedelta64(-,"s")
+        self.time_reversal = time_reversal
+        # self.time = self.start_time  # Running clock
+        self.step = -1  # step before start
+        self.time = self.step2time(self.step)
+
         # Quality control
         duration = self.stop_time - self.start_time
+        self.num_steps = duration / self.dt
+        print("num steps = ", self.num_steps)
         if time_reversal != (duration < np.timedelta64(0)):
             if time_reversal:
                 print("ERROR: Backwards time and start before stop")
@@ -85,8 +90,8 @@ class TimeKeeper:
                 print("ERROR: Forward time and stop before start")
             raise SystemExit(3)
 
-        self.min_time = min(self.start_time, self.stop_time)
-        self.max_time = max(self.start_time, self.stop_time)
+        self.min_time = min(self.start_time, self.stop_time)  # type: ignore
+        self.max_time = max(self.start_time, self.stop_time)  # type: ignore
 
         if reference:
             self.reference_time = np.datetime64(reference, "s")
@@ -94,7 +99,6 @@ class TimeKeeper:
             self.reference_time = self.min_time
         logger.info("  Reference time: %s", self.reference_time)
 
-        self.dt = normalize_period(dt)  # np.timedelta64(-,"s")
         self.dtsec = self.dt / np.timedelta64(1, "s")  # seconds
         logger.info("  Time step: %s", self.dt)
 
@@ -120,6 +124,9 @@ class TimeKeeper:
         """Get float value of model time"""
         delta = self.time - self.reference_time
         return float(delta / np.timedelta64(1, unit))
+
+    def step2time(self, step: int) -> np.datetime64:
+        return self.start_time + step * self.dt
 
     def time2step(self, time_: Time) -> int:
         """Timestep from time

@@ -6,6 +6,7 @@ import importlib
 import logging
 import types
 from typing import Any, Optional
+import numpy as np
 
 from ladim.state import State
 from ladim.grid import BaseGrid
@@ -52,35 +53,37 @@ class Model:
         self.output: BaseOutput = self.modules["output"]
         self.ibm: IBM = self.modules["ibm"]
 
+        self.skip_first_output = False
         if config["warm_start"]:
+            logger.info("Executing warm start")
             D = config["warm_start"]
             warm_start(D["filename"], D["variables"], self.state)
+            self.timer.step = 0
+            self.timer.time = self.timer.step2time(self.timer.step)
+            self.release.update()
+            self.force.update()
+            self.tracker.update()
+            self.ibm.update()
 
-    def update(self, step: int) -> None:
+    def update(self) -> None:
         """Update the model to the next time step"""
-        if step > 0:
-            self.timer.update()
-        logger.debug("step, model time: %4d %s", step, self.timer.time)
 
-        # --- Particle release
+        self.timer.update()
+        step = self.timer.step
+
+        logger.info("step, model time: %4d %s", step, self.timer.time)
+
         self.release.update()
-
-        # --- Update forcing ---
         self.force.update()
 
-        # if "temp" in self.force.variables:
-        #     self.state["temp"] = self.force.variables["temp"]
-        # if "salt" in self.force.variables:
-        #     self.state["salt"] = self.force.variables["salt"]
-
-        # --- Output
-        self.output.update()
+        # self.state.compactify()
+        if step >= 0:
+            self.output.update()
 
         # --- Update state to next time step
-        # No need to do after last output
-        self.ibm.update()
+        # Improve: no need to update after last write
         self.tracker.update()
-        # self.state.compactify()
+        self.ibm.update()
 
     def finish(self) -> None:
         """Clean-up after the model run"""
@@ -146,12 +149,9 @@ def load_module(module_name: str) -> types.ModuleType:
     # First try to load the module from a file
     if file_name.exists():
 
-        # basename = os.path.basename(module_name).rsplit(".", 1)[0]
         basename = file_name.stem
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(
-            internal_name, file_name
-        )
+        spec = importlib.util.spec_from_file_location(internal_name, file_name)  # type: ignore
         module_object = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module_object)  # type: ignore
         return module_object

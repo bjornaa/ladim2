@@ -67,7 +67,6 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         if "time" in config:
             version = 2
 
-
     logger.info("  Configuration file version: %s", version)
 
     if version == 2:
@@ -76,8 +75,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         config = configure_v1(config)
     else:
         logger.critical("Not a valid configuration version")
-        raise(SystemExit(3))
-
+        raise (SystemExit(3))
 
     # Possible improvement: write a yaml-file
     if DEBUG:
@@ -142,7 +140,6 @@ def configure_v2(config: dict[str, Any]) -> None:
         config["output"]["skip_initial"] = True
 
 
-
 def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
     """Tries to read version 1 configuration files
 
@@ -194,7 +191,6 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
             filename = sorted(directory.glob(filename.name))[0]
             print("--", filename)
         conf2["grid"]["filename"] = filename
-
 
     if "subgrid" in config["gridforce"]:
         conf2["grid"]["subgrid"] = config["gridforce"]["subgrid"]
@@ -251,7 +247,6 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
                 conf2["ibm"][var] = config["ibm"][var]
     else:
         conf2["ibm"] = dict()
-
 
     if "warm_start" not in config:
         conf2["warm_start"] = dict()

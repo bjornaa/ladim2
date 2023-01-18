@@ -123,6 +123,7 @@ def test_reference_time():
     timer = TimeKeeper(
         start="2020-01-01 12", stop="2020-01-03 12", reference="2000-01-01", dt=1800,
     )
+    timer.update()  # Update to time zero = start
     state = State()
     config = config0.copy()
     config['modules'] = config['modules'].copy()

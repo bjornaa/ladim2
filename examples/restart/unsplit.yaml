@@ -5,7 +5,7 @@ version: 2.0
 
 time:
     start: 1989-05-24 12:00
-    stop: 1989-05-25 00:00
+    stop: 1989-05-25 12:00
     reference: 1989-01-01
     dt: [1, h]
 
@@ -15,45 +15,88 @@ grid:
 forcing:
     module: ladim.ROMS
     filename: ../data/ocean_avg_0014.nc
+    extra_forcing: [temp]
 
 tracker:
     advection: EF
 
 release:
     release_file : restart.rls
-    names: [release_time, X, Y, Z]    # Given explicitly since not in rls-file
     continuous: True
     release_frequency: 3600
     particle_variables: [release_time]
 
 state:
-    particle_variables: {release_time: time}
+    particle_variables:
+        release_time: time
+    instance_variables:
+        age: float
+        temp: float
+        weight: float
+    default_values:
+        age: 0.0
+
+ibm:
+    module: restart_ibm
+    lifetime: 2   # Life time of particles in day
 
 output:
     filename: unsplit.nc
-    ncargs: {data_model: NETCDF4_CLASSIC}
-    output_period: [1, h]
+    ncargs:
+        data_model: NETCDF4_CLASSIC
+    output_period: [2, h]
     numrec: 0     # unsplitted output
     instance_variables:
         pid:
-            encoding: {datatype: i4, zlib: True}
-            attributes: {long_name: particle_identifier}
+            encoding: 
+                datatype: i4
+                zlib: True
+            attributes: 
+                long_name: particle identifier
         X:
-            encoding: {datatype: f4, zlib: True}
-            attributes: {long_name: particle X-coordinate}
+            encoding:
+                datatype: f4
+                zlib: True
+            attributes: 
+                long_name: particle X-coordinate
         Y:
-            encoding: {datatype: f4, zlib: True}
-            attributes: {long_name: particle Y-coordinate}
+            encoding:
+                datatype: f4
+                zlib: True
+            attributes: 
+                long_name: particle Y-coordinate
         Z:
-            encoding: {datatype: f4, zlib: True}
+            encoding: 
+                datatype: f4
+                zlib: True
             attributes:
                 long_name: particle depth
                 standard_name: depth_below_surface
                 units: m
                 positive: down
+        age:
+            encoding:
+                datatype: f4
+                zlib: True
+            attributes: 
+                long_name: particle age
+        temp:
+            encoding:
+                datatype: f4
+                zlib: True
+            attributes: 
+                long_name: particle temperature
+        weight:
+            encoding:
+                datatype: f4
+                zlib: True
+            attributes: 
+                long_name: particle weight
+        
     particle_variables:
         release_time:
-            encoding: {datatype: f8}
+            encoding: 
+                datatype: f8
             attributes:
                 long_name: particle release time
                 units: seconds since reference_time

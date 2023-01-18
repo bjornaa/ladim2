@@ -346,9 +346,9 @@ class Forcing(BaseForce):
 
     def __init__(
         self,
-        modules, 
-        #grid: Grid,
-        #timer: TimeKeeper,
+        modules,
+        # grid: Grid,
+        # timer: TimeKeeper,
         filename: Union[Path, str],
         pad: int = 30,
         extra_forcing: Optional[List[str]] = None,
@@ -462,14 +462,11 @@ class Forcing(BaseForce):
     def update(self) -> None:
         """Update the fields to given time step t"""
 
-
         state = self.modules["state"]
         X = state.X
         Y = state.Y
         Z = state.Z
         step = self.modules["time"].step
-
-
 
         # self.K, self.A = z2s(self.grid.z_r, X, Y, Z)  # OK
         self.K, self.A = z2s(
