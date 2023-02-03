@@ -233,7 +233,6 @@ class Output(BaseOutput):
 
         if self.layout == "dense":
             # Fill out state.alive, False for unborn particles
-            # has_value = np.full(self.num_particles, False)
             has_value = np.full(len(state), False)
             has_value[: len(state)] = state.alive
             for var in self.instance_variables:
@@ -241,7 +240,7 @@ class Output(BaseOutput):
                 self.nc.variables[var][self.local_record_count, has_value] = getattr(
                     state, var
                 )[state.alive]
-        else:  # sparse
+        elif self.layout == "sparse":
             count = len(state)  # Present number of particles
             start = self.local_instance_count
             end = start + count
@@ -255,7 +254,7 @@ class Output(BaseOutput):
             if self.layout == "dense":
                 self.nc.variables["lon"][self.local_record_count, :] = lon
                 self.nc.variables["lat"][self.local_record_count, :] = lat
-            else:
+            elif self.layout == "sparse":
                 self.nc.variables["lon"][start:end] = lon
                 self.nc.variables["lat"][start:end] = lat
 

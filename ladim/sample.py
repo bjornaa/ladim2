@@ -170,8 +170,8 @@ def sample2D(
     jmax, imax = F.shape
 
     # Broadcast X and Y
-    X0 = X + np.zeros_like(Z)
-    Y0 = Y + np.zeros_like(Z)
+    X0: ParticleArray = X + np.zeros_like(Z)
+    Y0: ParticleArray = Y + np.zeros_like(Z)
     # Find integer I, J such that
     # 0 <= I <= X < I+1 <= imax-1, 0 <= J <= Y < J+1 <= jmax-1
     # and local increments P and Q

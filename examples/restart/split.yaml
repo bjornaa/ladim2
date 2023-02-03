@@ -38,7 +38,7 @@ state:
 
 ibm:
     module: restart_ibm
-    lifetime: 2   # Life time of particles in day
+    lifetime: 0.5   # Life time of particles in day
 
 output:
     filename: split.nc

@@ -24,5 +24,6 @@ class IBM:
         self.state["weight"] += 0.01 * self.state.temp
 
         # Kill particles older than prescribed lifetime
-        self.state["alive"] &= self.state["age"] < self.lifetime
+        one_second = 1 / 86400  # Account for rounding errors
+        self.state["alive"] &= self.state["age"] < self.lifetime - one_second
 

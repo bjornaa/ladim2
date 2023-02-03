@@ -39,7 +39,7 @@ state:
 
 ibm:
     module: restart_ibm
-    lifetime: 2   # Life time of particles in days
+    lifetime: 0.5   # Life time of particles in days
 
 
 output:

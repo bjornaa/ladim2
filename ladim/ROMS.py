@@ -370,9 +370,9 @@ def sdepth(
         return R1
 
     if Vtransform == 2:  # New transform by Shchepetkin
-        N = Hc * S[:, None] + np.outer(C, H)
-        D = 1.0 + Hc / H
-        R2: Field = (N / D).reshape(outshape)
+        A = Hc * S[:, None] + np.outer(C, H)
+        B = 1.0 + Hc / H
+        R2: Field = (A / B).reshape(outshape)
         return R2
 
     # else:

@@ -6,7 +6,6 @@ import importlib
 import logging
 import types
 from typing import Any, Optional
-import numpy as np
 
 from ladim.state import State
 from ladim.grid import BaseGrid

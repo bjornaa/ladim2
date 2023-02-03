@@ -14,7 +14,7 @@ with compability wrapper for LADiM version 1 configuration
 import sys
 from pathlib import Path
 import logging
-from typing import Union, Literal, Any
+from typing import Union, Any
 
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
@@ -53,7 +53,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     try:
         with open(config_file, encoding="utf-8") as fid:
             config: dict[str, Any] = yaml.safe_load(fid)
-    except yaml.parser.ParserError as err:
+    except yaml.parser.ParserError as err:  # type: ignore
         logger.critical("Not a valid yaml file: %s", config_file)
         raise SystemExit(3) from err
 

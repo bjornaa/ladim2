@@ -21,7 +21,7 @@ from ladim.timekeeper import duration2iso
 def main(
     configuration_file: Union[Path, str],
     loglevel: int = logging.INFO,
-    config_version: Literal[1, 2] = 2,
+    # config_version: Literal[1, 2] = 2,
 ) -> None:
     """Main function for LADiM
 
@@ -90,6 +90,7 @@ def main(
     logger.info("Starting time loop")
     # for step in range(model.timer.Nsteps + 1):
     for step in range(model.timer.Nsteps):
+        print("==========", step)
         model.update()
 
     # --------------
