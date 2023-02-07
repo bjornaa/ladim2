@@ -90,7 +90,6 @@ def main(
     logger.info("Starting time loop")
     # for step in range(model.timer.Nsteps + 1):
     for step in range(model.timer.Nsteps):
-        print("==========", step)
         model.update()
 
     # --------------

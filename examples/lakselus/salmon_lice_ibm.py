@@ -1,12 +1,8 @@
 import numpy as np
 
+#from ladim.ibms import light
 from ladim.ibms import light
-
-# from ladim.ibm import BaseIBM
-# from ladim.timekeeper import TimeKeeper
-# from ladim.state import State
-# from ladim.forcing import BaseForce
-# from ladim.grid import BaseGrid
+#import ladim.ibms.light as light
 
 
 # class IBM(BaseIBM):
@@ -58,10 +54,8 @@ class IBM:
         state["super"] *= self.mortality_factor
 
         # Update forcing
-        # forcing.force_particles(state.X, state.Y, state.Z)
-        forcing.force_particles(state.X, state.Y)
-        state["temp"] = forcing.variables["temp"]
-        state["salt"] = forcing.variables["salt"]
+        # state["temp"] = forcing.variables["temp"]
+        # state["salt"] = forcing.variables["salt"]
 
         # Age in degree-days
         state["age"] += state.temp * self.dt / 86400

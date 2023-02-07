@@ -132,7 +132,7 @@ class Output(BaseOutput):
     def update(self) -> None:
         step = self.modules["time"].step
         if step % self.output_period_step == 0:
-            # logger.debug("Time for output")
+            logger.info("writing, time = %s",self.modules["time"].time)
             self.write(self.modules["state"])
 
     def create_netcdf(self) -> Dataset:

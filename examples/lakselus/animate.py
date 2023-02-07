@@ -11,8 +11,7 @@ from postladim import ParticleFile
 # Files
 particle_file = "out.nc"
 # grid_file = "/scratch/Data/NK800/file_0000.nc"
-grid_file = "/home/bjorn/data/NK800/file_0000.nc"
-
+grid_file = "/home/bjorn/nk800/norkyst_800m_his.nc4_2017033001-2017033100"
 # Subgrid definition
 i0, i1 = 340, 440
 j0, j1 = 490, 560

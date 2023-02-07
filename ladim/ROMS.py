@@ -581,7 +581,7 @@ class Forcing(BaseForce):
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logger.debug("Reading velocity for time step = %s", time_step)
+        logger.info("Reading velocity for time step = %s", time_step)
 
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file

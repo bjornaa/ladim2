@@ -1,6 +1,6 @@
 import datetime
 
-time_reversal = True
+time_reversal = False
 
 if time_reversal:
     release_file = "reverse.rls"

@@ -70,7 +70,7 @@ class Model:
         self.timer.update()
         step = self.timer.step
 
-        logger.info("step, model time: %4d %s", step, self.timer.time)
+        logger.debug("step, model time: %4d %s", step, self.timer.time)
 
         self.release.update()
         self.force.update()

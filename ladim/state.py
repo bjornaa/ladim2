@@ -215,8 +215,8 @@ class State(Sized):
         """Allow item style read access to variables"""
         value = np.array(item, dtype=self.dtypes[var])
         # The size of item should be unchanged
-        if np.size(value) != len(self.variables[var]):
-            raise KeyError("Size of data should be unchanged")
+        ###if np.size(value) != len(self.variables[var]):
+        ###    raise KeyError("Size of data should be unchanged")
         self.variables[var] = value
 
     def __getattr__(self, var: str) -> ParticleArray:

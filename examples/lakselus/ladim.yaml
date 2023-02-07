@@ -2,11 +2,11 @@ version: 2.0
 
 time:
     # Start and stop of simulation
-    start: 2015-03-30 13:00:00
+    start: 2017-03-30 01:00:00
     #stop      : 2015-04-10 23:00:00
-    stop: 2015-03-31 12:00:00
+    stop: 2017-03-31 23:00:00
     # reference_time is optional. default = start_time
-    reference: 2015-01-01
+    reference: 2017-01-01
     dt: [10, m]
 
 grid:
@@ -17,8 +17,8 @@ grid:
 forcing:
     module: ladim.ROMS
     #filename: /scratch/Data/NK800/file_*.nc
-    filename: /home/bjorn/data/NK800/file_*.nc
-    ibm_forcing: [temp, salt]
+    filename: /home/bjorn/nk800/norkyst*nc4*
+    extra_forcing: [temp, salt]
 
 state:
     instance_variables:
