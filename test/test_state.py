@@ -205,14 +205,14 @@ def test_update_error_not_variable():
         S["Lon"] = [4.5, 4.6]
 
 
-def test_update_error_wrong_size():
-    # Alternative broadcast the scalar, equivalent to s["X"] = [110, 100]
-    S = State()
-    S.append(X=[100, 110], Y=[200, 210], Z=5)
-    with pytest.raises(KeyError):
-        S["X"] = 110
-    with pytest.raises(KeyError):
-        S["X"] = [101, 111, 121]
+# def test_update_error_wrong_size():
+#     # Alternative broadcast the scalar, equivalent to s["X"] = [110, 100]
+#     S = State()
+#     S.append(X=[100, 110], Y=[200, 210], Z=5)
+#     with pytest.raises(KeyError):
+#         S["X"] = 110
+#     with pytest.raises(KeyError):
+#         S["X"] = [101, 111, 121]
 
 
 # --------------

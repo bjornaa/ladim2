@@ -2,6 +2,7 @@
 
 from collections.abc import Iterator
 from pathlib import Path
+import itertools
 import logging
 from typing import Optional, Union, Any
 
@@ -247,6 +248,8 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
     def discretize(self) -> None:
         """Make a continuous release sequence discrete"""
 
+        print("XXXX starter discretize")
+
         df = self._df
 
         # Find last release time <= start_time
@@ -279,14 +282,19 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
 
         # Reindex the index
         J = pd.Series(file_times, index=file_times).reindex(times, method="ffill")
-        num_entries_per_time = {i: mylen(df.loc[i]) for i in file_times}
-        df = df.loc[J]
+        num_entries_per_time = {i: mylen(df.loc[i]) for i in file_times}  # type: ignore
+        M = J.groupby(J).count().tolist()
+
+        L0 = (int(M[i]) * [df.loc[df.index == n]] for i, n in enumerate(file_times))
+        L = itertools.chain.from_iterable(L0)
+        L = list(L)
+        df = pd.concat(L)
 
         # Set non-unique index
         S: list[int] = []
         for t in times:
             S.extend(num_entries_per_time[J[t]] * [t])
-        df.index = S
+        df.index = S  # type: ignore
 
         self._df = df
 

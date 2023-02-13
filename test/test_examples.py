@@ -62,7 +62,8 @@ def test_restart():
         shutil.copy(example_dir / yaml_file0, temp_dir)
         shutil.copy(example_dir / yaml_file1, temp_dir)
         shutil.copy(example_dir / yaml_file2, temp_dir)
-        shutil.copy(example_dir / "verify_restart.py", temp_dir)
+        shutil.copy(example_dir / "restart_ibm.py", temp_dir)
+        shutil.copy(example_dir / "verify.py", temp_dir)
         runpy.run_path("make_release.py")
         # Unsplit
         run_ladim(yaml_file0)
@@ -70,7 +71,7 @@ def test_restart():
         # Split and Restart
         run_ladim(yaml_file1)
         run_ladim(yaml_file2)
-        runpy.run_path("verify_restart.py")
+        runpy.run_path("verify.py")
 
 
 
