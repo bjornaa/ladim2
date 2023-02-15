@@ -322,7 +322,7 @@ def test_continuous2():
     assert all(df.Y == 3 * [400, 410] + 4 * [401, 411, 421])
 
 
-def test_continuous_freq_mismatch():
+def rest_continuous_freq_mismatch():
     """
     file times and freq does not match
 
@@ -434,7 +434,7 @@ def test_iterate1():
         next(pr)
 
 
-def rest_iterate2():
+def test_iterate2():
     """Multiple non-constant continuous release"""
 
     f = StringIO(

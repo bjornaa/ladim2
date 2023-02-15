@@ -2,7 +2,6 @@
 
 from collections.abc import Iterator
 from pathlib import Path
-import itertools
 import logging
 from typing import Optional, Union, Any
 
@@ -49,13 +48,13 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         self.time_reversal = timer.time_reversal
 
         logger.info("Initializing the particle releaser")
+        logger.info("  Release file: %s", release_file)
 
         self._df = self.read_release_file(release_file, datatypes, names)
         if continuous:
             logger.info("  Continuous release")
         else:
             logger.info("  Discrete release")
-        logger.info("  Release file: %s", release_file)
 
         # If no mult column, add a column of ones
         if "mult" not in self._df.columns:
@@ -77,6 +76,10 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         # could use release_frequency == True (not None, > 0)
         if continuous:
             self.release_frequency = normalize_period(release_frequency)
+            logger.info(
+                "    Number of release times on file: %d", len(self._df.index.unique())
+            )
+            logger.info("    Release frequency %s", self.release_frequency)
             self.discretize()
 
         # Now discrete, remove everything before start
@@ -99,17 +102,6 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         # Add a release_time column if requested by the datatypes
         if "release_time" in datatypes.keys():
             self._df["release_time"] = self._df.index
-
-        # # Optionally, remove everything outside a subgrid
-        # try:
-        #     subgrid: list[int] = config["grid_args"]["subgrid"]
-        # except KeyError:
-        #     subgrid = []
-        # if subgrid:
-        #     lenA = len(A)
-        #     A = A[ingrid(A["X"], A["Y"], subgrid)]
-        #     if len(A) < lenA:
-        #         logger.warning("Ignoring particle release outside subgrid")
 
         if warm_start_file:
             # Get particle data from  warm start file
@@ -248,9 +240,13 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
     def discretize(self) -> None:
         """Make a continuous release sequence discrete"""
 
-        print("XXXX starter discretize")
+        # BÅ. 2023-02-15
+        # New algorithm: "unexplode", fill forward, explode
+        # Cleaner and substantial speed-up
 
         df = self._df
+        dtypes = df.dtypes
+        columns = df.columns
 
         # Find last release time <= start_time
         if not self.time_reversal:
@@ -262,9 +258,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             logger.warning("No particles released at simulation start")
             n = 1  # Use first release entry
         release_time0 = df.index[n - 1]
-        # if DEBUG:
-        #    print("release_time0 =", release_time0)
-        # Remove the early entries
+
         # NOTE: Makes a new DataFrame
         if not self.time_reversal:
             df = df[df.index >= release_time0]
@@ -279,24 +273,20 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             freq = -self.release_frequency
 
         times = np.arange(file_times[0], self.stop_time, np.timedelta64(freq, "s"))
+        T = pd.DataFrame(times, columns=["times"])
 
-        # Reindex the index
-        J = pd.Series(file_times, index=file_times).reindex(times, method="ffill")
-        num_entries_per_time = {i: mylen(df.loc[i]) for i in file_times}  # type: ignore
-        M = J.groupby(J).count().tolist()
+        # Unexplode (explode(B) reproduces df)
+        B = df.groupby(df.index).agg(lambda x: x.tolist())
 
-        L0 = (int(M[i]) * [df.loc[df.index == n]] for i, n in enumerate(file_times))
-        L = itertools.chain.from_iterable(L0)
-        L = list(L)
-        df = pd.concat(L)
+        # Insert full time axis and forward fill and explode
+        S = T.join(B, on="times").fillna(method="ffill").set_index("times")
+        S = S.explode(column=S.columns.tolist())
 
-        # Set non-unique index
-        S: list[int] = []
-        for t in times:
-            S.extend(num_entries_per_time[J[t]] * [t])
-        df.index = S  # type: ignore
+        # Reset dtypes
+        for c, t in zip(columns, dtypes):
+            S[c] = S[c].astype(t)
 
-        self._df = df
+        self._df = S
 
 
 def mylen(df: pd.DataFrame) -> int:
