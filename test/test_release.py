@@ -7,8 +7,6 @@ import pytest
 from ladim.release import ParticleReleaser
 from ladim.timekeeper import TimeKeeper
 
-# from ladim.state import State
-
 
 class Dummy:
     def __init__(self, **kwargs):
@@ -278,7 +276,7 @@ def test_continuous0():
     assert pr.steps[0] == 0
     assert pr.steps[1] == 12 * 4
     assert df.index[0] == timer.start_time
-    assert timer.stop_time - freq <= df.index[-1] < timer.stop_time
+    assert timer.stop_time - freq <= df.index[-1] < timer.stop_time  # type: ignore
 
 
 def test_continuous1():
@@ -322,22 +320,26 @@ def test_continuous2():
     assert all(df.Y == 3 * [400, 410] + 4 * [401, 411, 421])
 
 
-def rest_continuous_freq_mismatch():
+def test_continuous_freq_mismatch():
     """
-    file times and freq does not match
+    File times and freq does not match
 
-    File time is not on a release time,
-    new info is used at first release step after file time
+    If file time is not on a release time,
+    the entry in the release file is silently ignored
 
-    in example below, the response is the same as if
-    the second time was 2015-04-02T12
+    Might be better to issue a warning.
+
+    In the test below, the 2nd and 3rd lines are ignored
+
     """
 
     f = StringIO(
         """
     release_time      X     Y    Z
-    2015-03-01      100   400    5
-    2015-04-02T06   106   406    5
+    2015-03-01      100   400    0
+    2015-04-01T06   200   500    1
+    2015-04-01T18   300   600    2
+    2015-04-02T12   400   700    3
     """
     )
 
@@ -347,44 +349,7 @@ def rest_continuous_freq_mismatch():
     assert len(pr.steps) == 7
     assert all(pr.steps == 48 * np.arange(7))
     assert df.index[3] == timer.start_time + 3 * freq
-    assert all(df.X == 4 * [100] + 3 * [106])
-
-
-# Multiple releases between release times
-# Ignoring all but last
-# Is this best behaviour
-# Alternative: All releases between are released
-#    at release time.
-# Advantage: Number of particles become correct
-# Alternative: Raise an error (or warning)
-#    user responsibility to match up release times.
-
-# 2022-02-13  Does not work properly
-
-def rest_continuous_freq_mismatch2():
-    """
-    file times and freq does not match
-
-    Two releases between release times,
-    First is ignored, last work from release time
-
-    Example below, same result as if second line removed
-    """
-
-    f = StringIO(
-        """
-    release_time      X     Y    Z
-    2015-03-01      100   400    5
-    2015-04-02T05   105   405    5
-    2015-04-02T06   106   406    5
-    """
-    )
-
-    freq = np.timedelta64(12, "h")
-    pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
-    df = pr._df
-    assert len(pr._df) == 7
-    assert all(df.X == 4 * [100] + 3 * [106])
+    assert all(df.X == 4 * [100] + 3 * [400])
 
 
 def test_release_time_column():
@@ -401,7 +366,7 @@ def test_release_time_column():
     freq = np.timedelta64(12, "h")
     datatypes = dict(datatypes0, super=int, release_time=np.dtype("M8[s]"))
     modules = modules0.copy()
-    modules['state'] = Dummy(dtypes=datatypes)
+    modules["state"] = Dummy(dtypes=datatypes)
     pr = ParticleReleaser(modules, f, timer=timer)
     A = pr._df
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")

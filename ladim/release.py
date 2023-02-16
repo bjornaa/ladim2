@@ -248,22 +248,22 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         dtypes = df.dtypes
         columns = df.columns
 
-        # Find last release time <= start_time
-        if not self.time_reversal:
-            n = np.sum(df.index <= self.start_time)
-        else:
-            n = np.sum(df.index >= self.start_time)
+        # # Find last release time <= start_time
+        # if not self.time_reversal:
+        #     n = np.sum(df.index <= self.start_time)
+        # else:
+        #     n = np.sum(df.index >= self.start_time)
 
-        if n == 0:
-            logger.warning("No particles released at simulation start")
-            n = 1  # Use first release entry
-        release_time0 = df.index[n - 1]
+        # if n == 0:
+        #     logger.warning("No particles released at simulation start")
+        #     n = 1  # Use first release entry
+        # release_time0 = df.index[n - 1]
 
-        # NOTE: Makes a new DataFrame
-        if not self.time_reversal:
-            df = df[df.index >= release_time0]
-        else:
-            df = df[df.index <= release_time0]
+        # # NOTE: Makes a new DataFrame
+        # if not self.time_reversal:
+        #     df = df[df.index >= release_time0]
+        # else:
+        #     df = df[df.index <= release_time0]
 
         file_times = df.index.unique()
 
