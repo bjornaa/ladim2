@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from netCDF4 import Dataset
+
 # from postladim import ParticleFile
 
 # ---------------
@@ -56,8 +57,10 @@ ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.3)
 # Plot initial particle distribution
 X = pf.variables["X"][0, :]
 Y = pf.variables["Y"][0, :]
-particle_dist, = ax.plot(X, Y, ".", color="red", markeredgewidth=0, markersize=20)
-timestamp = ax.text(0.01, 0.95, pf.variables["time"][0], fontsize=15, transform=ax.transAxes)
+(particle_dist,) = ax.plot(X, Y, ".", color="red", markeredgewidth=0, markersize=20)
+timestamp = ax.text(
+    0.01, 0.95, pf.variables["time"][0], fontsize=15, transform=ax.transAxes
+)
 
 
 # Update function

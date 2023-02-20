@@ -17,8 +17,6 @@ class Output:
         particle_variables=None,
         **args,
     ):
-
-
         if instance_variables is None:
             particle_variables = dict()
         if particle_variables is None:
@@ -43,7 +41,6 @@ class Output:
         self.ncid = self._create_netcdf(filename)
 
     def write(self, step):
-
         state = self.state
         count = len(state)  # Present number of particles
         start = self.instance_count
@@ -73,7 +70,6 @@ class Output:
         self.ncid.close()
 
     def _create_netcdf(self, filename):
-
         ncid = Dataset(filename, mode="w", format="NETCDF3_64BIT")
 
         ncid.createDimension("time", self.num_records)
@@ -93,7 +89,6 @@ class Output:
         v = ncid.createVariable("particle_count", "i", ("time",))
         v.long_name = "number of particles in a given timestep"
         v.ragged_row_count = "particle count at nth timestep"
-
 
         # Define output instance variables
         for var, ncatts in self.instance_variables.items():

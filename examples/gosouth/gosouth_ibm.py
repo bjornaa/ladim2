@@ -19,9 +19,9 @@ class IBM:
         direction: float,  # clockwise degree from North
         speed: float,  # swimming speed [m/s]
     ):
-        self.dt = modules['time'].dtsec
-        self.state = modules['state']
-        self.grid = modules['grid']
+        self.dt = modules["time"].dtsec
+        self.state = modules["state"]
+        self.grid = modules["grid"]
 
         # Compute swimming velocity in grid coordinates
         azimuth = direction * np.pi / 180
@@ -30,7 +30,6 @@ class IBM:
         self.Ys = speed * np.cos(azimuth + angle)
 
     def update(self) -> None:
-
         state = self.state
         grid = self.grid
 

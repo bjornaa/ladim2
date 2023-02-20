@@ -59,13 +59,13 @@ def test_set_default_err1():
 def test_set_default_err2():
     """Trying to set default for pid"""
     with pytest.raises(ValueError):
-        S = State(default_values=dict(pid=42))
+        State(default_values=dict(pid=42))
 
 
 def test_set_default_err3():
     """Trying to set an array as default value"""
     with pytest.raises(TypeError):
-        S = State(
+        State(
             instance_variables=dict(length=float),
             default_values=dict(length=[1.2, 4.3]),
         )

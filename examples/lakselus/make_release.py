@@ -23,7 +23,7 @@ X2, Y2, farmid2, super2 = 381, 523, 10444, 32028.0
 with open(release_file, mode="w") as f:
     f.write("mult         release_time      X      Y     Z   farmid   super\n")
     for i in range(nrelease):
-        time_ = start + i * sgn* release_period
+        time_ = start + i * sgn * release_period
         f.write(
             f"{mult:4d}  {time_.isoformat()} {X1:6.1f} {Y1:6.1f} "
             f"  5.0   {farmid1:5d} {super1:7.1f}\n"

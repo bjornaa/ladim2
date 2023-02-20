@@ -68,7 +68,7 @@ boundary = np.vstack((north[:, :2], south[:, :2]))
 ax.set_boundary(Path(boundary), transform=proj)
 
 # Plot the coast
-ax.add_feature(coast, facecolor="Khaki", edgecolor='Black')
+ax.add_feature(coast, facecolor="Khaki", edgecolor="Black")
 
 # Add graticule
 ax.gridlines(xlocs=range(lon0, lon1 + 2, 2), ylocs=range(lat0, lat1 + 1))

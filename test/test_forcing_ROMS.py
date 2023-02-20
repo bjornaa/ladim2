@@ -28,7 +28,6 @@ def nc_files():
 
 
 def test_find_files(nc_files):
-
     # Test single file
     files = force.find_files("file_005.nc")
     assert files == [Path("file_005.nc")]
@@ -54,7 +53,6 @@ def test_find_files(nc_files):
 
 
 def test_scan_file_times(nc_files):
-
     # Everything is OK
     files = force.find_files("file_*.nc")
     all_frames, num_frames = force.scan_file_times(files)

@@ -271,7 +271,6 @@ def bilin_inv(
     y = np.zeros_like(f) + 0.5 * jmax
 
     for t in range(maxiter):
-
         i = x.astype("i")
         j = y.astype("i")
         p, q = x - i, y - j

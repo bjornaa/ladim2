@@ -65,7 +65,6 @@ class Grid(BaseGrid):
         Vinfo=None,
         **args,
     ) -> None:
-
         logger.info("Initiating grid")
 
         # logging.info("Initializing ROMS-type grid object")
@@ -353,7 +352,6 @@ class Forcing(BaseForce):
         pad: int = 30,
         extra_forcing: Optional[List[str]] = None,
     ) -> None:
-
         logger.info("Initiating forcing")
         super().__init__(modules)
         self.grid = modules["grid"]  # Get the grid object.
@@ -602,7 +600,6 @@ class Forcing(BaseForce):
     # ==============================================
 
     def open_forcing_file(self, time_step: int) -> None:
-
         """Open forcing file and get scaling info given time step"""
 
         logger.info(f"Open forcing file: {self.file_idx[time_step]}")
@@ -737,7 +734,6 @@ class Forcing(BaseForce):
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> Tuple[np.ndarray, np.ndarray]:
-
         i0 = self.i0
         j0 = self.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)

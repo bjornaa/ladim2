@@ -15,6 +15,7 @@ if cwd.stem == "test":
     filename = cwd.parent / filename
 pytestmark = pytest.mark.skipif(not filename.exists(), reason="Missing data file")
 
+
 class Dummy:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -22,6 +23,7 @@ class Dummy:
 
     def __setitem__(self, var, value):
         pass
+
 
 @pytest.fixture(scope="module")
 def setup():
@@ -52,7 +54,7 @@ def test_prestep0(setup):
     timer = TimeKeeper(start="1989-05-24T12", stop="1989-05-30T15", dt=3600)
     grid = ROMS2.Grid(filename)
     state = Dummy(X=X, Y=Y, Z=Z)
-    
+
     modules = dict(grid=grid, time=timer, state=state)
     force = ROMS2.Forcing(modules, filename, pad=10, extra_forcing=["temp"])
 

@@ -9,7 +9,7 @@ import shutil
 import contextlib
 from pathlib import Path
 from ladim.main import main
-import yaml   # type: ignore
+import yaml  # type: ignore
 import numpy as np
 
 
@@ -31,7 +31,7 @@ class Test_output_when_different_scenarios:
                 "pid",
             }
 
-            #assert result.X.values.tolist() == [2, 2, 2]
+            # assert result.X.values.tolist() == [2, 2, 2]
             assert result.X.values.tolist() == [2, 2]
 
     def test_multiple_release_times(self):
@@ -48,7 +48,7 @@ class Test_output_when_different_scenarios:
             assert (
                 (result.release_time.values - result.release_time.values[0])
                 / np.timedelta64(1, "s")
-            # ).tolist() == [0, 60, 120]
+                # ).tolist() == [0, 60, 120]
             ).tolist() == [0, 60]
 
     def test_multiple_initial_particles(self):
@@ -93,7 +93,7 @@ class Test_output_when_different_scenarios:
         conf["tracker"]["vertical_advection"] = "EF"
         conf["forcing"]["extra_forcing"] = ["w"]
         conf["state"]["instance_variables"]["w"] = "float"
-        
+
         with runladim(conf, gf, rls) as result:
             assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
             assert result.Z.values.tolist() == [
@@ -213,7 +213,10 @@ def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
             v=zerofunc(t, s, y_v, x_v) + vfunc(t, s, y_v, x_v),
             w=zerofunc(t, s_w, y, x) + wfunc(t, s_w, y, x),
         ),
-        coords=dict(lon_rho=(x * 1 + y * 0), lat_rho=(x * 0 + y * 1),),
+        coords=dict(
+            lon_rho=(x * 1 + y * 0),
+            lat_rho=(x * 0 + y * 1),
+        ),
     )
 
 
@@ -240,16 +243,31 @@ def make_conf() -> dict:
 
     return dict(
         version=2,
-        time=dict(dt=[30, "s"], start="2000-01-02T03", stop="2000-01-02T03:02",),
-        grid=dict(module="ladim.ROMS",),
-        forcing=dict(module="ladim.ROMS",),
+        time=dict(
+            dt=[30, "s"],
+            start="2000-01-02T03",
+            stop="2000-01-02T03:02",
+        ),
+        grid=dict(
+            module="ladim.ROMS",
+        ),
+        forcing=dict(
+            module="ladim.ROMS",
+        ),
         release=dict(),
         state=dict(
-            particle_variables=dict(release_time="time", weight="float",),
+            particle_variables=dict(
+                release_time="time",
+                weight="float",
+            ),
             instance_variables=dict(age="float"),
             default_values=dict(weight=0, age=0),
         ),
-        tracker=dict(advection="EF", diffusion=0.0, vertdiff=0.0,),
+        tracker=dict(
+            advection="EF",
+            diffusion=0.0,
+            vertdiff=0.0,
+        ),
         output=dict(
             output_period=[60, "s"],
             particle_variables=dict(
@@ -264,15 +282,21 @@ def make_conf() -> dict:
             instance_variables=dict(
                 pid=dict(
                     encoding=dict(datatype="i4"),
-                    attributes=dict(long_name="particle identifier",),
+                    attributes=dict(
+                        long_name="particle identifier",
+                    ),
                 ),
                 X=dict(
                     encoding=dict(datatype="f4"),
-                    attributes=dict(long_name="particle X-coordinate",),
+                    attributes=dict(
+                        long_name="particle X-coordinate",
+                    ),
                 ),
                 Y=dict(
                     encoding=dict(datatype="f4"),
-                    attributes=dict(long_name="particle Y-coordinate",),
+                    attributes=dict(
+                        long_name="particle Y-coordinate",
+                    ),
                 ),
                 Z=dict(
                     encoding=dict(datatype="f4"),

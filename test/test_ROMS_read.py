@@ -55,7 +55,10 @@ def test_prestep0(setup):
     X, Y, Z, subgrid, U_dir, temp_dir = setup
 
     timer = TimeKeeper(start="1989-05-24T12", stop="1989-05-30T15", dt=3600)
-    grid = ROMS.Grid(filename, subgrid=subgrid,)
+    grid = ROMS.Grid(
+        filename,
+        subgrid=subgrid,
+    )
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
     force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])
@@ -81,7 +84,10 @@ def test_midstep(setup):
     X, Y, Z, subgrid, U_dir, temp_dir = setup
 
     timer = TimeKeeper(start="1989-05-26T00", stop="1989-05-30T15", dt=3600)
-    grid = ROMS.Grid(filename, subgrid=subgrid,)
+    grid = ROMS.Grid(
+        filename,
+        subgrid=subgrid,
+    )
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
     force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])
@@ -110,7 +116,10 @@ def test_start_second(setup):
     X, Y, Z, subgrid, U_dir, temp_dir = setup
 
     timer = TimeKeeper(start="1989-05-27T12", stop="1989-05-30T15", dt=3600)
-    grid = ROMS.Grid(filename, subgrid=subgrid,)
+    grid = ROMS.Grid(
+        filename,
+        subgrid=subgrid,
+    )
     state = Dummy(X=X, Y=Y, Z=Z)
     modules = dict(grid=grid, time=timer, state=state)
     force = ROMS.Forcing(modules, filename, extra_forcing=["temp"])

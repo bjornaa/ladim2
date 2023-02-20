@@ -44,8 +44,10 @@ with Dataset(grid_file) as nc:
     lon_grid = nc.variables["lon_rho"][:, :]
     lat_grid = nc.variables["lat_rho"][:, :]
 
+
 def time(t):
-    return np.datetime64(pf.time[t].values, 'h')
+    return np.datetime64(pf.time[t].values, "h")
+
 
 # Make background map
 

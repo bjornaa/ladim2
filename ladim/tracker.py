@@ -42,7 +42,6 @@ class Tracker:
         modules: dict[str, Any]
         # modules: Optional[dict[str, Any]] = None,
     ) -> None:
-
         logger.info("Initiating the particle tracker")
         self.modules = modules
         self.dt = modules["time"].dt / np.timedelta64(1, "s")
@@ -170,7 +169,6 @@ class Tracker:
     def RK2(
         self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, force: BaseForce
     ) -> Velocity:
-
         """Runge-Kutta second order = Heun scheme
 
         This version does not sample velocities outside the grid
@@ -245,7 +243,6 @@ def RKstep0(
     dtdx: ParticleArray,
     dtdy: ParticleArray,
 ) -> tuple[ParticleArray, ParticleArray]:
-
     Xp = X + frac * U * dtdx
     Yp = Y + frac * V * dtdy
     return Xp, Yp

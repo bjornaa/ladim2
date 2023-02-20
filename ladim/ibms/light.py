@@ -40,7 +40,7 @@ def surface_light(dtime, lon, lat):
     a2 = 1.9171 * RAD
     a3 = 0.98112
     sindelta = a0 * sin(a1 * (yday - 80) + a2 * (sin(a1 * yday) - a3))
-    cosdelta = (1 - sindelta ** 2) ** 0.5
+    cosdelta = (1 - sindelta**2) ** 0.5
 
     # True Sun Time [degrees](=0 with sun in North, 15 deg/hour
     # b0 = 0.4083
@@ -86,7 +86,6 @@ def surface_light(dtime, lon, lat):
 
 
 if __name__ == "__main__":
-
     dtime = np.datetime64("2014-06-23 12")
     lon, lat = 0, 60
     print(surface_light(dtime, lon, lat))

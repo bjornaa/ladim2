@@ -97,7 +97,7 @@ def test_hc_is_h_Vtransform2():
     Hc = H
     N = 10
     S = -1.0 + (0.5 + np.arange(N)) / N
-    C = S ** 3
+    C = S**3
     Z = sdepth(H, Hc, C, Vtransform=2)
     assert np.allclose(Z, 0.5 * H * (S + C))
 
@@ -108,7 +108,7 @@ def test_shape_Vtransform2():
     Hc = 10.0
     N = 10
     S = -1.0 + (0.5 + np.arange(N)) / N
-    C = S ** 3
+    C = S**3
     Z = sdepth(H, Hc, C, Vtransform=2)
     Mp, Lp = H.shape
     assert Z.shape == (N, Mp, Lp)

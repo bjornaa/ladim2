@@ -27,7 +27,6 @@ for name in module_names:
 # Time stepping
 Nsteps = modules["time"].Nsteps
 for step in range(Nsteps + 1):
-
     if step > 0:
         modules["time"].update()
     modules["release"].update()

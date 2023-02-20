@@ -408,7 +408,6 @@ class Forcing(BaseForce):
         filename: Union[Path, str],
         extra_forcing: Optional[list[str]] = None,
     ) -> None:
-
         logger.info("Initiating forcing")
         super().__init__(modules)
         timer = modules["time"]
@@ -552,7 +551,6 @@ class Forcing(BaseForce):
     # ==============================================
 
     def open_forcing_file(self, time_step: int) -> None:
-
         """Open forcing file and get scaling info given time step"""
 
         logger.debug("Open forcing file: %s", self.file_idx[time_step])
@@ -671,7 +669,6 @@ class Forcing(BaseForce):
         fractional_step: float = 0,
         method: str = "bilinear",
     ) -> tuple[ParticleArray, ParticleArray]:
-
         # if DEBUG:
         #    print("interpolating velocity")
 

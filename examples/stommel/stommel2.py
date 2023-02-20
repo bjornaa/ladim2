@@ -7,7 +7,6 @@ from ladim.tracker import Tracker
 
 
 def main():
-
     # --- Simulation ---
     Nsteps = 1736
 
@@ -64,16 +63,16 @@ class Forcing:
         lambda_ = grid.lambda_
         D = grid.D
 
-        r = 1.0e-6              # Bottom friction coefficient          [s-1]
-        beta = 1.0e-11          # Coriolis derivative                  [m-1 s-1]
-        alfa = beta / r                                              # [m-1]
-        F = 0.1                 # Wind stress amplitude                [N m-2]
-        rho = 1025.0            # Density                              [kg/m3]
-        gamma = F * pi / (r * b)                                     # [kg m2 s-1]
-        G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2              # [m2 s-1]
+        r = 1.0e-6  # Bottom friction coefficient          [s-1]
+        beta = 1.0e-11  # Coriolis derivative                  [m-1 s-1]
+        alfa = beta / r  # [m-1]
+        F = 0.1  # Wind stress amplitude                [N m-2]
+        rho = 1025.0  # Density                              [kg/m3]
+        gamma = F * pi / (r * b)  # [kg m2 s-1]
+        G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  # [m2 s-1]
 
-        A = -0.5 * alfa + np.sqrt(0.25 * alfa ** 2 + (pi / b) ** 2)  # [m-1]
-        B = -0.5 * alfa - np.sqrt(0.25 * alfa ** 2 + (pi / b) ** 2)  # [m-1]
+        A = -0.5 * alfa + np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
+        B = -0.5 * alfa - np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
         p = (1.0 - exp(B * lambda_)) / (exp(A * lambda_) - exp(B * lambda_))
         q = 1 - p
 
@@ -82,7 +81,6 @@ class Forcing:
             setattr(self, v, locals()[v])
 
     def velocity(self, X, Y, Z):
-
         # Unselfify: self.v -> v
         b, A, B, G, p, q = [getattr(self, v) for v in "b A B G p q".split()]
 
@@ -119,7 +117,6 @@ def initial_release(grid):
 
 
 def plot_particles(state, X0, Y0, forcing):
-
     # Discetize and contour the streamfunction
     km = 1000
     imax, jmax = 101, 64

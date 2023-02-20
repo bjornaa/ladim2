@@ -13,7 +13,6 @@ nsteps: int = 2000
 
 
 def main():
-
     state = State()
 
     # Initialize

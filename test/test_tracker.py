@@ -30,7 +30,7 @@ class Grid:
 
 class Timer:
     def __init__(self):
-        self.dt = np.timedelta64(10, 'm')
+        self.dt = np.timedelta64(10, "m")
 
 
 class Forcing:

@@ -145,7 +145,6 @@ def test_date_error():
 
 
 def test_normalize_period():
-
     assert normalize_period(1800) == np.timedelta64(30, "m")
     assert normalize_period(np.timedelta64(300, "s")) == np.timedelta64(5, "m")
     assert normalize_period(datetime.timedelta(seconds=60)) == np.timedelta64(1, "m")

@@ -7,7 +7,7 @@ from pathlib import Path
 import logging
 import datetime
 import argparse
-from typing import Union, Literal
+from typing import Union
 
 
 from ladim import __version__, __file__

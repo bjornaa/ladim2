@@ -1,4 +1,5 @@
 from pathlib import Path
+
 # import numpy as np
 from netCDF4 import Dataset
 import pytest
@@ -25,7 +26,7 @@ def test_ok():
 def test_nofile():
     """Capture wrong file name"""
     with pytest.raises(SystemExit):
-        g = Grid(filename="does_not_exist.nc")
+        Grid(filename="does_not_exist.nc")
 
 
 def test_subgrid():
@@ -47,6 +48,6 @@ def test_subgrid():
 def test_subgrid_error():
     """Capture errors in the subgrid specification"""
     with pytest.raises(SystemExit):  # j0 outside grid
-        g = Grid(filename=grid_file, subgrid=(20, 150, 30, 222))
+        Grid(filename=grid_file, subgrid=(20, 150, 30, 222))
     with pytest.raises(SystemExit):  # i0 > i1, i0
-        g = Grid(filename=grid_file, subgrid=(50, 20, 30, 170))
+        Grid(filename=grid_file, subgrid=(50, 20, 30, 170))

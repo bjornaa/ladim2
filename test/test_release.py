@@ -43,7 +43,6 @@ def test_read_release():
 
 
 def test_read_release_no_header():
-
     f = StringIO(
         """
         2    2015-04-01     100 200   5
@@ -61,7 +60,6 @@ def test_read_release_no_header():
 
 
 def test_read_release_no_header_no_names():
-
     f = StringIO(
         """
         2    2015-04-01     100 200   5
@@ -363,7 +361,6 @@ def test_release_time_column():
         "2015-04-03 12" 200  300.0  5    3333
     """
     )
-    freq = np.timedelta64(12, "h")
     datatypes = dict(datatypes0, super=int, release_time=np.dtype("M8[s]"))
     modules = modules0.copy()
     modules["state"] = Dummy(dtypes=datatypes)

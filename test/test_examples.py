@@ -74,8 +74,6 @@ def test_restart():
         runpy.run_path("verify.py")
 
 
-
-
 def test_gosouth():
     name = "gosouth"
     example_dir = EXAMPLE_DIR / name
@@ -144,6 +142,7 @@ def test_line():
         # Dense output test
         run_ladim(yaml_file2)
         verify_output(yaml_file2)
+
 
 # ----------------------------------------------------
 

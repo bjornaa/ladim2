@@ -1,22 +1,23 @@
 import numpy as np
 
-#from ladim.ibms import light
+# from ladim.ibms import light
 from ladim.ibms import light
-#import ladim.ibms.light as light
+
+# import ladim.ibms.light as light
 
 
 # class IBM(BaseIBM):
 class IBM:
-    #def __init__(self, modules, **kwargs):
+    # def __init__(self, modules, **kwargs):
     def __init__(self, modules, vertical_mixing=0, salinity_model="new"):
-    #     self,
-    #     timer: TimeKeeper,
-    #     state: State,
-    #     forcing: BaseForce,
-    #     grid: BaseGrid,
-    #     vertical_mixing: float = 0,
-    #     salinity_model: str = "new",
-    # ):
+        #     self,
+        #     timer: TimeKeeper,
+        #     state: State,
+        #     forcing: BaseForce,
+        #     grid: BaseGrid,
+        #     vertical_mixing: float = 0,
+        #     salinity_model: str = "new",
+        # ):
 
         # Modules
         self.timer = modules["time"]
@@ -39,14 +40,14 @@ class IBM:
         self.swim_vel = 5e-4  # m/s
         self.vertical_diffusion = self.vertical_mixing > 0
 
-        self.dt = self.timer.dt / np.timedelta64(1, 'D')  # Timestep in days
+        self.dt = self.timer.dt / np.timedelta64(1, "D")  # Timestep in days
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
         # salinity_model = config["ibm"].get('salinity_model', 'new')
         # self.new_salinity_model = (salinity_model == 'new')
         #
-    def update(self):
 
+    def update(self):
         state = self.state
         forcing = self.forcing
 

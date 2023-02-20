@@ -39,7 +39,6 @@ class Output(BaseOutput):
         skip_initial: Optional[bool] = False,
         global_attributes: Optional[dict[str, Any]] = None,
     ) -> None:
-
         logger.info("Initializing output")
         super().__init__(modules)
         timer = modules["time"]
@@ -132,7 +131,7 @@ class Output(BaseOutput):
     def update(self) -> None:
         step = self.modules["time"].step
         if step % self.output_period_step == 0:
-            logger.info("writing, time = %s",self.modules["time"].time)
+            logger.info("writing, time = %s", self.modules["time"].time)
             self.write(self.modules["state"])
 
     def create_netcdf(self) -> Dataset:

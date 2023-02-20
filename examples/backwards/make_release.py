@@ -6,8 +6,8 @@ from postladim import ParticleFile
 # --- Settings ---
 
 pfile = "../line/out.nc"
-record_nr = 200       # 25 days
-sigma = 0.0          # standard deviation of perturbation (grid units)
+record_nr = 200  # 25 days
+sigma = 0.0  # standard deviation of perturbation (grid units)
 rls_file = "backwards.rls"
 
 # --- Read the particle file ---

@@ -88,7 +88,6 @@ state.append(X=X0, Y=Y0, Z=Z0)
 # ----------------
 
 for step in range(timer.Nsteps + 1):
-
     if step > 0:
         timer.update()
 

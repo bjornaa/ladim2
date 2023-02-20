@@ -76,7 +76,6 @@ def get_velocity4(
     sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
     dt: int,
 ) -> Velocity:
-
     """4th order Runge Kutta velocity sampling
 
     Args:

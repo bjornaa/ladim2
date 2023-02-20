@@ -19,5 +19,5 @@ lats = np.linspace(lat0, lat1, Npart)
 
 # Write the release file
 with open("latlon.rls", mode="w") as f:
-    for (lon, lat) in zip(lons, lats):
+    for lon, lat in zip(lons, lats):
         f.write(f"1989-05-24T12 {lon:8.5f} {lat:8.5f} {Z:4.1f}\n")

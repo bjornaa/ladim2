@@ -28,13 +28,9 @@ coast_file = "coast_grid.npy"
 grid = Grid(grid_file)
 
 with Dataset(grid_file) as nc:
-    glon = nc.variables["lon_rho"][:,:]
-    glat = nc.variables["lat_rho"][:,:]
+    glon = nc.variables["lon_rho"][:, :]
+    glat = nc.variables["lat_rho"][:, :]
 jmax, imax = glon.shape
-
-
-
-
 
 
 # Boundary (grid coordinates)
@@ -44,7 +40,7 @@ xmin, xmax = grid.xmin + eps, grid.xmax - eps
 ymin, ymax = grid.ymin + eps, grid.ymax - eps
 xbd = np.concatenate(
     (
-        np.linspace(xmin, xmax, res), 
+        np.linspace(xmin, xmax, res),
         res * [xmax],
         np.linspace(xmax, xmin, res),
         res * [xmin],
@@ -117,7 +113,6 @@ with open(coast_file, "wb") as f:
     np.save(f, Ycoast)
 
 
-# # Save to WKB file 
+# # Save to WKB file
 # with open(fname, mode="wb") as fp:
 #     wkb.dump(coast, fp, output_dimension=2)
-

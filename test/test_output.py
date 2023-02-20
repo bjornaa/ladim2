@@ -3,6 +3,7 @@ import subprocess
 
 import numpy as np
 from netCDF4 import Dataset
+
 # import pytest
 
 from ladim.state import State
@@ -121,13 +122,16 @@ def test_reference_time():
     """Explicit reference time"""
 
     timer = TimeKeeper(
-        start="2020-01-01 12", stop="2020-01-03 12", reference="2000-01-01", dt=1800,
+        start="2020-01-01 12",
+        stop="2020-01-03 12",
+        reference="2000-01-01",
+        dt=1800,
     )
     timer.update()  # Update to time zero = start
     state = State()
     config = config0.copy()
-    config['modules'] = config['modules'].copy()
-    config['modules']['time'] = timer
+    config["modules"] = config["modules"].copy()
+    config["modules"]["time"] = timer
     out = Output(**config)
     state.append(X=100, Y=10, Z=5)
     out.write(state)

@@ -36,7 +36,7 @@ with Dataset(grid_file) as nc:
     M = nc.variables["mask_rho"][j0:j1, i0:i1]
     lon = nc.variables["lon_rho"][j0:j1, i0:i1]
     lat = nc.variables["lat_rho"][j0:j1, i0:i1]
-M[M > 0] = np.nan   # Mask out sea cells
+M[M > 0] = np.nan  # Mask out sea cells
 
 # particle_file
 pf = ParticleFile(particle_file)

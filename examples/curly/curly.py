@@ -24,7 +24,6 @@ class Curly:
         num_steps: int = 50,
         density: Optional[int] = None,
     ):
-
         # Define grid
         grid = ladim.ROMS.Grid(filename=data_file, subgrid=subgrid)
         self.grid = grid
@@ -111,7 +110,13 @@ def zslice(
     Z = np.zeros_like(Xc) + Z  # Make a 1D array
     K, A = ladim.ROMS.z2s(grid.z_r, Xc - grid.i0, Yc - grid.j0, Z)
     U2D, V2D = ladim.ROMS.sample3DUV(
-        U3D, V3D, Xc - i0, Yc - j0, K, A, method="bilinear",
+        U3D,
+        V3D,
+        Xc - i0,
+        Yc - j0,
+        K,
+        A,
+        method="bilinear",
     )
     return U2D.reshape(j1 - j0, i1 - i0), V2D.reshape(j1 - j0, i1 - i0)
 
@@ -146,7 +151,6 @@ class FixedTimeKeeper:
 
 
 if __name__ == "__main__":
-
     # --------------
     # Settings
     # --------------

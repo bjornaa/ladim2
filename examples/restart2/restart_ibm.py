@@ -7,7 +7,6 @@ class IBM:
     """Minimal IBM for the killer example"""
 
     def __init__(self, modules, **kwargs) -> None:
-
         print("Initializing IBM: restart_ibm")
         self.state = modules["state"]
         self.forcing = modules["forcing"]
@@ -16,7 +15,6 @@ class IBM:
         self.lifetime = kwargs["lifetime"]
 
     def update(self) -> None:
-
         # Update the particle age
         self.state["age"] += self.dt
 
@@ -25,4 +23,3 @@ class IBM:
 
         # Kill particles older than prescribed lifetime
         self.state["alive"] &= self.state["age"] < self.lifetime
-
