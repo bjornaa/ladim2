@@ -13,6 +13,9 @@ This can be run in several ways, with varying degrees of control.
 Uses configuration in ladim.yaml and release file line.rls and runs the LADiM
 application. Use python make_release.py with version != 1 to make line.rls
 
+1b) ladim line.toml
+Uses configuration in TOML format instead of YAML. Otherwise identical to 1)
+
 2) ladim ladim1.yaml
 
 Uses version 1 configuration file ladim1.yaml. Also old-style release file

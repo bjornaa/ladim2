@@ -19,6 +19,7 @@ from typing import Union, Any
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
 import yaml  # type: ignore
+import tomli
 
 
 DEBUG = False
@@ -46,16 +47,32 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     logger.info("Configuration")
     logger.info("  Configuration file %s:", config_file)
 
-    if not Path(config_file).exists():
-        logger.critical("No configuration file %s:", config_file)
+    confile = Path(config_file)
+
+    if not confile.exists():
+        logger.critical("No configuration file %s:", confile)
         raise SystemExit(3)
 
-    try:
-        with open(config_file, encoding="utf-8") as fid:
-            config: dict[str, Any] = yaml.safe_load(fid)
-    except yaml.parser.ParserError as err:  # type: ignore
-        logger.critical("Not a valid yaml file: %s", config_file)
-        raise SystemExit(3) from err
+    format = confile.suffix[1:]  # remove "dot"
+
+    if format == "yaml":
+        try:
+            with open(config_file, encoding="utf-8") as fid:
+                config: dict[str, Any] = yaml.safe_load(fid)
+        except yaml.parser.ParserError as err:  # type: ignore
+            logger.critical("Not a valid yaml file: %s", confile)
+            raise SystemExit(3) from err
+    elif format == "toml":
+        try:
+            with open(config_file, mode="rb") as fid:
+                config: dict[str, Any] = tomli.load(fid)
+        except tomli.TOMLDecodeError as err:
+            logger.critical("Not a valid toml file: %s", confile)
+            raise SystemExit(3) from err
+    else:
+        logger.critical("Not a config file: %s", confile)
+        raise SystemExit(3)
+
 
     # Determine configuration version
     # i) explicitly given
