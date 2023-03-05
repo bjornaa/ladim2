@@ -59,36 +59,37 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         try:
             with open(config_file, encoding="utf-8") as fid:
                 config: dict[str, Any] = yaml.safe_load(fid)
-        except yaml.parser.ParserError as err:  # type: ignore
-            logger.critical("Not a valid yaml file: %s", confile)
+        except yaml.YAMLError as err:  # type: ignore
+            print("YAML error:", err)
+            logger.critical("Not a valid YAML file: %s", confile)
             raise SystemExit(3) from err
     elif format == "toml":
         try:
             with open(config_file, mode="rb") as fid:
                 config: dict[str, Any] = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
-            logger.critical("Not a valid toml file: %s", confile)
+            print("TOML error:", err)
+            logger.critical("Not a valid TOML file: %s", confile)
             raise SystemExit(3) from err
     else:
         logger.critical("Not a config file: %s", confile)
         raise SystemExit(3)
 
-
     # Determine configuration version
     # i) explicitly given
-    version = config.get("version", 0)  # zero for undetermined
-    if version == 0:
-        # ii) infer version
+    version = str(config.get("version", "0"))  # zero for undetermined
+    if version == "0":
+        # infer version
         if "time_control" in config:
-            version = 1
+            version = "1"
         if "time" in config:
-            version = 2
+            version = "2"
 
     logger.info("  Configuration file version: %s", version)
 
-    if version == 2:
+    if version[0] == "2":
         configure_v2(config)
-    elif version == 1:
+    elif version[0] == "1":
         config = configure_v1(config)
     else:
         logger.critical("Not a valid configuration version")
@@ -127,7 +128,10 @@ def configure_v2(config: dict[str, Any]) -> None:
         # glob if necessary and use first file
         if ("*" in str(filename)) or ("?" in str(filename)):
             directory = filename.parent
-            filename = sorted(directory.glob(filename.name))[0]
+            flist = list(directory.glob(filename.name))
+            print(flist)
+            if flist:
+                filename = sorted(flist)[0]
         config["grid"]["filename"] = filename
 
     # Warm start

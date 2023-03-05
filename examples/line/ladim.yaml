@@ -28,7 +28,7 @@ release:
     release_file : line.rls
 
 output:
-    module: ladim.out_netcdf
+    module: "ladim.out_netcdf"
     filename: out.nc
     ncargs: {data_model: NETCDF3_CLASSIC}
     output_period: [3, h]
