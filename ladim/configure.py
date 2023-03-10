@@ -59,14 +59,14 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         try:
             with open(config_file, encoding="utf-8") as fid:
                 config: dict[str, Any] = yaml.safe_load(fid)
-        except yaml.YAMLError as err:  # type: ignore
+        except yaml.YAMLError as err:
             print("YAML error:", err)
             logger.critical("Not a valid YAML file: %s", confile)
             raise SystemExit(3) from err
     elif format == "toml":
         try:
             with open(config_file, mode="rb") as fid:
-                config: dict[str, Any] = tomli.load(fid)
+                config = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
             print("TOML error:", err)
             logger.critical("Not a valid TOML file: %s", confile)

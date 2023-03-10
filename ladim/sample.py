@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""Utilities functions for sampling output from the ROMS
+"""Utility functions for sampling output from the ROMS
 
 Horizontal sampling
 -------------------
@@ -23,11 +21,16 @@ Horizontal sampling
 from typing import Optional
 
 import numpy as np
+# mport numpy.typing as npt
 
 # Type aliases
+
+# Does not work nicely with pylance (VS code)
+# Field = npt.NDArray[np.float64]  # 2D gridded field
+# ParticleArray = npt.NDArray[np.float64]  # 1D array of values per particle
+
 Field = np.ndarray  # 2D gridded field
 ParticleArray = np.ndarray  # 1D array of values per particle
-
 
 # ---------------------
 
@@ -175,11 +178,10 @@ def sample2D(
     # Find integer I, J such that
     # 0 <= I <= X < I+1 <= imax-1, 0 <= J <= Y < J+1 <= jmax-1
     # and local increments P and Q
-    I: ParticleArray = X0.astype("int")
-    J: ParticleArray = Y0.astype("int")
-    P = X0 - I
-    Q = Y0 - J
-
+    I = X0.astype("int")
+    J = Y0.astype("int")
+    P = X0 - I  # type: ignore
+    Q = Y0 - J  # type: ignore
     outside = (X0 < 0) | (X0 >= imax - 1) | (Y0 < 0) | (Y0 >= jmax - 1)
     if np.any(outside):
         if outside_value is None:
@@ -207,7 +209,7 @@ def sample2D(
         W11 = mask[J + 1, I + 1] * W11
         SW = W00 + W01 + W10 + W11
 
-    SW = np.where(SW == 0, -1.0, SW)  # Avoid division by zero below
+    SW = np.where(SW == 0, -1.0, SW)  # type: ignore
     result: ParticleArray = np.where(
         SW <= 0,
         undef_value,

@@ -1,33 +1,26 @@
+from typing import Any
 import numpy as np
-
-# from ladim.ibms import light
-from ladim.ibms import light
-
-# import ladim.ibms.light as light
+from ladim.ibms import light  # type: ignore
 
 
 # class IBM(BaseIBM):
 class IBM:
     # def __init__(self, modules, **kwargs):
-    def __init__(self, modules, vertical_mixing=0, salinity_model="new"):
-        #     self,
-        #     timer: TimeKeeper,
-        #     state: State,
-        #     forcing: BaseForce,
-        #     grid: BaseGrid,
-        #     vertical_mixing: float = 0,
-        #     salinity_model: str = "new",
-        # ):
-
+    def __init__(
+        self,
+        modules: dict[str, Any],
+        vertical_mixing: float = 0,
+        salinity_model: str = "new",
+    ):
         # Modules
         self.timer = modules["time"]
         self.state = modules["state"]
-        self.forcing = modules["forcing"]
+        # self.forcing = modules["forcing"]
         self.grid = modules["grid"]
 
         # Keyword arguments
         self.vertical_mixing = vertical_mixing
-        self.new_salinity_model = salinity_model == "True"
+        self.new_salinity_model = salinity_model == "new"
 
         # Constants
         mortality = 0.17  # [days-1]
@@ -47,9 +40,9 @@ class IBM:
         # self.new_salinity_model = (salinity_model == 'new')
         #
 
-    def update(self):
+    def update(self) -> None:
         state = self.state
-        forcing = self.forcing
+        # forcing = self.forcing
 
         # Mortality
         state["super"] *= self.mortality_factor
@@ -86,7 +79,7 @@ class IBM:
         # Random diffusion velocity
         if self.vertical_diffusion:
             rand = np.random.normal(size=len(W))
-            W += rand * (2 * self.D / self.dt) ** 0.5
+            W += rand * (2 * self.vertical_mixing / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
         state["Z"] += W * self.dt

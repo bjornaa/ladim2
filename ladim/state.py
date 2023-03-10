@@ -11,9 +11,11 @@ Class for the state of the model
 import logging
 from numbers import Number
 from collections.abc import Sized
-from typing import Union, Sequence, Optional, Any
+# from typing import Union, Sequence, Optional, Any
+from typing import Optional, Any
 
 import numpy as np
+import numpy.typing as npt
 
 DEBUG = False
 
@@ -28,10 +30,7 @@ if DEBUG:
 # ------------------------
 
 # Define some types aliases
-Scalar = Number
-Arraylike = Union[np.ndarray, Sequence[Scalar], Scalar]
-ParticleArray = np.ndarray
-Dtype = Union[type, np.dtype]
+ParticleArray = npt.NDArray[Any]
 
 # State has no internal difference between particle and instance variable.
 # With append also particle variables needs a value
@@ -78,7 +77,7 @@ class State(Sized):
         self,
         instance_variables: Optional[dict[str, type]] = None,
         particle_variables: Optional[dict[str, type]] = None,
-        default_values: Optional[dict[str, Scalar]] = None,
+        default_values: Optional[dict[str, Number]] = None,
         modules: Optional[dict[str, Any]] = None,
     ) -> None:
         """
@@ -111,7 +110,7 @@ class State(Sized):
         logger.info("  Particle variables: %s", list(pvar))
 
         # Raises TypeError if overlap
-        self.dtypes: dict[str, Dtype] = dict(**ivar, **pvar)
+        self.dtypes: dict[str, npt.DTypeLike] = dict(**ivar, **pvar)
         # expand aliases (presently only "time")
         for var in self.dtypes:
             if self.dtypes[var] == "time":
@@ -144,7 +143,7 @@ class State(Sized):
 
         logger.debug("State initialized, number of particles = %d", len(self))
 
-    def append(self, **args: Arraylike) -> None:
+    def append(self, **args: npt.ArrayLike) -> None:
         """Append particles to the State object"""
 
         # state_vars = instance_variables (without pid)
@@ -156,7 +155,7 @@ class State(Sized):
                 raise ValueError(f"Invalid argument {name}")
 
         # Variables must have a value
-        value_vars = dict(self.default_values, **args)
+        value_vars: dict[str, Any] = dict(self.default_values, **args)
         for name in state_vars:
             if name not in value_vars:
                 value_vars[name] = np.nan
@@ -211,12 +210,12 @@ class State(Sized):
         """Allow item style write access to variables"""
         return self.variables[var]
 
-    def __setitem__(self, var: str, item: Arraylike) -> None:
+    def __setitem__(self, var: str, item: npt.ArrayLike) -> None:
         """Allow item style read access to variables"""
         value = np.array(item, dtype=self.dtypes[var])
         # The size of item should be unchanged
-        ###if np.size(value) != len(self.variables[var]):
-        ###    raise KeyError("Size of data should be unchanged")
+        # if np.size(value) != len(self.variables[var]):
+        #    raise KeyError("Size of data should be unchanged")
         self.variables[var] = value
 
     def __getattr__(self, var: str) -> ParticleArray:

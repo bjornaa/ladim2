@@ -1,5 +1,5 @@
 """
-Surface ligth module
+Surface light module
 """
 
 # After A. Skartveit & J.A. Olseth,1988

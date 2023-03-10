@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import importlib
+import importlib.util
 
 import logging
 import types
