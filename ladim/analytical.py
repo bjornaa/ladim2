@@ -1,5 +1,6 @@
 """Useful functions for analytically defined current fields in LADiM"""
 
+from collections import namedtuple
 from typing import Optional, Union, Callable
 
 import numpy as np  # type: ignore
@@ -7,7 +8,7 @@ import numpy as np  # type: ignore
 from ladim.state import State
 
 ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
-Velocity = tuple[ParticleArray, ParticleArray]
+Velocity = namedtuple('Velocity', ['U', 'V'])
 
 
 def get_velocity1(
@@ -30,7 +31,7 @@ def get_velocity1(
 
     """
     x0, y0 = state.X, state.Y
-    return sample_func(x0, y0)
+    return Velocity(*sample_func(x0, y0))
 
 
 def get_velocity2(
@@ -68,7 +69,7 @@ def get_velocity2(
     u0, v0 = sample_func(x0, y0)
     x1, y1 = x0 + s * dt * u0, y0 + s * dt * v0
     u1, v1 = sample_func(x1, y1)
-    return (1 - m) * u0 + m * u1, (1 - m) * v0 + m * v1
+    return Velocity((1 - m) * u0 + m * u1, (1 - m) * v0 + m * v1)
 
 
 def get_velocity4(
@@ -99,4 +100,4 @@ def get_velocity4(
     u2, v2 = sample_func(x2, y2)
     x3, y3 = x0 + dt * u2, y0 + dt * v2
     u3, v3 = sample_func(x3, y3)
-    return (u0 + 2 * u1 + 2 * u2 + u3) / 6, (v0 + 2 * v1 + 2 * v2 + v3) / 6
+    return Velocity((u0 + 2 * u1 + 2 * u2 + u3) / 6, (v0 + 2 * v1 + 2 * v2 + v3) / 6)

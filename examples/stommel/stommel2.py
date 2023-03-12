@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 from numpy import pi, exp, sin, cos
 import matplotlib.pyplot as plt
@@ -5,85 +7,76 @@ import matplotlib.pyplot as plt
 from ladim.state import State
 from ladim.tracker import Tracker
 
+# Stommel model parameters as global variables
+km = 1000.0  # [m]
+D = 200.0  # Depth [m]
+lambda_ = 10000 * km  # West-east extent of domain   [m]
+b = 6300 * km  # South-north extent of domain  [m]
+r = 1.0e-6  # Bottom friction coefficient  [s-1]
+beta = 1.0e-11  # Coriolis derivative  [m-1 s-1]
+F = 0.1  # Wind stress amplitude  [N m-2]
+rho = 1025.0  # Density  [kg/m3]
+alfa = beta / r  # [m-1]
+gamma = F * pi / (r * b)  # [kg m2 s-1]
+
 
 def main():
     # --- Simulation ---
-    Nsteps = 1736
+    num_steps = 1736
 
     # --- Setup ---
-    g = Grid()
-    f = Forcing(grid=g)
-    tracker = Tracker(dt=86400, advection="EF")
+    grid = Grid()
+    force = Forcing()
+    timer = TimeKeeper(dt=np.timedelta64(1, "D"))
     state = State()
+    modules = dict(grid=grid, forcing=force, time=timer, state=state)
+    tracker = Tracker(advection="RK2", modules=modules)
 
     # Initialize
-    X0, Y0 = initial_release(grid=g)
+    X0, Y0 = initial_release(grid=grid)
     state.append(X=X0, Y=Y0, Z=5)
 
     # Time loop
-    for n in range(Nsteps):
-        tracker.update(state, grid=g, force=f)
+    for n in range(num_steps):
+        tracker.update()
 
     # Plot results
-    plot_particles(state, X0, Y0, forcing=f)
+    plot_particles(state, X0, Y0, forcing=force)
 
 
+@dataclass
 class Grid:
-    def __init__(self):
-        km = 1000.0  # Kilometer                             [m]
-        D = 200.0  # Depth                                   [m]
-        lambda_ = 10000 * km  # West-east extent of domain   [m]
-        b = 6300 * km  # South-north extent of domain        [m]
-        dt = 24 * 3600  # Day                                [s]
-
-        # Selfify: v -> self.v
-        for v in "D lambda_ b dt".split():
-            setattr(self, v, locals()[v])
-
-        self.xmin, self.xmax, self.ymin, self.ymax = 0, lambda_, 0, b
+    xmin: float = 0
+    xmax: float = lambda_
+    ymin: float = 0
+    ymax: float = b
 
     @staticmethod
     def metric(X, Y):
         return np.ones_like(X), np.ones_like(X)
 
     def ingrid(self, X, Y):
-        return (0 < X) & (X < self.lambda_) & (0 < Y) & (Y < self.b)
+        return (0 < X) & (X < self.xmax) & (0 < Y) & (Y < self.ymax)
 
     def depth(self, X, Y):
-        return self.D + np.zeros_like(X)
+        return D + np.zeros_like(X)
 
     @staticmethod
     def atsea(X, Y):
         return np.ones(X.shape, dtype="bool")
 
 
+@dataclass
 class Forcing:
-    def __init__(self, grid):
-        b = grid.b
-        lambda_ = grid.lambda_
-        D = grid.D
+    G: float = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  # [m2 s-1]
+    A: float = -0.5 * alfa + np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
+    B: float = -0.5 * alfa - np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
+    p: float = (1.0 - exp(B * lambda_)) / (exp(A * lambda_) - exp(B * lambda_))
+    q: float = 1 - p
 
-        r = 1.0e-6  # Bottom friction coefficient          [s-1]
-        beta = 1.0e-11  # Coriolis derivative                  [m-1 s-1]
-        alfa = beta / r  # [m-1]
-        F = 0.1  # Wind stress amplitude                [N m-2]
-        rho = 1025.0  # Density                              [kg/m3]
-        gamma = F * pi / (r * b)  # [kg m2 s-1]
-        G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  # [m2 s-1]
-
-        A = -0.5 * alfa + np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
-        B = -0.5 * alfa - np.sqrt(0.25 * alfa**2 + (pi / b) ** 2)  # [m-1]
-        p = (1.0 - exp(B * lambda_)) / (exp(A * lambda_) - exp(B * lambda_))
-        q = 1 - p
-
-        # Selfify: v -> self.v
-        for v in "b A B G p q".split():
-            setattr(self, v, locals()[v])
-
-    def velocity(self, X, Y, Z):
+    def velocity(self, X, Y, Z, fractional_step=0):
         # Unselfify: self.v -> v
-        b, A, B, G, p, q = [getattr(self, v) for v in "b A B G p q".split()]
-
+        A, B, G, p, q = [getattr(self, v) for v in "A B G p q".split()]
         U = G * (pi / b) * cos(pi * Y / b) * (p * exp(A * X) + q * exp(B * X) - 1)
         V = -G * sin(pi * Y / b) * (p * A * exp(A * X) + q * B * exp(B * X))
         return U, V
@@ -92,16 +85,21 @@ class Forcing:
         """Stream function"""
 
         # Unselfify: self.v -> v
-        b, A, B, G, p, q = [getattr(self, v) for v in "b A B G p q".split()]
+        A, B, G, p, q = [getattr(self, v) for v in "A B G p q".split()]
 
         return G * sin(pi * Y / b) * (p * exp(A * X) + q * exp(B * X) - 1)
 
 
+@dataclass
+class TimeKeeper:
+    dt: np.timedelta64
+
+
 def initial_release(grid):
-    """Initalize with particles in two concentric circles"""
+    """Initialize with particles in two concentric circles"""
     km = 1000
-    x0 = grid.lambda_ / 3.0
-    y0 = grid.b / 3.0
+    x0 = lambda_ / 3.0
+    y0 = b / 3.0
     r1 = 800 * km
     r2 = 1600 * km
 

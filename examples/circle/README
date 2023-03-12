@@ -3,3 +3,8 @@ Circle example
 Circular current field, the trajectory should be a perfecr circle.
 
 Trying different methods in analytical module.
+
+With NUM_STEPS = 2000
+  EF:  DT =  0.3 => feil < 1%
+  RK2: DT =  7.9 => feil < 1%
+  RK4: DT = 30.0 => feil < 1%

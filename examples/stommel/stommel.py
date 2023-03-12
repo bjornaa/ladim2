@@ -25,7 +25,7 @@ p = (1.0 - exp(B * lambda_)) / (exp(A * lambda_) - exp(B * lambda_))
 q = 1 - p
 
 # --- Simulation ---
-day = 86400
+day = 86400  
 simulation_time = 1736 * day
 dt = day
 Nsteps = simulation_time // dt
@@ -41,8 +41,8 @@ def main():
     # Time loop
     for n in range(Nsteps):
         velocity = get_velocity(state, sample_velocity, dt)
-        state["X"] += dt * velocity[0]
-        state["Y"] += dt * velocity[1]
+        state["X"] += dt * velocity.U
+        state["Y"] += dt * velocity.V
 
     # Plot results
     plot_particles(state, X0, Y0)
@@ -54,7 +54,7 @@ def sample_velocity(X, Y):
     return U, V
 
 
-get_velocity = analytical.get_velocity2
+get_velocity = analytical.get_velocity2  # RK2
 
 
 def psi(X, Y):
@@ -63,6 +63,7 @@ def psi(X, Y):
 
 
 def initial_release():
+    """Two concentric circles"""
     x0 = lambda_ / 3.0
     y0 = b / 3.0
     r1 = 800 * km
@@ -80,6 +81,7 @@ def initial_release():
 
 
 def plot_particles(state, X0, Y0):
+    """Plot particle distributions on top of the streamfunction"""
     # Discetize and contour the streamfunction
     imax, jmax = 101, 64
     dx = 100 * km
@@ -89,8 +91,8 @@ def plot_particles(state, X0, Y0):
     Psi = psi(JJ, II)
     plt.contour(I / km, J / km, Psi, colors="k", linestyles=":", linewidths=0.5)
 
-    plt.plot(X0 / km, Y0 / km, ".b")
-    plt.plot(state.X / km, state.Y / km, ".r")
+    plt.plot(X0 / km, Y0 / km, ".b")   # Initial distribution
+    plt.plot(state.X / km, state.Y / km, ".r")  # Final distribution
 
     plt.axis("image")
     plt.show()
