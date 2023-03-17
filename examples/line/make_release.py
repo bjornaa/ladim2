@@ -23,4 +23,4 @@ with open(rlsfile, mode="w") as f:
     if version != 1:
         f.write("release_time   X       Y         Z\n")
     for x, y in zip(X, Y):
-        f.write("1989-05-24T12 {:7.3f} {:7.3f} {:6.1f}\n".format(x, y, Z))
+        f.write(f"1989-05-24T12 {x:7.3f} {y:7.3f} {Z:6.1f}\n")

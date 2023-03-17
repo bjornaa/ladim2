@@ -6,14 +6,12 @@
 # 2021-02-10
 # ----------------------------------
 
+import cartopy.io.shapereader as shapereader
 import numpy as np
 import scipy
-from netCDF4 import Dataset
-
-from shapely import geometry
-import cartopy.io.shapereader as shapereader
-
 from ladim.ROMS import Grid
+from netCDF4 import Dataset
+from shapely import geometry
 
 # Choose between c, l, i, h, f resolutions
 GSHHS_resolution = "i"
@@ -66,7 +64,7 @@ coast = shapereader.Reader(path).geometries()
 coast = (bd_pol.intersection(p) for p in coast if bd_pol.intersects(p))
 # Filter out isolated points
 coast = filter(
-    lambda p: isinstance(p, geometry.MultiPolygon) or isinstance(p, geometry.Polygon),
+    lambda p: isinstance(p, (geometry.MultiPolygon, geometry.Polygon)),
     coast,
 )
 

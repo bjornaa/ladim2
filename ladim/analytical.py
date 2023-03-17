@@ -1,14 +1,17 @@
 """Useful functions for analytically defined current fields in LADiM"""
 
+from __future__ import annotations
+
 from collections import namedtuple
-from typing import Optional, Union, Callable
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 import numpy as np  # type: ignore
 
-from ladim.state import State
+if TYPE_CHECKING:
+    from ladim.state import State
 
 ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
-Velocity = namedtuple('Velocity', ['U', 'V'])
+Velocity = namedtuple("Velocity", ["U", "V"])
 
 
 def get_velocity1(

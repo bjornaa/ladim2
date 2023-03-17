@@ -1,9 +1,8 @@
-import numpy as np
-from numpy import pi, exp, sin, cos
 import matplotlib.pyplot as plt
-
-from ladim.state import State
+import numpy as np
 from ladim import analytical
+from ladim.state import State
+from numpy import cos, exp, pi, sin
 
 # Global variables (parameters)
 

@@ -1,4 +1,5 @@
 from typing import Any
+
 import numpy as np
 from ladim.ibms import light  # type: ignore
 

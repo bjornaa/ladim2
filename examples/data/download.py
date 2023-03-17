@@ -9,8 +9,8 @@
 # -----------------------------------
 
 import ftplib
-import io
 import gzip
+import io
 
 ftp_site = "ftp.imr.no"
 datadir = "bjorn/ladim-data"

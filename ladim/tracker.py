@@ -9,14 +9,16 @@
 #
 # Licensed under the MIT license
 # ------------------------------------
+from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import numba  # type: ignore
+import numpy as np
 
-from ladim.forcing import BaseForce
+if TYPE_CHECKING:
+    from ladim.forcing import BaseForce
 
 ParticleArray = np.ndarray  # 1D array, one element per particle
 Velocity = tuple[ParticleArray, ParticleArray]
@@ -67,6 +69,8 @@ class Tracker:
         self.Dz = vertdiff
         if self.vertdiff:
             logger.info("  Vertical diffusion: %s m²/s", vertdiff)
+
+        self.rng = np.random.default_rng()
 
     def update(self) -> None:
         """Move the particles one time step"""
@@ -219,8 +223,8 @@ class Tracker:
 
         # Diffusive velocity
         stddev = (2 * self.D / self.dt) ** 0.5
-        U = stddev * np.random.normal(size=num_particles)
-        V = stddev * np.random.normal(size=num_particles)
+        U = stddev * self.rng.normal(size=num_particles)
+        V = stddev * self.rng.normal(size=num_particles)
 
         return U, V
 
@@ -229,7 +233,7 @@ class Tracker:
 
         # Diffusive velocity
         stddev = (2 * self.Dz / self.dt) ** 0.5
-        W: ParticleArray = stddev * np.random.normal(size=num_particles)
+        W: ParticleArray = stddev * self.rng.normal(size=num_particles)
         return W
 
 

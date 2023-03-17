@@ -17,10 +17,12 @@ Horizontal sampling
 # Bergen, Norway
 # 2010-09-30
 # -----------------------------------
+from __future__ import annotations
 
 from typing import Optional
 
 import numpy as np
+
 # mport numpy.typing as npt
 
 # Type aliases
@@ -166,9 +168,9 @@ def sample2D(
 
     if np.ndim(F) != 2:
         raise ValueError("F must be 2D")
-    if mask is not None:
-        if mask.shape != F.shape:
-            raise ValueError("Must have mask.shape == F.shape")
+    if mask is not None and mask.shape != F.shape:
+        msg = "Must have mask.shape == F.shape"
+        raise ValueError(msg)
 
     jmax, imax = F.shape
 
@@ -247,7 +249,8 @@ def bilin_inv(
 
     imax, jmax = F.shape
     if G.shape != (imax, jmax):
-        raise ValueError("Shape mismatch in 2D arrays")
+        msg = "Shape mismatch in 2D arrays"
+        raise ValueError(msg)
 
     # scalar = np.isscalar(f)
 
@@ -272,7 +275,7 @@ def bilin_inv(
     x = np.zeros_like(f) + 0.5 * imax
     y = np.zeros_like(f) + 0.5 * jmax
 
-    for t in range(maxiter):
+    for _t in range(maxiter):
         i = x.astype("i")
         j = y.astype("i")
         p, q = x - i, y - j

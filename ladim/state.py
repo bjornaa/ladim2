@@ -7,15 +7,20 @@ Class for the state of the model
 # Institute of Marine Research
 # October 2020
 # ----------------------------------
+from __future__ import annotations
 
 import logging
-from numbers import Number
 from collections.abc import Sized
+
 # from typing import Union, Sequence, Optional, Any
-from typing import Optional, Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+
+if TYPE_CHECKING:
+    from numbers import Number
+
 
 DEBUG = False
 
@@ -75,10 +80,10 @@ class State(Sized):
 
     def __init__(
         self,
-        instance_variables: Optional[dict[str, type]] = None,
-        particle_variables: Optional[dict[str, type]] = None,
-        default_values: Optional[dict[str, Number]] = None,
-        modules: Optional[dict[str, Any]] = None,
+        instance_variables: dict[str, type] | None = None,
+        particle_variables: dict[str, type] | None = None,
+        default_values: dict[str, Number] | None = None,
+        modules: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize the state
@@ -230,5 +235,5 @@ class State(Sized):
         except AttributeError as e:
             raise AttributeError(
                 f"Cannot assign attribute {var} on a State instance.\n"
-                + f'Use state["{var}"] = ...  instead.'
+                f'Use state["{var}"] = ...  instead.'
             ) from e

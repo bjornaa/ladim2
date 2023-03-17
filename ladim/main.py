@@ -1,16 +1,17 @@
 """Main function for running LADiM as an application"""
 
-import sys
+from __future__ import annotations
+
+import argparse
+import datetime
+import logging
 import os
 import platform
+import sys
 from pathlib import Path
-import logging
-import datetime
-import argparse
 from typing import Union
 
-
-from ladim import __version__, __file__
+from ladim import __file__, __version__
 from ladim.configure import configure
 from ladim.model import Model
 
@@ -89,7 +90,7 @@ def main(
 
     logger.info("Starting time loop")
     # for step in range(model.timer.Nsteps + 1):
-    for step in range(model.timer.Nsteps):
+    for _step in range(model.timer.Nsteps):
         model.update()
 
     # --------------
@@ -143,7 +144,7 @@ def script() -> None:
     # Start up message
     print("")
     print(" ========================================================")
-    print(" === LADiM – Lagrangian Advection and Diffusion Model ===")
+    print(" === LADiM – Lagrangian Advection and Diffusion Model ===")  # noqa: RUF001
     print(" ========================================================")
     print("")
 

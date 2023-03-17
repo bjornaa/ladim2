@@ -9,8 +9,9 @@
 # ----------------------------------
 
 from itertools import chain
-from shapely import geometry, wkb
+
 import cartopy.io.shapereader as shapereader
+from shapely import geometry, wkb
 
 # Choose between c, l, i, h, f resolutions
 # Crude, Low, Intermediate, High, or Full
@@ -32,7 +33,7 @@ coast = (bbox.intersection(p) for p in coast if bbox.intersects(p))
 
 # Filter out isolated points
 coast = filter(
-    lambda p: isinstance(p, geometry.MultiPolygon) or isinstance(p, geometry.Polygon),
+    lambda p: isinstance(p, (geometry.MultiPolygon, geometry.Polygon)),
     coast,
 )
 

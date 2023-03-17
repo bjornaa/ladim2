@@ -11,16 +11,18 @@ with compability wrapper for LADiM version 1 configuration
 # December 2020
 # -----------------------------------
 
+
+from __future__ import annotations
+
+import logging
 import sys
 from pathlib import Path
-import logging
-from typing import Union, Any
+from typing import Any, Union
 
 import numpy as np
-from netCDF4 import Dataset, num2date  # type: ignore
-import yaml  # type: ignore
 import tomli
-
+import yaml  # type: ignore
+from netCDF4 import Dataset, num2date  # type: ignore
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -53,22 +55,22 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         logger.critical("No configuration file %s:", confile)
         raise SystemExit(3)
 
-    format = confile.suffix[1:]  # remove "dot"
+    filetype = confile.suffix[1:]  # remove "dot"
 
-    if format == "yaml":
+    if filetype == "yaml":
         try:
-            with open(config_file, encoding="utf-8") as fid:
+            # with open(config_file, encoding="utf-8") as fid:
+            with confile.open(encoding="utf-8") as fid:
                 config: dict[str, Any] = yaml.safe_load(fid)
         except yaml.YAMLError as err:
-            print("YAML error:", err)
             logger.critical("Not a valid YAML file: %s", confile)
             raise SystemExit(3) from err
-    elif format == "toml":
+    elif filetype == "toml":
         try:
-            with open(config_file, mode="rb") as fid:
+            # with open(config_file, mode="rb") as fid:
+            with confile.open(mode="rb") as fid:
                 config = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
-            print("TOML error:", err)
             logger.critical("Not a valid TOML file: %s", confile)
             raise SystemExit(3) from err
     else:
@@ -129,7 +131,6 @@ def configure_v2(config: dict[str, Any]) -> None:
         if ("*" in str(filename)) or ("?" in str(filename)):
             directory = filename.parent
             flist = list(directory.glob(filename.name))
-            print(flist)
             if flist:
                 filename = sorted(flist)[0]
         config["grid"]["filename"] = filename
@@ -210,7 +211,6 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
         if ("*" in str(filename)) or ("?" in str(filename)):
             directory = filename.parent
             filename = sorted(directory.glob(filename.name))[0]
-            print("--", filename)
         conf2["grid"]["filename"] = filename
 
     if "subgrid" in config["gridforce"]:
@@ -251,12 +251,14 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
         release_file=config["files"]["particle_release_file"],
         names=config["particle_release"]["variables"],
     )
-    if "release_type" in config["particle_release"]:
-        if config["particle_release"]["release_type"] == "continuous":
-            conf2["release"]["continuous"] = True
-            conf2["release"]["release_frequency"] = config["particle_release"][
-                "release_frequency"
-            ]
+    if (
+        "release_type" in config["particle_release"]
+        and config["particle_release"]["release_type"] == "continuous"
+    ):
+        conf2["release"]["continuous"] = True
+        conf2["release"]["release_frequency"] = config["particle_release"][
+            "release_frequency"
+        ]
     # ibm
     if "ibm" in config:
         conf2["ibm"] = dict()

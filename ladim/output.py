@@ -5,17 +5,18 @@
 # Institute of Marine Research
 # November 2020
 # ----------------------------------
+from __future__ import annotations
 
-import sys
-import os
 import importlib
-from pathlib import Path
+import sys
 from abc import ABC, abstractmethod
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from ladim.state import State
+if TYPE_CHECKING:
+    from ladim.state import State
 
 
 class BaseOutput(ABC):
@@ -56,11 +57,12 @@ def init_output(module: str, **args: dict[str, Any]) -> BaseOutput:
     The working directory takes priority.
     The Output class in the module should be named "Output".
     """
+
     # System path for ladim.ladim
     p = Path(__file__).parent
     sys.path.insert(0, str(p))
     # Working directory
-    sys.path.insert(0, os.getcwd())
+    sys.path.insert(0, Path.cwd())  # type: ignore
 
     # Import correct module
     output_module = importlib.import_module(module)

@@ -4,14 +4,12 @@ This version uses a coast file precomputed by make_coast.py
 
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.path import Path
-
-import shapely.wkb as wkb
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
+import matplotlib.pyplot as plt
+import numpy as np
+import shapely.wkb as wkb
+from matplotlib.path import Path
 from postladim import ParticleFile
 
 # ---------------

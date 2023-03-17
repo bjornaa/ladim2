@@ -1,15 +1,13 @@
 """Animate the time evolution of the particle distributions"""
 
-import numpy as np
-from netCDF4 import Dataset
-import matplotlib.pyplot as plt
-from matplotlib.path import Path
-from matplotlib.animation import FuncAnimation
-
-import shapely.wkb as wkb
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
+import matplotlib.pyplot as plt
+import numpy as np
+import shapely.wkb as wkb
+from matplotlib.animation import FuncAnimation
+from matplotlib.path import Path
+from netCDF4 import Dataset
 from postladim import ParticleFile
 
 # ---------------

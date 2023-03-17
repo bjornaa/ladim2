@@ -1,19 +1,23 @@
 """Output module for NetCDF contiguous ragged array"""
+from __future__ import annotations
 
-
-import re
-from pathlib import Path
-from datetime import date
 import logging
-from typing import Union, Optional, Any, Generator, Literal
+import re
+from datetime import date
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import numpy as np  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-from ladim.timekeeper import TimeDelta, normalize_period
-from ladim.state import State  # For typing
-
 from ladim.output import BaseOutput
+from ladim.timekeeper import TimeDelta, normalize_period
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from ladim.state import State  # For typing
+
 
 Variable = dict[str, Any]
 

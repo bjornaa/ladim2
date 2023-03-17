@@ -364,7 +364,7 @@ def test_release_time_column():
     datatypes = dict(datatypes0, super=int, release_time=np.dtype("M8[s]"))
     modules = modules0.copy()
     modules["state"] = Dummy(dtypes=datatypes)
-    pr = ParticleReleaser(modules, f, timer=timer)
+    pr = ParticleReleaser(modules=modules, release_file=f, timer=timer)
     A = pr._df
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
     assert A["release_time"][1] == np.datetime64("2015-04-01", "s")

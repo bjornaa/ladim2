@@ -1,11 +1,15 @@
 """Perform initialization for warm start in LADiM"""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from netCDF4 import Dataset  # type: ignore
 
-from ladim.state import State
+if TYPE_CHECKING:
+    from ladim.state import State
 
 DEBUG = False
 
@@ -43,7 +47,7 @@ def warm_start(
     pend = pstart + pcount
     pid_max = np.max(f.variables["pid"][:]) + 1
 
-    print("warm start: antall partikler = ", pcount)
+    logger.info("antall partikler = %s", pcount)
 
     state.npid = pid_max
 
@@ -66,10 +70,7 @@ def warm_start(
         # Variables not on file, but with defaults
         elif var in state.default_values:
             # print("Med default", var)
-            if var in state.instance_variables:
-                shape = (pcount,)
-            else:
-                shape = (pid_max,)
+            shape = (pcount,) if var in state.instance_variables else (pid_max,)
             values = np.full(shape, state.default_values[var])
         else:
             logger.error("Warm start: No value for variable %s", var)

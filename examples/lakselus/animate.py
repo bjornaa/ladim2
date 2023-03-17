@@ -1,5 +1,5 @@
-import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
+import numpy as np  # type: ignore
 from matplotlib.animation import FuncAnimation  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 from postladim import ParticleFile

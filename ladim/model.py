@@ -1,22 +1,26 @@
 """Module containing the LADiM Model class definition"""
 
-from pathlib import Path
+from __future__ import annotations
+
 import importlib
 import importlib.util
-
 import logging
-import types
-from typing import Any, Optional
+from pathlib import Path
+from types import ModuleType  # noqa: TCH003
+from typing import TYPE_CHECKING, Any
 
-from ladim.state import State
-from ladim.grid import BaseGrid
-from ladim.timekeeper import TimeKeeper
-from ladim.forcing import BaseForce
-from ladim.tracker import Tracker
-from ladim.release import ParticleReleaser
 from ladim.warm_start import warm_start
-from ladim.output import BaseOutput
-from ladim.ibm import IBM
+
+if TYPE_CHECKING:
+
+    from ladim.forcing import BaseForce
+    from ladim.grid import BaseGrid
+    from ladim.ibm import IBM
+    from ladim.output import BaseOutput
+    from ladim.release import ParticleReleaser
+    from ladim.state import State
+    from ladim.timekeeper import TimeKeeper
+    from ladim.tracker import Tracker
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -97,7 +101,7 @@ class Model:
 def init_module(
     module_name: str,
     conf_dict: dict[str, Any],
-    all_modules_dict: Optional[dict[str, Any]] = None,
+    all_modules_dict: dict[str, Any] | None = None,
 ) -> Any:
     """Initiate the main class in one of the modules"""
     default_module_names = dict(
@@ -134,7 +138,7 @@ def init_module(
     return MainClass(modules=all_modules_dict, **conf_dict)
 
 
-def load_module(module_name: str) -> types.ModuleType:
+def load_module(module_name: str) -> ModuleType:
     """Load LADiM module
 
     Modules are given as paths (absolute or relative to the working directory) to

@@ -8,10 +8,10 @@ Example on the use of LADiM as a library
 
 from collections import namedtuple
 
-import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
-from ladim.state import State
+import numpy as np  # type: ignore
 from ladim import analytical
+from ladim.state import State
 
 # Numerical method "EF", "RK2", or "RK4"
 METHOD = "RK2"

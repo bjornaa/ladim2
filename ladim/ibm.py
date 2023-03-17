@@ -1,4 +1,6 @@
 """Abstract Base Class for IBMs"""
+from __future__ import annotations
+
 from typing import Any
 
 

@@ -10,18 +10,22 @@ LADiM Grid og Forcing for the Regional Ocean Model System (ROMS)
 # February, 2021
 # -----------------------------------
 
-from pathlib import Path
-import logging
-from typing import Union, Optional, Any
+from __future__ import annotations
 
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+import numba  # type: ignore
 import numpy as np
 from netCDF4 import Dataset, num2date  # type: ignore
-import numba  # type: ignore
 
+from ladim.forcing import BaseForce, Field, ParticleArray
 from ladim.grid import BaseGrid
-from ladim.forcing import BaseForce, ParticleArray, Field
-from ladim.sample import sample2D, bilin_inv
-from ladim.timekeeper import TimeKeeper
+from ladim.sample import bilin_inv, sample2D
+
+if TYPE_CHECKING:
+    from ladim.timekeeper import TimeKeeper
 
 
 DEBUG = False
@@ -294,7 +298,8 @@ def s_stretch(
     elif stagger == "w":
         S = np.linspace(-1.0, 0.0, N + 1)
     else:
-        raise ValueError("stagger must be 'rho' or 'w'")
+        msg = "stagger must be 'rho' or 'w'"
+        raise ValueError(msg)
 
     if Vstretching == 1:
         cff1 = 1.0 / np.sinh(theta_s)
@@ -318,7 +323,8 @@ def s_stretch(
         return C4
 
     # else:
-    raise ValueError("Unknown Vstretching")
+    msg = "Unknown Vstretching"
+    raise ValueError(msg)
 
 
 def sdepth(
@@ -355,13 +361,14 @@ def sdepth(
     H = H.ravel()  # and make H 1D for easy shape maniplation
     C = np.asarray(C)
     N = len(C)
-    outshape = (N,) + Hshape  # Shape of output
+    outshape = (N, *Hshape)  # Shape of output
     if stagger == "rho":
         S = -1.0 + (0.5 + np.arange(N)) / N  # Unstretched coordinates
     elif stagger == "w":
         S = np.linspace(-1.0, 0.0, N)
     else:
-        raise ValueError("stagger must be 'rho' or 'w'")
+        msg = "stagger must be 'rho' or 'w'"
+        raise ValueError(msg)
 
     if Vtransform == 1:  # Default transform by Song and Haidvogel
         A = Hc * (S - C)[:, None]
@@ -376,7 +383,8 @@ def sdepth(
         return R2
 
     # else:
-    raise ValueError("Unknown Vtransform")
+    msg = "Unknown Vtransform"
+    raise ValueError(msg)
 
 
 # -----------------------------------
@@ -419,11 +427,11 @@ class Forcing(BaseForce):
 
         # 3D forcing fields
         self.fields = {
-            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
+            var: np.array([], float) for var in ["u", "v", *self.extra_forcing]
         }
         # Forcing interpolated to particle positions
         self.variables = {
-            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
+            var: np.array([], float) for var in ["u", "v", *self.extra_forcing]
         }
 
         # Input files and times
@@ -563,7 +571,7 @@ class Forcing(BaseForce):
         self.scaled = dict()
         self.scale_factor = dict()
         self.add_offset = dict()
-        forcing_variables = ["u", "v"] + self.extra_forcing
+        forcing_variables = ["u", "v", *self.extra_forcing]
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True

@@ -13,19 +13,22 @@ Adaptive version
 # April, 2021
 # -----------------------------------
 
-from pathlib import Path
-import logging
-from typing import Union, Optional, List, Tuple, Dict
+from __future__ import annotations
 
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional, Union
+
+import numba
 import numpy as np  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
-import numba
 
-
-from ladim.grid import BaseGrid
 from ladim.forcing import BaseForce
-from ladim.sample import sample2D, bilin_inv
-from ladim.timekeeper import TimeKeeper
+from ladim.grid import BaseGrid
+from ladim.sample import bilin_inv, sample2D
+
+if TYPE_CHECKING:
+    from ladim.timekeeper import TimeKeeper
 
 DEBUG = False
 parallel = False
@@ -78,9 +81,9 @@ class Grid(BaseGrid):
         #     raise SystemExit(1)
         try:
             ncid = Dataset(filename)
-        except OSError:
+        except OSError as err:
             logger.critical(f"Could not open grid file {filename}")
-            raise SystemExit(1)
+            raise SystemExit(1) from err
         ncid.set_auto_maskandscale(False)
 
         # Grid limits
@@ -145,7 +148,7 @@ class Grid(BaseGrid):
         # Close the file
         ncid.close()
 
-    def metric(self, X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def metric(self, X: np.ndarray, Y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Sample the metric coefficients
 
         Changes slowly, so using nearest neighbour
@@ -165,7 +168,7 @@ class Grid(BaseGrid):
 
     def lonlat(
         self, X: np.ndarray, Y: np.ndarray, method: str = "bilinear"
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)
@@ -292,7 +295,7 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
     H = H.ravel()  # and make H 1D for easy shape maniplation
     C = np.asarray(C)
     N = len(C)
-    outshape = (N,) + Hshape  # Shape of output
+    outshape = (N, *Hshape)  # Shape of output
     if stagger == "rho":
         S = -1.0 + (0.5 + np.arange(N)) / N  # Unstretched coordinates
     elif stagger == "w":
@@ -350,7 +353,7 @@ class Forcing(BaseForce):
         # timer: TimeKeeper,
         filename: Union[Path, str],
         pad: int = 30,
-        extra_forcing: Optional[List[str]] = None,
+        extra_forcing: Optional[list[str]] = None,
     ) -> None:
         logger.info("Initiating forcing")
         super().__init__(modules)
@@ -361,25 +364,24 @@ class Forcing(BaseForce):
 
         # 3D forcing fields
         self.fields = {
-            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
+            var: np.array([], float) for var in ["u", "v", *self.extra_forcing]
         }
         # Forcing interpolated to particle positions
         self.variables = {
-            var: np.array([], float) for var in ["u", "v"] + self.extra_forcing
+            var: np.array([], float) for var in ["u", "v", *self.extra_forcing]
         }
 
         # Sub grid padding, make configurable
         self.pad = pad  # number of grid cell around bounding box
-        print("forcing: pad = ", pad)
 
         # Input files and times
 
         files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
-            logger.error("No input file: {}".format(filename))
+            logger.error(f"No input file: {filename}")
             raise SystemExit(3)
-        logger.info("Number of forcing files = {}".format(numfiles))
+        logger.info(f"Number of forcing files = {numfiles}")
 
         self.files = files
 
@@ -413,8 +415,6 @@ class Forcing(BaseForce):
         # if V:  # Forcing available before start time
         if True:
             # prestep = max(V)
-            print("prestep", prestep)
-
             i = steps.index(prestep)
             if timer.time_reversal:
                 i = i - 1
@@ -478,7 +478,7 @@ class Forcing(BaseForce):
         interpolate_velocity_in_time = True
         # interpolate_extra_forcing_in_time = False
 
-        logging.debug("Updating forcing, time step = {}".format(step))
+        logging.debug(f"Updating forcing, time step = {step}")
         if step in self.steps:  # No time interpolation
             self.fields["u"] = self.fields["u_new"].copy()
             self.fields["v"] = self.fields["v_new"].copy()
@@ -613,7 +613,7 @@ class Forcing(BaseForce):
         self.scaled = dict()
         self.scale_factor = dict()
         self.add_offset = dict()
-        forcing_variables = ["u", "v"] + self.extra_forcing
+        forcing_variables = ["u", "v", *self.extra_forcing]
         for key in forcing_variables:
             if hasattr(nc.variables[key], "scale_factor"):
                 self.scaled[key] = True
@@ -622,14 +622,14 @@ class Forcing(BaseForce):
             else:
                 self.scaled[key] = False
 
-    def _read_velocity(self, time_step: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_velocity(self, time_step: int) -> tuple[np.ndarray, np.ndarray]:
         """Read velocity fields at given time step"""
         # Need a switch for reading W
         # T = self._nc.variables['ocean_time'][n]  # Read new fields
 
         # Handle file opening/closing
         # Always read velocity before other fields
-        logger.debug("Reading velocity for time step = {}".format(time_step))
+        logger.debug(f"Reading velocity for time step = {time_step}")
 
         if self._first_read:
             self.open_forcing_file(time_step)  # Open first file
@@ -678,10 +678,8 @@ class Forcing(BaseForce):
             out=V,
         )
 
-        if np.any(U < -10):
-            print("Undef U")
-        if np.any(V < -10):
-            print("Undef V")
+        # if np.any(U < -10):
+        # if np.any(V < -10):
         # U[U < -10000] = 0
         # V[V < -10000] = 0
 
@@ -733,7 +731,7 @@ class Forcing(BaseForce):
         Z: np.ndarray,
         fractional_step: float = 0,
         method: str = "bilinear",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         i0 = self.i0
         j0 = self.j0
         # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
@@ -769,7 +767,7 @@ class Forcing(BaseForce):
 
 def z2s(
     z_rho: np.ndarray, X: np.ndarray, Y: np.ndarray, Z: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Find s-level and coefficients for vertical interpolation
 
@@ -891,7 +889,7 @@ def sample3DUV(
     K: np.ndarray,
     A: np.ndarray,
     method="bilinear",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     return (
         sample3D(U, X + 0.5, Y, K, A, method=method),
         sample3D(V, X, Y + 0.5, K, A, method=method),
@@ -907,7 +905,7 @@ def find_files(
     file_pattern: Union[Path, str],
     first_file: Union[Path, str, None] = None,
     last_file: Union[Path, str, None] = None,
-) -> List[Path]:
+) -> list[Path]:
     """Find ordered sequence of files following a pattern
 
     The sequence can be limited by first_file and/or last_file
@@ -923,7 +921,7 @@ def find_files(
     return files
 
 
-def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
+def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:
@@ -958,8 +956,8 @@ def scan_file_times(files: List[Path]) -> Tuple[np.ndarray, Dict[Path, int]]:
 
 
 def forcing_steps(
-    files: List[Path], timer: TimeKeeper
-) -> Tuple[List[int], Dict[int, Path], Dict[int, int]]:
+    files: list[Path], timer: TimeKeeper
+) -> tuple[list[int], dict[int, Path], dict[int, int]]:
     """Return time step numbers of the forcing and pointers to the data"""
 
     all_frames, num_frames = scan_file_times(files)

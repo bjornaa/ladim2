@@ -1,6 +1,6 @@
 # import itertools
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.animation import FuncAnimation
 from netCDF4 import Dataset
 from postladim import ParticleFile

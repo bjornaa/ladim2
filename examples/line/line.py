@@ -1,13 +1,12 @@
 """Module containing the LADiM Model class definition"""
 
-import numpy as np
-
 import ladim
+import ladim.out_netcdf
+import ladim.ROMS
 import ladim.state
 import ladim.timekeeper
-import ladim.ROMS
-import ladim.out_netcdf
 import ladim.tracker
+import numpy as np
 
 # --------------
 # Settings

@@ -15,9 +15,6 @@ Z = 5
 X = np.linspace(x0, x1, Npart)
 Y = np.linspace(y0, y1, Npart)
 
-f = open("line.rls", mode="w")
-
-for i, (x, y) in enumerate(zip(X, Y)):
-    f.write("1989-05-24T12 {:7.3f} {:7.3f} {:6.1f}\n".format(x, y, Z))
-
-f.close()
+with open("line.rls", mode="w") as fid:
+    for i, (x, y) in enumerate(zip(X, Y)):
+        fid.write(f"1989-05-24T12 {x:7.3f} {y:7.3f} {Z:6.1f}\n")

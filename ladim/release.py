@@ -1,17 +1,21 @@
 """Particle release module for LADiM"""
 
-from collections.abc import Iterator
-from pathlib import Path
+from __future__ import annotations
+
 import logging
-from typing import Optional, Union, Any
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd  # type: ignore
 from netCDF4 import Dataset  # type: ignore
 
-# from ladim.timekeeper import TimeKeeper, normalize_period
 from ladim.timekeeper import normalize_period
-from ladim.grid import BaseGrid
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from ladim.grid import BaseGrid
 
 
 # ----------------------------------
@@ -33,6 +37,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         self,
         modules: dict[str, Any],
         release_file: Union[Path, str],
+        *,
         names: Optional[list[str]] = None,
         continuous: bool = False,
         release_frequency: int = 0,  # frequency in seconds
@@ -100,7 +105,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             raise SystemExit(3)
 
         # Add a release_time column if requested by the datatypes
-        if "release_time" in datatypes.keys():
+        if "release_time" in datatypes:
             self._df["release_time"] = self._df.index
 
         if warm_start_file:
@@ -283,7 +288,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         S = S.explode(column=S.columns.tolist())
 
         # Reset dtypes
-        for c, t in zip(columns, dtypes):
+        for c, t in zip(columns, dtypes, strict=True):
             S[c] = S[c].astype(t)
 
         self._df = S

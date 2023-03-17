@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 
-import numpy as np
-from numpy import pi, exp, sin, cos
 import matplotlib.pyplot as plt
-
+import numpy as np
 from ladim.state import State
 from ladim.tracker import Tracker
+from numpy import cos, exp, pi, sin
 
 # Stommel model parameters as global variables
 km = 1000.0  # [m]
@@ -76,7 +75,7 @@ class Forcing:
 
     def velocity(self, X, Y, Z, fractional_step=0):
         # Unselfify: self.v -> v
-        A, B, G, p, q = [getattr(self, v) for v in "A B G p q".split()]
+        A, B, G, p, q = (getattr(self, v) for v in "A B G p q".split())
         U = G * (pi / b) * cos(pi * Y / b) * (p * exp(A * X) + q * exp(B * X) - 1)
         V = -G * sin(pi * Y / b) * (p * A * exp(A * X) + q * B * exp(B * X))
         return U, V
@@ -85,7 +84,7 @@ class Forcing:
         """Stream function"""
 
         # Unselfify: self.v -> v
-        A, B, G, p, q = [getattr(self, v) for v in "A B G p q".split()]
+        A, B, G, p, q = (getattr(self, v) for v in "A B G p q".split())
 
         return G * sin(pi * Y / b) * (p * exp(A * X) + q * exp(B * X) - 1)
 

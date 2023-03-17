@@ -14,4 +14,4 @@ Z = linspace(zmax, 0, num_particles)
 
 with open("station.rls", mode="w") as f:
     for z in Z:
-        f.write("{:s} {:7.3f} {:7.3f} {:6.2f}\n".format(start_time, x, y, z))
+        f.write(f"{start_time:s} {x:7.3f} {y:7.3f} {z:6.2f}\n")

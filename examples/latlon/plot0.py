@@ -1,12 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.path import Path
-
 # from netCDF4 import Dataset
-
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.path import Path
 from postladim import ParticleFile
 
 # ---------------

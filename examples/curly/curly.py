@@ -1,14 +1,13 @@
 """Module for plotting curly vectors with LADiM"""
 
-from typing import Optional, Tuple
+from typing import Optional
 
-import numpy as np
-import matplotlib.pyplot as plt
-from netCDF4 import Dataset
-
+import ladim.ROMS
 import ladim.state
 import ladim.tracker
-import ladim.ROMS
+import matplotlib.pyplot as plt
+import numpy as np
+from netCDF4 import Dataset
 
 
 class Curly:
@@ -19,7 +18,7 @@ class Curly:
         data_file: str,
         rec: int,
         depth: float = 0.0,
-        subgrid: Optional[Tuple[int, int, int, int]] = None,
+        subgrid: Optional[tuple[int, int, int, int]] = None,
         dt: Optional[int] = None,
         num_steps: int = 50,
         density: Optional[int] = None,
@@ -101,7 +100,7 @@ class Curly:
 
 def zslice(
     grid: ladim.ROMS.Grid, U3D: np.ndarray, V3D: np.ndarray, Z: float
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Horizontal slice of 3D ROMS vector field, return fields are non-staggered"""
     i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
     Xc, Yc = np.meshgrid(np.arange(i0, i1), np.arange(j0, j1))  # Grid cell centers
@@ -131,7 +130,7 @@ class FixedForcing:
 
     def velocity(
         self, X: np.ndarray, Y: np.ndarray, Z: np.ndarray, fractional_step: float = 0
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Sample velocity at the particle positions
 
         Z and fractional_step are ignored, dummy input from tracker

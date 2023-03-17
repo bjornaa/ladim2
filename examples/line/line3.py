@@ -1,8 +1,8 @@
 """Module containing the LADiM Model class definition"""
+from contextlib import suppress
 
 from ladim.configure import configure
 from ladim.model import init_module
-
 
 configuration_file = "ladim.yaml"
 config = configure(configuration_file)
@@ -36,8 +36,6 @@ for step in range(Nsteps + 1):
         modules["tracker"].update()
 
 # Clean up
-for name in module_names:
-    try:
+with suppress(AttributeError, KeyError):
+    for name in module_names:
         modules[name].close()
-    except (AttributeError, KeyError):
-        pass

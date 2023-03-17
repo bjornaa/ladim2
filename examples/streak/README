@@ -1,6 +1,8 @@
 Streak example
 ==============
 
+TODO: Problem with release_time
+
 In this example there is a continuous release of particles from a single position. This
 is called a streakline. The example demonstrates how to do continuous release, how to
 use particle variables and a simple IBM.

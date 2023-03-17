@@ -6,14 +6,18 @@
 # 2020-10-29
 # ================================
 
-import logging
+from __future__ import annotations
+
 import datetime
+import logging
 import re
-from typing import Union, Optional, Any
+from typing import Any
+
 import numpy as np
 
-Time = Union[str, np.datetime64, datetime.datetime]
-TimeDelta = Union[int, np.timedelta64, datetime.timedelta, list[Union[int, str]], str]
+# Time = Union[str, np.datetime64, datetime.datetime]
+Time = str | np.datetime64 | datetime.datetime
+TimeDelta = int | np.timedelta64 | datetime.timedelta | tuple[int, str]
 
 
 DEBUG = False
@@ -51,9 +55,9 @@ class TimeKeeper:
         start: Time,
         stop: Time,
         dt: TimeDelta,
-        reference: Optional[Time] = None,
+        reference: Time | None = None,
         time_reversal: bool = False,
-        modules: Optional[dict[str, Any]] = None,
+        modules: dict[str, Any] | None = None,
     ) -> None:
         """
         start      start time
@@ -82,13 +86,12 @@ class TimeKeeper:
         # Quality control
         duration = self.stop_time - self.start_time
         self.num_steps = duration / self.dt
-        print("num steps = ", self.num_steps)
         if time_reversal != (duration < np.timedelta64(0)):
             if time_reversal:
-                print("ERROR: Backwards time and start before stop")
+                msg = "ERROR: Backwards time and start before stop"
             else:
-                print("ERROR: Forward time and stop before start")
-            raise SystemExit(3)
+                msg = "ERROR: Forward time and stop before start"
+            raise SystemExit(3, msg)
 
         self.min_time = min(self.start_time, self.stop_time)  # type: ignore
         self.max_time = max(self.start_time, self.stop_time)  # type: ignore
@@ -160,7 +163,7 @@ class TimeKeeper:
         return f"{self.unit_table[unit]} since {self.reference_time}"
 
 
-def duration2iso(duration: Union[datetime.timedelta, np.timedelta64]) -> str:
+def duration2iso(duration: datetime.timedelta | np.timedelta64) -> str:
     """Convert time delta to ISO 8601 format"""
     if isinstance(duration, np.timedelta64):
         seconds = int(duration / np.timedelta64(1, "s") + 0.5)
@@ -184,7 +187,7 @@ def duration2iso(duration: Union[datetime.timedelta, np.timedelta64]) -> str:
 
 
 def normalize_period(per: TimeDelta) -> np.timedelta64:
-    """Normalize different time period formats to np.timedelta64(-,"s")
+    """Normalize different time period formats to np.timedelta64(-,"s").
 
     Accepted formats:
        int:  number of seconds
