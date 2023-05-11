@@ -191,29 +191,34 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         """Read the release file into a pandas DataFrame"""
 
         # Handle time separately
-        time_vars = ["release_time"]
-        dtypes = dict()
-        for var, dtype in datatypes.items():
-            if dtype in ["M8[s]", np.dtype("M8[s]"), np.dtype("M8[ns]")]:
-                time_vars.append(var)
-            else:
-                dtypes[var] = dtype
+        # time_vars = ["release_time"]
+        # dtypes = dict()
+        # for var, dtype in datatypes.items():
+        #     if dtype in ["M8[s]", np.dtype("M8[s]"), np.dtype("M8[ns]")]:
+        #         time_vars.append(var)
+        #     else:
+        #         dtypes[var] = dtype
         # Standard dtypes
-        dtypes["mult"] = int
-        dtypes["X"] = float
-        dtypes["Y"] = float
-        dtypes["Z"] = float
-        dtypes["lon"] = float
-        dtypes["lat"] = float
+        dtypes = dict(
+            mult=int,
+            X=float,
+            Y=float,
+            Z=float,
+            lon=float,
+            lat=float,
+        )
 
-        df = pd.read_csv(
-            rls_file,
-            parse_dates=list(set(time_vars)),
+        kwargs = dict(
+            parse_dates=["release_time"],
             names=names,
             dtype=dtypes,
             delim_whitespace=True,
             index_col="release_time",
         )
+        # pandas 2.x has trouble reading time
+        if pd.__version__[0] == "2":
+            kwargs["date_format"] = "ISO8601"
+        df = pd.read_csv(rls_file, **kwargs)
 
         return df
 
