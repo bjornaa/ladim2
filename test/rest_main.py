@@ -1,16 +1,16 @@
 """Module for testing config file API"""
 
 
-import xarray as xr
-import pandas as pd
-
-import uuid
-import shutil
 import contextlib
+import shutil
+import uuid
 from pathlib import Path
-from ladim.main import main
-import yaml  # type: ignore
+
 import numpy as np
+import pandas as pd
+import xarray as xr
+import yaml  # type: ignore
+from ladim.main import main
 
 
 class Test_output_when_different_scenarios:
@@ -129,13 +129,12 @@ def tempfile(num):
                     p.unlink()
                 elif p.is_dir():
                     shutil.rmtree(p)
-            except IOError:
+            except OSError:
                 pass
 
-        try:
+        with contextlib.suppress(OSError):
             d.rmdir()
-        except IOError:
-            pass
+
 
 
 @contextlib.contextmanager

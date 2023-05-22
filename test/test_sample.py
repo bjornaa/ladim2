@@ -1,9 +1,8 @@
 # Test the sampling routines
 
 import numpy as np
-from pytest import approx
-
 from ladim.sample import sample2D, sample2DUV
+from pytest import approx
 
 
 def test_sample2D():

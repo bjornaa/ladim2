@@ -1,11 +1,10 @@
 from pathlib import Path
-import numpy as np
-from netCDF4 import Dataset
-
-import pytest
 
 import ladim.ROMS as force
+import numpy as np
+import pytest
 from ladim.timekeeper import TimeKeeper
+from netCDF4 import Dataset
 
 
 @pytest.fixture(scope="module")

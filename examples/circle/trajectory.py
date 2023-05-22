@@ -42,7 +42,7 @@ def main():
     append_trajectory(traj, state)
 
     # Time loop
-    for n in range(NUM_STEPS):
+    for _n in range(NUM_STEPS):
         advance(state, DT)
         append_trajectory(traj, state)
 

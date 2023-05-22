@@ -85,20 +85,19 @@ def animate(t):
     return particle_dist, timestamp
 
 
-# Make mouse click halt the animation
-anim_running = True
-
-
+# Start/stop function
+# Using function attribute to avoid a global variable
 def onClick(event):
-    global anim_running
-    if anim_running:
+    """Make an event halt or restart the animation"""
+    if onClick.running:
         anim.event_source.stop()
-        anim_running = False
+        onClick.running = False
     else:
         anim.event_source.start()
-        anim_running = True
+        onClick.running = True
 
 
+onClick.running = True
 fig.canvas.mpl_connect("button_press_event", onClick)
 
 # Do the animation
@@ -112,6 +111,7 @@ anim = FuncAnimation(
     blit=True,
 )
 
+# Uncomment the next lineto save the animation
 # anim.save('line.gif',  writer='imagemagick')
 plt.show()
 

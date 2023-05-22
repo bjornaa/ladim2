@@ -1,12 +1,10 @@
 from pathlib import Path
 
 import numpy as np
-from netCDF4 import Dataset
 import pytest
-
-from ladim.timekeeper import TimeKeeper
 from ladim import ROMS2
-
+from ladim.timekeeper import TimeKeeper
+from netCDF4 import Dataset
 
 filename = Path("examples/data/ocean_avg_0014.nc")
 # Can be run from test directory or ladim root

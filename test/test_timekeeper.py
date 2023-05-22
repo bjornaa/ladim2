@@ -1,10 +1,9 @@
 """Unit tests for TimeKeeper"""
 
 import datetime
+
 import numpy as np
-
 import pytest
-
 from ladim.timekeeper import TimeKeeper, normalize_period
 
 

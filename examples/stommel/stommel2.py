@@ -36,7 +36,7 @@ def main():
     state.append(X=X0, Y=Y0, Z=5)
 
     # Time loop
-    for n in range(num_steps):
+    for _n in range(num_steps):
         tracker.update()
 
     # Plot results

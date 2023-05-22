@@ -1,6 +1,5 @@
 import numpy as np  # type: ignore
 import pytest
-
 from ladim.state import State
 
 # ------------

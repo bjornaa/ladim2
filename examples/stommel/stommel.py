@@ -1,3 +1,5 @@
+# type: ignore
+
 import matplotlib.pyplot as plt
 import numpy as np
 from ladim import analytical
@@ -7,14 +9,14 @@ from numpy import cos, exp, pi, sin
 # Global variables (parameters)
 
 km = 1000.0  # [m]
-D = 200.0  # Depth                                  [m]
-r = 1.0e-6  # Bottom friction coefficient            [s-1]
-beta = 1.0e-11  # Coriolis gradient                      [m-1 s-1]
+D = 200.0  # Depth [m]
+r = 1.0e-6  # Bottom friction coefficient [s-1]
+beta = 1.0e-11  # Coriolis gradient   [m-1 s-1]
 alfa = beta / r  # [m-1]
-lambda_ = 10000 * km  # West-east extent of domain             [m]
-b = 6300 * km  # South-north extent of domain           [m]
-F = 0.1  # Wind stress amplitude                  [N m-2]
-rho = 1025.0  # Density                                [kg/m3]
+lambda_ = 10000 * km  # West-east extent of domain [m]
+b = 6300 * km  # South-north extent of domain [m]
+F = 0.1  # Wind stress amplitude [N m-2]
+rho = 1025.0  # Density [kg/m3]
 gamma = F * pi / (r * b)  # [kg m2 s-1]
 G = (1 / rho) * (1 / D) * gamma * (b / pi) ** 2  # [m2 s-1]
 
@@ -24,7 +26,7 @@ p = (1.0 - exp(B * lambda_)) / (exp(A * lambda_) - exp(B * lambda_))
 q = 1 - p
 
 # --- Simulation ---
-day = 86400  
+day = 86400
 simulation_time = 1736 * day
 dt = day
 Nsteps = simulation_time // dt
@@ -38,7 +40,7 @@ def main():
     state.append(X=X0, Y=Y0, Z=5)
 
     # Time loop
-    for n in range(Nsteps):
+    for _n in range(Nsteps):
         velocity = get_velocity(state, sample_velocity, dt)
         state["X"] += dt * velocity.U
         state["Y"] += dt * velocity.V
@@ -90,7 +92,7 @@ def plot_particles(state, X0, Y0):
     Psi = psi(JJ, II)
     plt.contour(I / km, J / km, Psi, colors="k", linestyles=":", linewidths=0.5)
 
-    plt.plot(X0 / km, Y0 / km, ".b")   # Initial distribution
+    plt.plot(X0 / km, Y0 / km, ".b")  # Initial distribution
     plt.plot(state.X / km, state.Y / km, ".r")  # Final distribution
 
     plt.axis("image")

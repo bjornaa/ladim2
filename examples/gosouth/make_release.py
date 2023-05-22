@@ -16,5 +16,5 @@ X = np.linspace(x0, x1, Npart)
 Y = np.linspace(y0, y1, Npart)
 
 with open("line.rls", mode="w") as fid:
-    for i, (x, y) in enumerate(zip(X, Y)):
+    for _i, (x, y) in enumerate(zip(X, Y)):
         fid.write(f"1989-05-24T12 {x:7.3f} {y:7.3f} {Z:6.1f}\n")

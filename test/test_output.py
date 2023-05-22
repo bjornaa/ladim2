@@ -1,14 +1,13 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import numpy as np
-from netCDF4 import Dataset
+from ladim.out_netcdf import Output, filename_generator
 
 # import pytest
-
 from ladim.state import State
 from ladim.timekeeper import TimeKeeper
-from ladim.out_netcdf import filename_generator, Output
+from netCDF4 import Dataset
 
 NCFILE = Path("output_test.nc")
 
@@ -164,7 +163,7 @@ def test_write():
 
     # Update position
     state["X"] += 1
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     assert out.record_count == 2
@@ -175,7 +174,7 @@ def test_write():
     state.append(
         X=np.array([200, 300]), Y=np.array([20, 30]), Z=5, X0=np.array([200, 300])
     )
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     assert out.record_count == 3
@@ -185,7 +184,7 @@ def test_write():
     state["X"] = state["X"] + 1.0
     state["alive"][0] = False
     state.compactify()
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     assert out.record_count == 4
@@ -193,7 +192,7 @@ def test_write():
 
     # Update positions
     state["X"] += 1
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     assert out.record_count == 5
@@ -236,7 +235,7 @@ def test_multifile():
     timer.reset()
     out.write(state)
     state["X"] += 1
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     with Dataset("a_000.nc") as nc:
@@ -248,13 +247,13 @@ def test_multifile():
     # Update first particle and add two new particles
     state["X"] += 1
     state.append(X=np.array([200, 300]), Y=np.array([20, 30]), Z=5)
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     state["X"] = state["X"] + 1.0
     state["alive"][0] = False
     state.compactify()
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     with Dataset("a_001.nc") as nc:
@@ -264,7 +263,7 @@ def test_multifile():
 
     # Third and last file
     state["X"] += 1
-    for i in range(outper):
+    for _i in range(outper):
         timer.update()
     out.write(state)
     with Dataset("a_002.nc") as nc:

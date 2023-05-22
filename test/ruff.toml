@@ -1,0 +1,17 @@
+# A more foregiving version for the tests
+
+target-version = "py39"
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "I",  # isort
+    "A",  # flake8 builtins
+    "NPY",  # numpy
+    "RUF",
+]
+
+ignore = [
+    "E741",
+   ]
+

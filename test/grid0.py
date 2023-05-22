@@ -1,6 +1,5 @@
-from ladim.grid import BaseGrid
-
 import numpy as np
+from ladim.grid import BaseGrid
 
 
 class Grid(BaseGrid):

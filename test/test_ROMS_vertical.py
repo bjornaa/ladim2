@@ -1,7 +1,5 @@
 import numpy as np
-from ladim.ROMS import sdepth
-from ladim.ROMS import z2s, sample3D
-
+from ladim.ROMS import sample3D, sdepth, z2s
 
 # Make a module level fixture for these tests
 
@@ -12,7 +10,8 @@ def test_z2s():
     H = 100.0 + np.zeros((2, 2))
     Hc = 10.0
     # Make a random increasing sequence of N values between -1 to 0
-    C = np.random.uniform(-1, 0, kmax)
+    rng = np.random.default_rng()
+    C = rng.uniform(-1, 0, kmax)
     C.sort()
     # C = np.linspace(-1, 0, kmax + 2)[1:-1]  # Exclude end points
     z_rho = sdepth(H, Hc, C, stagger="rho")

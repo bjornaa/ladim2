@@ -3,6 +3,9 @@ from typing import Any
 import numpy as np
 from ladim.ibms import light  # type: ignore
 
+# Random number generator
+rng = np.random.default_rng()
+
 
 # class IBM(BaseIBM):
 class IBM:
@@ -70,7 +73,7 @@ class IBM:
         if self.new_salinity_model:
             # Mixture of down/up if salinity between 23 and 31
             # Downwards if salinity < 31
-            salt_limit = np.random.uniform(23, 31, W.shape)
+            salt_limit = rng.uniform(23, 31, W.shape)
         else:
             # Downwards if salinity < 20
             salt_limit = 20
@@ -79,7 +82,7 @@ class IBM:
 
         # Random diffusion velocity
         if self.vertical_diffusion:
-            rand = np.random.normal(size=len(W))
+            rand = rng.normal(size=len(W))
             W += rand * (2 * self.vertical_mixing / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top

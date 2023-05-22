@@ -1,11 +1,10 @@
 from pathlib import Path
 
 import numpy as np
-from netCDF4 import Dataset
 import pytest
-
-from ladim.timekeeper import TimeKeeper
 from ladim import ROMS
+from ladim.timekeeper import TimeKeeper
+from netCDF4 import Dataset
 
 
 class Dummy:

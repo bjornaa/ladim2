@@ -1,5 +1,6 @@
 # import os
 from io import StringIO
+
 import numpy as np  # type: ignore
 
 # import pandas as pd
@@ -414,13 +415,13 @@ def test_iterate2():
     freq = np.timedelta64(12, "h")
     pr = ParticleReleaser(modules0, f, continuous=True, release_frequency=freq)
 
-    for k in range(3):
+    for _k in range(3):
         A = next(pr)
         assert all(A.X == [100, 110])
-    for k in range(2):
+    for _k in range(2):
         A = next(pr)
         assert all(A.X == [101, 111, 121])
-    for k in range(2):
+    for _k in range(2):
         A = next(pr)
         assert all(A.X == [102])
     with pytest.raises(StopIteration):

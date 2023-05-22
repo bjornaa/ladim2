@@ -6,9 +6,7 @@
 # ----------------------------------
 
 import numpy as np
-
-from ladim.ROMS import sdepth, s_stretch
-
+from ladim.ROMS import s_stretch, sdepth
 
 # ------------------------------------
 
@@ -17,7 +15,8 @@ N = 10
 # Make N uniformly distributed values from -1+0.5/N to -0.5/N
 S = -1.0 + (0.5 + np.arange(N)) / N
 # Make a random increasing sequence of N values between -1 to 0
-C_random = np.random.uniform(-1, 0, N)
+rng = np.random.default_rng()
+C_random = rng.uniform(-1, 0, N)
 C_random.sort()
 
 # --------------------------

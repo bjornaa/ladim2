@@ -3,7 +3,6 @@
 
 class IBM:
     def __init__(self, modules, **kwargs) -> None:
-        print("Initializing age IBM")
         self.state = modules["state"]
         self.dt = modules["time"].dtsec
 

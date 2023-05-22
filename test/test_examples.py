@@ -1,14 +1,12 @@
 import os
-from pathlib import Path
-from contextlib import contextmanager
-import shutil
 import runpy
+import shutil
+from contextlib import contextmanager
+from pathlib import Path
 
 import yaml  # type: ignore
-from netCDF4 import Dataset
-
 from ladim.main import main as run_ladim
-
+from netCDF4 import Dataset
 
 EXAMPLE_DIR = Path(__file__).parents[1] / "examples"
 
