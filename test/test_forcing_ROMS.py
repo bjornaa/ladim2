@@ -95,7 +95,6 @@ def test_forcing_steps(nc_files):
     )
     steps, file_idx, frame_idx = force.forcing_steps(files, timer)
     assert steps == [2 * (11 - i) for i in range(len(all_frames))]
-    print(steps)
 
     for step in [-4, 0, 4, 16]:
         with Dataset(file_idx[step]) as nc:

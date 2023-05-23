@@ -57,15 +57,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
 
     filetype = confile.suffix[1:]  # remove "dot"
 
-    if filetype == "yaml":
-        try:
-            # with open(config_file, encoding="utf-8") as fid:
-            with confile.open(encoding="utf-8") as fid:
-                config: dict[str, Any] = yaml.safe_load(fid)
-        except yaml.YAMLError as err:
-            logger.critical("Not a valid YAML file: %s", confile)
-            raise SystemExit(3) from err
-    elif filetype == "toml":
+    if filetype == "toml":
         try:
             # with open(config_file, mode="rb") as fid:
             with confile.open(mode="rb") as fid:
@@ -73,9 +65,14 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         except tomli.TOMLDecodeError as err:
             logger.critical("Not a valid TOML file: %s", confile)
             raise SystemExit(3) from err
-    else:
-        logger.critical("Not a config file: %s", confile)
-        raise SystemExit(3)
+    else:  # Default filetype = yaml
+        try:
+            # with open(config_file, encoding="utf-8") as fid:
+            with confile.open(encoding="utf-8") as fid:
+                config: dict[str, Any] = yaml.safe_load(fid)
+        except yaml.YAMLError as err:
+            logger.critical("Not a valid YAML file: %s", confile)
+            raise SystemExit(3) from err
 
     # Determine configuration version
     # i) explicitly given

@@ -27,3 +27,7 @@ assert all(abs(pf1.temp[0] - pf1.temp[0]) < 1e-6)
 assert all(abs(pf2.age[1] - pf1.age[1]) < 1e-6)
 assert all(abs(pf1.weight[0] - pf1.weight[0]) < 1e-6)
 assert all(abs(pf1.weight[3] - pf1.weight[3]) < 1e-6)
+
+# particle variables
+assert all(pf1.weight.values - pf0.weight.values[-48:] <= 1e-6)
+assert all(pf2.weight.values - pf1.weight.values <= 1e-6)

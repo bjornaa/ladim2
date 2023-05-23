@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 from ladim.warm_start import warm_start
 
 if TYPE_CHECKING:
-
     from ladim.forcing import BaseForce
     from ladim.grid import BaseGrid
     from ladim.ibm import IBM

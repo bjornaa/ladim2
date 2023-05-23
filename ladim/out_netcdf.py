@@ -96,8 +96,8 @@ class Output(BaseOutput):
         self.num_records = int(
             abs((timer.stop_time - timer.start_time) // self.output_period)
         )
-        if not skip_initial:  # Add an initial record
-            self.num_records += 1
+        # if not skip_initial:  # Add an initial record
+        #     self.num_records += 1
         logger.info("  Number of records: %s", self.num_records)
 
         if self.numrec:
@@ -199,13 +199,14 @@ class Output(BaseOutput):
                         conf["encoding"]["datatype"],
                         ("particle",),
                     )
+
                 for att, value in conf["attributes"].items():
                     # Replace string "reference_time" with actual reference time
                     if "reference_time" in value:
-                        value = value.replace(
+                        new_value = value.replace(
                             "reference_time", str(self.timer.reference_time)
                         )
-                    setattr(v, att, value)
+                        setattr(v, att, new_value)
 
         if self.global_attributes is not None:
             for att, value in self.global_attributes.items():

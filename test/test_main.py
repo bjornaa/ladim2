@@ -44,7 +44,6 @@ class Test_output_when_different_scenarios:
             assert result.particle_count.values.tolist() == [1, 2]
             # assert result.pid.values.tolist() == [0, 0, 1, 0, 1, 2]
             assert result.pid.values.tolist() == [0, 0, 1]
-            print(result.release_time.values)  # Should not be empty
             assert (
                 (result.release_time.values - result.release_time.values[0])
                 / np.timedelta64(1, "s")
@@ -57,8 +56,8 @@ class Test_output_when_different_scenarios:
         conf = make_conf()
 
         with runladim(conf, gridforce_zero, release_multiple) as result:
-            assert result.particle_count.values.tolist() == [5] * 3
-            assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 3
+            assert result.particle_count.values.tolist() == [5] * 2
+            assert result.pid.values.tolist() == [0, 1, 2, 3, 4] * 2
             assert (
                 (result.release_time.values - result.release_time.values[0])
                 / np.timedelta64(1, "s")
@@ -70,8 +69,8 @@ class Test_output_when_different_scenarios:
         conf = make_conf()
 
         with runladim(conf, gf, rls) as result:
-            assert result.X.values.tolist() == [2, 3, 4]
-            assert result.Y.values.tolist() == [2, 4, 6]
+            assert result.X.values.tolist() == [2, 3]
+            assert result.Y.values.tolist() == [2, 4]
 
     def test_single_particle_nonzero_vertdiff(self):
         gf = make_gridforce()
@@ -80,11 +79,11 @@ class Test_output_when_different_scenarios:
         conf["tracker"]["vertdiff"] = 1e-7
 
         with runladim(conf, gf, rls) as result:
-            assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
-            assert all(result.Z.values[4:] != [0, 1, 2, 3] * 2)
+            assert result.pid.values.tolist() == [0, 1, 2, 3] * 2
+            assert all(result.Z.values[4:] != [0, 1, 2, 3])
             assert all(result.Z.values[4:] > 0)
             assert all(result.Z.values[4:] < 3)
-            assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 3) < 1)
+            assert all(np.abs(result.Z.values - [0, 1, 2, 3] * 2) < 1)
 
     def test_single_particle_nonzero_vertical_advection(self):
         gf = make_gridforce(wfunc=lambda *args: 0.125 / 60)
@@ -95,7 +94,7 @@ class Test_output_when_different_scenarios:
         conf["state"]["instance_variables"]["w"] = "float"
 
         with runladim(conf, gf, rls) as result:
-            assert result.pid.values.tolist() == [0, 1, 2, 3] * 3
+            assert result.pid.values.tolist() == [0, 1, 2, 3] * 2
             assert result.Z.values.tolist() == [
                 0,
                 1,
@@ -104,10 +103,6 @@ class Test_output_when_different_scenarios:
                 0.125,
                 1.125,
                 2.125,
-                3,
-                0.25,
-                1.25,
-                2.25,
                 3,
             ]
 
@@ -134,7 +129,6 @@ def tempfile(num):
 
         with contextlib.suppress(OSError):
             d.rmdir()
-
 
 
 @contextlib.contextmanager
@@ -193,7 +187,7 @@ def make_gridforce(ufunc=None, vfunc=None, wfunc=None):
     s_w = xr.Variable("s_w", np.arange(len(s) + 1))
     ocean_t = xr.Variable(
         "ocean_time",
-        np.datetime64("2000-01-02T03") + np.arange(3) * np.timedelta64(1, "m"),
+        np.datetime64("2000-01-02T03", "ns") + np.arange(3) * np.timedelta64(1, "m"),
     )
     t = xr.Variable("ocean_time", np.arange(len(ocean_t)))
 
