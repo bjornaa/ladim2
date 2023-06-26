@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from typing import Union
 
+import rich.highlighter
+import rich.logging
+
 from ladim import __file__, __version__
 from ladim.configure import configure
 from ladim.model import Model
@@ -41,8 +44,19 @@ def main(
     # Logging
     # ---------------------
 
-    # set master log level
-    logging.basicConfig(level=loglevel, format="%(levelname)s:%(module)s - %(message)s")
+    loghandler = rich.logging.RichHandler(
+        show_time=False,
+        show_path=False,
+        markup=True,
+        highlighter=rich.highlighter.NullHighlighter(),
+    )
+    loghandler.setFormatter(LadimLogFormatter())
+
+    logging.basicConfig(
+        level=loglevel,
+        handlers=[loghandler],
+    )
+
     logger = logging.getLogger("main")
 
     # ----------------
@@ -149,3 +163,22 @@ def script() -> None:
     print("")
 
     main(args.config_file, loglevel=args.loglevel)
+
+
+class LadimLogFormatter(logging.Formatter):
+    """Set up coloured log messages for LADiM"""
+
+    logformat = "%(module)s - %(message)s"
+
+    formats = {
+        logging.DEBUG: "[green]" + logformat,
+        logging.INFO: logformat,
+        logging.WARNING: "[magenta]" + logformat,
+        logging.ERROR: "[bold bright_red]" + logformat,
+        logging.CRITICAL: "[bold white on red]" + logformat,
+    }
+
+    def format(self, record):  # noqa: A003
+        log_fmt = self.formats[record.levelno]
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)

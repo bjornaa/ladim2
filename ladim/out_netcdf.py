@@ -222,8 +222,6 @@ class Output(BaseOutput):
 
         """
 
-        logger.debug("Writing output")
-
         # May skip initial output
         self.skip_initial = False
         if self.skip_initial:

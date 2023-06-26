@@ -36,7 +36,7 @@ class Tracker:
 
     def __init__(
         self,
-        advection: str,  # EF, RK2, or RK4
+        advection: str = "",  # EF, RK2, or RK4
         diffusion: float = 0.0,
         vertdiff: float = 0.0,
         vertical_advection: bool = False,
@@ -53,19 +53,23 @@ class Tracker:
         # advect <- requested advection method
         # advection = string "EF", "RK2", "RK4"
         # advect = the actual method
-        if self.advection:
+        if self.advection in ["EF", "RK2", "RK4"]:
             self.advect = getattr(self, self.advection)
-
+        else:
+            if self.advection:
+                logger.warning(f"{self.advection} is not a valid advection method")
+                self.advection = ""
+            logger.warning("No advection")
         self.vertical_advection = vertical_advection
         if vertical_advection:
             logger.info("  Vertical advection activated")
 
-        self.diffusion = bool(diffusion)
+        self.diffusion = bool(diffusion > 0)
         self.D = diffusion
         if self.diffusion:
             logger.info("  Horizontal diffusion: %s m²/s", diffusion)
 
-        self.vertdiff = bool(vertdiff)
+        self.vertdiff = bool(vertdiff > 0)
         self.Dz = vertdiff
         if self.vertdiff:
             logger.info("  Vertical diffusion: %s m²/s", vertdiff)

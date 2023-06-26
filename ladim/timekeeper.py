@@ -52,9 +52,9 @@ class TimeKeeper:
 
     def __init__(
         self,
-        start: Time,
-        stop: Time,
-        dt: TimeDelta,
+        start: Time = "",
+        stop: Time = "",
+        dt: TimeDelta = 0,
         reference: Time | None = None,
         time_reversal: bool = False,
         modules: dict[str, Any] | None = None,
@@ -72,6 +72,15 @@ class TimeKeeper:
 
         logger.info("Initiating the timekeeper")
         self.modules = modules
+        if not start:
+            logger.critical("Missing start time")
+            raise SystemExit(3)
+        if not stop:
+            logger.critical("Missinc stop time")
+            raise SystemExit(3)
+        if not dt:
+            logger.critical("Missing time step, dt")
+            raise SystemExit(3)
         self.start_time: np.datetime64 = np.datetime64(start, "s")
         self.stop_time: np.datetime64 = np.datetime64(stop, "s")
         logger.info("  Model start time: %s", self.start_time)
@@ -88,10 +97,10 @@ class TimeKeeper:
         self.num_steps = duration / self.dt
         if time_reversal != (duration < np.timedelta64(0)):
             if time_reversal:
-                msg = "ERROR: Backwards time and start before stop"
+                logger.critical("ERROR: Backwards time and start before stop")
             else:
-                msg = "ERROR: Forward time and stop before start"
-            raise SystemExit(3, msg)
+                logger.critical("ERROR: Forward time and stop before start")
+            raise SystemExit(3)
 
         self.min_time = min(self.start_time, self.stop_time)  # type: ignore
         self.max_time = max(self.start_time, self.stop_time)  # type: ignore

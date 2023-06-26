@@ -94,7 +94,7 @@ class Grid(BaseGrid):
         if (not 1 <= limits[0] < limits[1] <= imax0 - 1) or (
             not 1 <= limits[2] < limits[3] <= jmax0 - 1
         ):
-            logger.critical("Illegal subgrid specification: %s", limits)
+            logger.critical("Illegal subgrid specification: %s", str(limits))
             raise SystemExit(1)
 
         self.i0, self.i1, self.j0, self.j1 = limits
@@ -440,7 +440,7 @@ class Forcing(BaseForce):
         files = find_files(filename)
         numfiles = len(files)
         if numfiles == 0:
-            logger.error("No input file: %s", filename)
+            logger.error("No forcing file: %s", filename)
             raise SystemExit(3)
         logger.info("  Number of forcing files = %s", numfiles)
         self.files = files
@@ -945,21 +945,16 @@ def forcing_steps(
     time1 = all_frames[-1].astype("M8[s]")
     logger.info("  First forcing time = %s", time0)
     logger.info("  Last forcing time = %s", time1)
-    # start_time = self.start_time)
-    # stop_time = self.stop_time)
-    # dt = np.timedelta64(self.timer.dt, "s")
 
     # Check that forcing period covers the simulation period
     # ------------------------------------------------------
 
     if time0 > timer.min_time:
-        error_string = "No forcing at minimum time"
-        # logger.error(error_string)
-        raise SystemExit(error_string)
+        logger.critical("No forcing at minimum time")
+        raise SystemExit(3)
     if time1 < timer.max_time:
-        error_string = "No forcing at maximum time"
-        # logger.error(error_string)
-        raise SystemExit(error_string)
+        logger.critical("No forcing at maximum time")
+        raise SystemExit(3)
 
     # Make a list steps of the forcing time steps
     # --------------------------------------------

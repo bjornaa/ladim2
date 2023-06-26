@@ -43,6 +43,15 @@ def test_read_release():
     assert all(A.super == [1000, 2000, 3333.0])
 
 
+def test_not_found():
+    """Should exit if release file is not found"""
+
+    with pytest.raises(SystemExit):
+        ParticleReleaser.read_release_file(
+            "xxxxxxx", datatypes0, names=["mult", "release_time", "X", "Y", "Z"]
+        )
+
+
 def test_read_release_no_header():
     f = StringIO(
         """
@@ -70,13 +79,12 @@ def test_read_release_no_header_no_names():
     )
 
     # Have more explicit error
-    with pytest.raises(ValueError):
+    with pytest.raises(SystemExit):
         ParticleReleaser.read_release_file(f, datatypes0)
 
 
 def test_read_release_both_header_names():
-    """Do not accept header in file and as argument"""
-    # Chang to priority for file??
+    """Do not accept header both in file and as argument"""
 
     f = StringIO(
         """
@@ -87,7 +95,7 @@ def test_read_release_both_header_names():
     """
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(SystemExit):
         ParticleReleaser.read_release_file(
             f, datatypes0, names=["mult", "release_time", "X", "Y", "Z"]
         )

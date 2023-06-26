@@ -1,5 +1,11 @@
 """Particle release module for LADiM"""
 
+# ----------------------------------
+# Bjørn Ådlandsvik <bjorn@imr.no>
+# Institute of Marine Research
+# Bergen, Norway
+# ----------------------------------
+
 from __future__ import annotations
 
 import logging
@@ -17,12 +23,6 @@ if TYPE_CHECKING:
 
     from ladim.grid import BaseGrid
 
-
-# ----------------------------------
-# Bjørn Ådlandsvik <bjorn@imr.no>
-# Institute of Marine Research
-# Bergen, Norway
-# ----------------------------------
 
 DEBUG = False
 logger = logging.getLogger(__name__)
@@ -55,7 +55,12 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         logger.info("Initializing the particle releaser")
         logger.info("  Release file: %s", release_file)
 
+        if release_file == "":
+            logging.critical("No release file")
+            raise SystemExit(3)
+
         self._df = self.read_release_file(release_file, datatypes, names)
+
         if continuous:
             logger.info("  Continuous release")
         else:
@@ -215,11 +220,19 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             delim_whitespace=True,
             index_col="release_time",
         )
+
         # pandas 2.x has trouble reading time
         if pd.__version__[0] == "2":
             kwargs["date_format"] = "ISO8601"
-        df = pd.read_csv(rls_file, **kwargs)
-
+        try:
+            df = pd.read_csv(rls_file, **kwargs)
+        except ValueError as err:
+            logger.critical("Could not read release file")
+            logger.debug("  Keyword arguments to read_csv:\n %s", str(kwargs))
+            raise SystemExit(3) from err
+        except FileNotFoundError as err:
+            logger.critical("Release file %s not found" % rls_file)
+            raise SystemExit(3) from err
         return df
 
     def clean_position(self, grid: Optional[BaseGrid] = None) -> None:

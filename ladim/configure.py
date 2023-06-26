@@ -47,19 +47,18 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     """
 
     logger.info("Configuration")
-    logger.info("  Configuration file %s:", config_file)
+    logger.info("  Configuration file %s", config_file)
 
     confile = Path(config_file)
 
     if not confile.exists():
-        logger.critical("No configuration file %s:", confile)
+        logger.critical("No configuration file %s", confile)
         raise SystemExit(3)
 
     filetype = confile.suffix[1:]  # remove "dot"
 
     if filetype == "toml":
         try:
-            # with open(config_file, mode="rb") as fid:
             with confile.open(mode="rb") as fid:
                 config = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
@@ -79,20 +78,21 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     version = str(config.get("version", "0"))  # zero for undetermined
     if version == "0":
         # infer version
-        if "time_control" in config:
-            version = "1"
-        if "time" in config:
-            version = "2"
-
+        version = "1" if "time_control" in config else "2"
     logger.info("  Configuration file version: %s", version)
 
     if version[0] == "2":
-        configure_v2(config)
+        try:
+            configure_v2(config)
+        except KeyError as err:
+            logger.critical("Missing key %s in configuration file", err)
+            raise SystemExit(3) from err
+
     elif version[0] == "1":
         config = configure_v1(config)
     else:
-        logger.critical("Not a valid configuration version")
-        raise (SystemExit(3))
+        logger.critical("Version %s in not a valid configuration version", version)
+        raise SystemExit(3)
 
     # Possible improvement: write a yaml-file
     if DEBUG:
@@ -116,6 +116,21 @@ def configure_v2(config: dict[str, Any]) -> None:
         config["ibm"] = dict()
     if "warm_start" not in config:
         config["warm_start"] = dict()
+
+    # tracker is mandatory, raise KeyError if missing
+    if config["tracker"] is None:
+        config["tracker"] = dict()
+
+    # time is mandatory
+    if config["time"] is None:
+        pass
+
+    # release with release_file is mandatory
+    if config["release"] is None:
+        config["release"] = dict(release_file="")
+
+    # output is mandatory
+    config["output"]  # Raise KeyError if missing
 
     # Handle non-orthogonality
 
