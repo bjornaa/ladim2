@@ -8,6 +8,7 @@ import logging
 import os
 import platform
 import sys
+import typing
 from pathlib import Path
 from typing import Union
 
@@ -170,7 +171,7 @@ class LadimLogFormatter(logging.Formatter):
 
     logformat = "%(module)s - %(message)s"
 
-    formats = {
+    formats: typing.ClassVar = {
         logging.DEBUG: "[green]" + logformat,
         logging.INFO: logformat,
         logging.WARNING: "[magenta]" + logformat,
@@ -178,7 +179,7 @@ class LadimLogFormatter(logging.Formatter):
         logging.CRITICAL: "[bold white on red]" + logformat,
     }
 
-    def format(self, record):  # noqa: A003
+    def format(self, record):
         log_fmt = self.formats[record.levelno]
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)

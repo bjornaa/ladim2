@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Configuration file for the Sphinx documentation builder.
 #
 # This file does only contain a selection of the most common options. For a
@@ -21,7 +19,7 @@
 
 project = "LADiM"
 author = "Bjørn Ådlandsvik"
-copyright = "2018, Institute of Marine Research"
+copyright = "2024, Institute of Marine Research"  # noqa: A001
 
 # The short X.Y version
 version = "2.0"

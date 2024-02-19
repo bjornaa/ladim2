@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime
 import logging
 import re
+import typing
 from typing import Any
 
 import numpy as np
@@ -48,7 +49,7 @@ class TimeKeeper:
 
     """
 
-    unit_table = dict(s="seconds", m="minutes", h="hours", d="days")
+    unit_table: typing.ClassVar = dict(s="seconds", m="minutes", h="hours", d="days")
 
     def __init__(
         self,
@@ -202,6 +203,7 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
        int:  number of seconds
        np.timedelta64
        [value, unit]:  np.timedelta64(value, unit), unit = "h", "m", "s"
+
        ISO 8601 format: "PTxHyMzS", x hours, y minutes, z seconds
     """
 

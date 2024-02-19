@@ -11,6 +11,7 @@ Horizontal sampling
   Sample a 2D field given at v-points
 
 """
+
 # -----------------------------------
 # Bjørn Ådlandsvik, bjorn@imr.no
 # Institute of Marine Research

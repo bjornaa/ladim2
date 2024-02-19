@@ -41,7 +41,7 @@ class Tracker:
         vertdiff: float = 0.0,
         vertical_advection: bool = False,
         *,
-        modules: dict[str, Any]
+        modules: dict[str, Any],
         # modules: Optional[dict[str, Any]] = None,
     ) -> None:
         logger.info("Initiating the particle tracker")

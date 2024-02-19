@@ -1,5 +1,5 @@
 target-version = "py39"
-select = [
+lint.select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -40,7 +40,7 @@ select = [
     "RUF",
 ]
 
-ignore = [
+lint.ignore = [
     "E741",
     # "N802",  # Allow uppercase in functions
     # "N803",  # Allow uppercase in arguments
@@ -52,5 +52,5 @@ ignore = [
     # "S101"
    ]
 
-[per-file-ignores]
+[lint.per-file-ignores]
     "ladim/main.py" = ["T201"]

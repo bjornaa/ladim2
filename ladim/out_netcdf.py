@@ -1,4 +1,5 @@
 """Output module for NetCDF contiguous ragged array"""
+
 from __future__ import annotations
 
 import logging
@@ -78,13 +79,13 @@ class Output(BaseOutput):
         else:
             self.global_attributes = dict()
         if self.layout == "dense":
-            self.global_attributes[
-                "type"
-            ] = "LADiM output, dense = netcdf orthogonal array"
+            self.global_attributes["type"] = (
+                "LADiM output, dense = netcdf orthogonal array"
+            )
         else:
-            self.global_attributes[
-                "type"
-            ] = "LADiM output, sparse = netcdf contiguous ragged array"
+            self.global_attributes["type"] = (
+                "LADiM output, sparse = netcdf contiguous ragged array"
+            )
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)

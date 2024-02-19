@@ -1,6 +1,5 @@
 """Module for testing config file API"""
 
-
 import contextlib
 import shutil
 import uuid

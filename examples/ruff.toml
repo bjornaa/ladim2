@@ -1,7 +1,7 @@
 # A more foregiving version for the examples
 
 target-version = "py39"
-select = [
+lint.select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -11,7 +11,7 @@ select = [
     "RUF",
 ]
 
-ignore = [
+lint.ignore = [
     "E741",
    ]
 

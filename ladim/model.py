@@ -153,9 +153,7 @@ def load_module(module_name: str) -> ModuleType:
     if file_name.exists():
         basename = file_name.stem
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(
-            internal_name, file_name
-        )  # type: ignore
+        spec = importlib.util.spec_from_file_location(internal_name, file_name)  # type: ignore
         module_object = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module_object)  # type: ignore
         return module_object

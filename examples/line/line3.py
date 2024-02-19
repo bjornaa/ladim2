@@ -1,4 +1,5 @@
 """Module containing the LADiM Model class definition"""
+
 from contextlib import suppress
 
 from ladim.configure import configure

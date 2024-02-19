@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from ladim.state import State
 from ladim.tracker import Tracker
@@ -34,7 +36,7 @@ class Timer:
 
 
 class Forcing:
-    def __init__(self, modules: dict = None, **kwargs):
+    def __init__(self, modules: Optional[dict] = None, **kwargs):
         self.modules = modules
 
     def velocity(self, X, Y, Z):
