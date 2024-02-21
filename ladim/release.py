@@ -217,7 +217,8 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             parse_dates=["release_time"],
             names=names,
             dtype=dtypes,
-            delim_whitespace=True,
+            # delim_whitespace=True,
+            sep="\s+",
             index_col="release_time",
         )
 
@@ -302,7 +303,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         B = df.groupby(df.index).agg(lambda x: x.tolist())
 
         # Insert full time axis and forward fill and explode
-        S = T.join(B, on="times").fillna(method="ffill").set_index("times")
+        S = T.join(B, on="times").ffill().set_index("times")
         S = S.explode(column=S.columns.tolist())
 
         # Reset dtypes
