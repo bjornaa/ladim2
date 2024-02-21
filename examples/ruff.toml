@@ -15,3 +15,4 @@ lint.ignore = [
     "E741",
    ]
 
+extend-include = ["*.ipynb"]
