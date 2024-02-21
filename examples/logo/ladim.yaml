@@ -1,0 +1,45 @@
+# Configuration file for ladim
+#
+# Logo creation example
+#
+
+version: 2.0
+
+time:
+    # Start and stop of simulation
+    start: 1989-05-24 12
+    stop:  1989-05-30 12
+    dt: [1, 'h']
+
+forcing:
+    module: ladim.ROMS
+    filename: ../data/ocean_avg_*.nc
+
+tracker:
+    advection: EF
+    diffusion: 1
+
+release:
+    release_file: logo.rls
+    names: [mult, release_time, X, Y, Z]
+    particle_variables: [release_time]
+    release_time: time
+
+output:
+    module: ladim.out_netcdf
+    filename: logo.nc
+    ncargs: {data_model: NETCDF3_CLASSIC}
+    output_period: [1, h]
+    instance_variables:
+        pid:
+            encoding: {datatype: i4, zlib: True}
+            attributes: {long_name: particle_identifier}
+        X:
+            encoding: {datatype: f4, zlib: True}
+            attributes: {long_name: particle X-coordinate}
+        Y:
+            encoding: {datatype: f4, zlib: True}
+            attributes: {long_name: particle Y-coordinate}
+    global_attributes:
+        title: LADiM logo example
+        institution: Institute of Marine Research
