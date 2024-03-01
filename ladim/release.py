@@ -218,7 +218,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             names=names,
             dtype=dtypes,
             # delim_whitespace=True,
-            sep="\s+",
+            sep=r"\s+",
             index_col="release_time",
         )
 

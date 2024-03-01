@@ -189,12 +189,13 @@ def test_update_item():
     assert all(S.variables["X"] == [101, 111])
 
 
-def test_update_attr():
-    """Attribute style assignment to variables is not allowed"""
-    S = State()
-    S.append(X=[100, 110], Y=[200, 210], Z=5)
-    with pytest.raises(AttributeError):
-        S.X += 1
+# Allowed for old_ibm compatibility
+# def test_update_attr():
+#     """Attribute style assignment to variables is not allowed"""
+#     S = State()
+#     S.append(X=[100, 110], Y=[200, 210], Z=5)
+#     with pytest.raises(AttributeError):
+#         S.X += 1
 
 
 def test_update_error_not_variable():

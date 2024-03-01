@@ -190,7 +190,7 @@ def test_remove_late_release():
     assert len(pr.steps) == 1
     assert pr.steps[0] == 12 * 4  # 12 hours, 4 steps per hour
     assert all(df.index == np.datetime64("2015-04-01"))
-    #assert df.X[0] == 4
+    # assert df.X[0] == 4
     assert df.X.iloc[0] == 4
 
 

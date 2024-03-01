@@ -15,7 +15,6 @@ with compability wrapper for LADiM version 1 configuration
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 from typing import Any, Union
 
@@ -95,8 +94,9 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         raise SystemExit(3)
 
     # Possible improvement: write a yaml-file
-    if DEBUG:
-        yaml.dump(config, stream=sys.stdout)
+    # DEBUG = True
+    # if DEBUG:
+    #     yaml.dump(config, stream=sys.stdout)
 
     return config
 
@@ -277,9 +277,13 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
         for var in config["ibm"]:
             if var == "ibm_module":
                 conf2["ibm"]["module"] = config["ibm"][var]
-                continue
-            if var != "variables":
+            #     continue
+            # elif var == "variables":
+            #     pass
+            #     #conf2["state"]["instance_variables"].extend(config["ibm"][var])
+            else:
                 conf2["ibm"][var] = config["ibm"][var]
+
     else:
         conf2["ibm"] = dict()
 

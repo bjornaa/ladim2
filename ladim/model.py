@@ -5,9 +5,12 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import logging
+from functools import partial
 from pathlib import Path
 from types import ModuleType  # noqa: TCH003
 from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 from ladim.warm_start import warm_start
 
@@ -44,7 +47,19 @@ class Model:
             "output",
         ]
         for name in module_names:
-            self.modules[name] = init_module(name, config[name], self.modules)
+            if name != "ibm":
+                self.modules[name] = init_module(name, config[name], self.modules)
+
+        # Handle IBM separately for compability with old IBM style
+        if config["ibm"]:
+            ibm_module = config["ibm"][
+                "module"
+            ]  # Module name will be killed by init_module
+        try:  # New IBM style
+            self.modules["ibm"] = init_module("ibm", config["ibm"], self.modules)
+        except TypeError:  # Old IBM style
+            logger.warning(" old style IBM module: %s", ibm_module)
+            self.modules["ibm"] = init_old_ibm(ibm_module, config, self.modules)
 
         # Define shorthand for individual modules
         self.state: State = self.modules["state"]
@@ -166,3 +181,22 @@ def load_module(module_name: str) -> ModuleType:
     except ModuleNotFoundError as err:
         logging.critical("Can not find module %s", module_name)
         raise SystemExit from err
+
+
+def init_old_ibm(
+    module_name: str, conf_dict: dict[str, Any], all_modules_dict: dict[str, Any]
+) -> Any:
+    ibm_module = load_module(module_name)
+    # Initiate the IBM object
+    ibm_mod = ibm_module.IBM(conf_dict)
+    dt = conf_dict["time"]["dt"]
+    dt = np.timedelta64(np.timedelta64(dt[0], dt[1]), "s").astype(int)
+    all_modules_dict["state"].dt = dt
+    ibm_mod.update = partial(
+        ibm_mod.update_ibm,
+        all_modules_dict["grid"],
+        all_modules_dict["state"],
+        all_modules_dict["forcing"],
+    )
+
+    return ibm_mod

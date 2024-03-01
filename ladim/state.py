@@ -76,6 +76,7 @@ class State(Sized):
         "default_values",
         "dtypes",
         "npid",
+        "dt",  # For old-style IBM
     ]
 
     def __init__(
@@ -212,11 +213,11 @@ class State(Sized):
 
     # Allow item notation, state[var]
     def __getitem__(self, var: str) -> ParticleArray:
-        """Allow item style write access to variables"""
+        """Allow item style read access to variables"""
         return self.variables[var]
 
     def __setitem__(self, var: str, item: npt.ArrayLike) -> None:
-        """Allow item style read access to variables"""
+        """Allow item style write access to variables"""
         value = np.array(item, dtype=self.dtypes[var])
         # The size of item should be unchanged
         # if np.size(value) != len(self.variables[var]):
@@ -228,12 +229,18 @@ class State(Sized):
         return self.variables[var]
 
     def __setattr__(self, var: str, value: Any) -> None:
-        """Follow pandas and xarray and disallow attribute assignment"""
-        # Method taken from xarray
-        try:  # allow assigning attributes in __slots__
+        try:
             object.__setattr__(self, var, value)
-        except AttributeError as e:
-            raise AttributeError(
-                f"Cannot assign attribute {var} on a State instance.\n"
-                f'Use state["{var}"] = ...  instead.'
-            ) from e
+        except AttributeError:
+            self.variables[var] = value
+
+    # def __setattr__(self, var: str, value: Any) -> None:
+    #     """Follow pandas and xarray and disallow attribute assignment"""
+    #     # Method taken from xarray
+    #     try:  # allow assigning attributes in __slots__
+    #         object.__setattr__(self, var, value)
+    #     except AttributeError as e:
+    #         raise AttributeError(
+    #             f"Cannot assign attribute {var} on a State instance.\n"
+    #             f'Use state["{var}"] = ...  instead.'
+    #         ) from e
