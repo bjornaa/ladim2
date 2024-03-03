@@ -15,6 +15,7 @@ with compability wrapper for LADiM version 1 configuration
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 from typing import Any, Union
 
@@ -78,7 +79,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     if version == "0":
         # infer version
         version = "1" if "time_control" in config else "2"
-    logger.info("  Configuration file version: %s", version)
+    # logger.info("  Configuration file version: %s", version)
 
     if version[0] == "2":
         try:
@@ -88,15 +89,14 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
             raise SystemExit(3) from err
 
     elif version[0] == "1":
+        logger.warning("Using old (version 1) configuration file")
         config = configure_v1(config)
     else:
         logger.critical("Version %s in not a valid configuration version", version)
         raise SystemExit(3)
 
-    # Possible improvement: write a yaml-file
-    # DEBUG = True
-    # if DEBUG:
-    #     yaml.dump(config, stream=sys.stdout)
+    if DEBUG:
+        yaml.dump(config, stream=sys.stdout)
 
     return config
 
@@ -283,6 +283,14 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
             #     #conf2["state"]["instance_variables"].extend(config["ibm"][var])
             else:
                 conf2["ibm"][var] = config["ibm"][var]
+
+        if config["ibm"]["variables"]:
+            V = config["ibm"]["variables"]
+            conf2["forcing"]["extra_forcing"] = []
+            if "temp" in V:
+                conf2["forcing"]["extra_forcing"].append("temp")
+            if "salt" in V:
+                conf2["forcing"]["extra_forcing"].append("salt")
 
     else:
         conf2["ibm"] = dict()

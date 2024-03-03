@@ -77,6 +77,7 @@ class State(Sized):
         "dtypes",
         "npid",
         "dt",  # For old-style IBM
+        "timestamp",
     ]
 
     def __init__(
@@ -233,14 +234,3 @@ class State(Sized):
             object.__setattr__(self, var, value)
         except AttributeError:
             self.variables[var] = value
-
-    # def __setattr__(self, var: str, value: Any) -> None:
-    #     """Follow pandas and xarray and disallow attribute assignment"""
-    #     # Method taken from xarray
-    #     try:  # allow assigning attributes in __slots__
-    #         object.__setattr__(self, var, value)
-    #     except AttributeError as e:
-    #         raise AttributeError(
-    #             f"Cannot assign attribute {var} on a State instance.\n"
-    #             f'Use state["{var}"] = ...  instead.'
-    #         ) from e

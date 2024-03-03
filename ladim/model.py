@@ -188,10 +188,13 @@ def init_old_ibm(
 ) -> Any:
     ibm_module = load_module(module_name)
     # Initiate the IBM object
-    ibm_mod = ibm_module.IBM(conf_dict)
     dt = conf_dict["time"]["dt"]
+    # Convert from [value, unit] to seconds
     dt = np.timedelta64(np.timedelta64(dt[0], dt[1]), "s").astype(int)
+    conf_dict["dt"] = dt
     all_modules_dict["state"].dt = dt
+    all_modules_dict["state"].timestamp = all_modules_dict["time"].time
+    ibm_mod = ibm_module.IBM(conf_dict)
     ibm_mod.update = partial(
         ibm_mod.update_ibm,
         all_modules_dict["grid"],
