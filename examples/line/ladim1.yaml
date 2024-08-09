@@ -15,7 +15,7 @@ time_control:
 
 files:
     particle_release_file : line1.rls
-    output_file           : line.nc
+    output_file           : out.nc
     # With warm start, warm_start_file goes here
 
 particle_release:
