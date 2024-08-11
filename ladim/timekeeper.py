@@ -94,14 +94,14 @@ class TimeKeeper:
         self.time = self.step2time(self.step)
 
         # Quality control
-        duration = self.stop_time - self.start_time
-        self.num_steps = duration / self.dt
-        if time_reversal != (duration < np.timedelta64(0)):
-            if time_reversal:
+        if time_reversal:
+            if self.start_time < self.stop_time:
                 logger.critical("ERROR: Backwards time and start before stop")
-            else:
-                logger.critical("ERROR: Forward time and stop before start")
-            raise SystemExit(3)
+                raise SystemExit(3)
+        else:  # Forward time
+            if self.start_time > self.stop_time:
+                logger.critical("ERROR: Stop before start")
+                raise SystemExit(3)
 
         self.min_time = min(self.start_time, self.stop_time)  # type: ignore
         self.max_time = max(self.start_time, self.stop_time)  # type: ignore
@@ -116,7 +116,8 @@ class TimeKeeper:
         logger.info("  Time step: %s", self.dt)
 
         # Number of time steps (excluding initial)
-        self.Nsteps = int(abs(duration) // self.dt)
+        duration = abs(self.stop_time - self.start_time)
+        self.Nsteps = int(duration // self.dt)
         self.simulation_time = self.Nsteps * self.dt
         logger.info("  Length of  simulation: %s", duration2iso(duration))
         logger.info("  Number of time steps: %d", self.Nsteps)
