@@ -18,7 +18,7 @@ version = "2.0"
     filename =  "../data/ocean_avg_0014.nc"
 
 [tracker]
-    advection = "EF"
+    advection: "EF"
 
 [release]
     release_file = "line.rls"

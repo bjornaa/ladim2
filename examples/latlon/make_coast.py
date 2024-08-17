@@ -1,6 +1,4 @@
-"""Save a regional part of GSHHS  to a wkb-file
-
-"""
+"""Save a regional part of GSHHS  to a wkb-file"""
 
 # ----------------------------------
 # Bjørn Ådlandsvik <bjorn@imr.no>

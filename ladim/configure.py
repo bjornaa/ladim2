@@ -1,4 +1,4 @@
-""""
+""" "
 
 Configuration reader for LADiM version 2
 with compability wrapper for LADiM version 1 configuration
@@ -11,11 +11,10 @@ with compability wrapper for LADiM version 1 configuration
 # December 2020
 # -----------------------------------
 
-
 from __future__ import annotations
 
 import logging
-import sys
+import traceback
 from pathlib import Path
 from typing import Any, Union
 
@@ -25,6 +24,7 @@ import yaml  # type: ignore
 from netCDF4 import Dataset, num2date  # type: ignore
 
 DEBUG = False
+
 logger = logging.getLogger(__name__)
 if DEBUG:
     logger.setLevel(logging.DEBUG)
@@ -46,9 +46,11 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
 
     """
 
+    # Harmonize logging and debug settings
+    debug = logger.getEffectiveLevel() <= logging.DEBUG
+
     logger.info("Configuration")
     logger.info("  Configuration file %s", config_file)
-
     confile = Path(config_file)
 
     if not confile.exists():
@@ -62,14 +64,19 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
             with confile.open(mode="rb") as fid:
                 config = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
+            if debug:
+                # Print the traceback in debug mode
+                traceback.print_exc()
             logger.critical("Not a valid TOML file: %s", confile)
             raise SystemExit(3) from err
+
     else:  # Default filetype = yaml
         try:
-            # with open(config_file, encoding="utf-8") as fid:
             with confile.open(encoding="utf-8") as fid:
                 config: dict[str, Any] = yaml.safe_load(fid)
         except yaml.YAMLError as err:
+            if debug:
+                traceback.print_exc()
             logger.critical("Not a valid YAML file: %s", confile)
             raise SystemExit(3) from err
 
@@ -95,8 +102,8 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
         logger.critical("Version %s in not a valid configuration version", version)
         raise SystemExit(3)
 
-    if DEBUG:
-        yaml.dump(config, stream=sys.stdout)
+    # If debug mode, write a yaml dump of the config
+    logger.debug(yaml.dump(config))
 
     return config
 
