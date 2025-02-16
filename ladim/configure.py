@@ -21,7 +21,7 @@ from typing import Any, Union
 import numpy as np
 import tomli
 import yaml  # type: ignore
-from netCDF4 import Dataset, num2date  # type: ignore
+from netCDF4 import Dataset, num2date
 
 DEBUG = False
 

@@ -15,7 +15,7 @@ import numpy as np
 
 # Type aliases
 Field = np.ndarray  # 3D or 2D gridded field
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 Velocity = tuple[ParticleArray, ParticleArray]
 
 

@@ -5,12 +5,14 @@ from __future__ import annotations
 from collections import namedtuple
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
-import numpy as np  # type: ignore
+import numpy as np
 
 if TYPE_CHECKING:
     from ladim.state import State
 
-ParticleArray = Union[np.ndarray, float]  # 1D array of floats, one element per particle
+ParticleArray = Union[
+    np.ndarray[tuple[int], np.dtype[np.float64]], float
+]  # 1D array of floats, one element per particle
 Velocity = namedtuple("Velocity", ["U", "V"])
 
 

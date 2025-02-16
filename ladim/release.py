@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd  # type: ignore
-from netCDF4 import Dataset  # type: ignore
+from netCDF4 import Dataset
 
 from ladim.timekeeper import normalize_period
 

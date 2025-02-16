@@ -8,8 +8,8 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
-import numpy as np  # type: ignore
-from netCDF4 import Dataset  # type: ignore
+import numpy as np
+from netCDF4 import Dataset
 
 from ladim.output import BaseOutput
 from ladim.timekeeper import TimeDelta, normalize_period
@@ -17,7 +17,7 @@ from ladim.timekeeper import TimeDelta, normalize_period
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from ladim.state import State  # For typing
+    from ladim.state import State
 
 
 Variable = dict[str, Any]

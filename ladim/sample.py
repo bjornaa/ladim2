@@ -18,22 +18,17 @@ Horizontal sampling
 # Bergen, Norway
 # 2010-09-30
 # -----------------------------------
+
 from __future__ import annotations
 
 from typing import Optional
 
 import numpy as np
 
-# mport numpy.typing as npt
-
 # Type aliases
+Field = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 
-# Does not work nicely with pylance (VS code)
-# Field = npt.NDArray[np.float64]  # 2D gridded field
-# ParticleArray = npt.NDArray[np.float64]  # 1D array of values per particle
-
-Field = np.ndarray  # 2D gridded field
-ParticleArray = np.ndarray  # 1D array of values per particle
 
 # ---------------------
 
@@ -52,8 +47,8 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
 
     """
 
-    I = X.astype("int")
-    J = Y.astype("int")
+    I: np.ndarray[tuple[int], np.dtype[np.int64]] = X.astype("int")
+    J: np.ndarray[tuple[int], np.dtype[np.int64]] = Y.astype("int")
     P = X - I
     Q = Y - J
 
@@ -62,7 +57,7 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
     W10 = P * (1 - Q)
     W11 = P * Q
 
-    result: np.ndarray = (
+    result: ParticleArray = (
         W00 * F[J, I] + W01 * F[J + 1, I] + W10 * F[J, I + 1] + W11 * F[J + 1, I + 1]
     )
     return result
@@ -97,9 +92,8 @@ def sample2D_masked(
     """
 
     masked = True
-
-    I = X.astype("int")
-    J = Y.astype("int")
+    I: np.ndarray[tuple[int], np.dtype[np.int64]] = X.astype("int")
+    J: np.ndarray[tuple[int], np.dtype[np.int64]] = Y.astype("int")
     P = X - I
     Q = Y - J
 
@@ -160,50 +154,28 @@ def sample2D(
 
     """
 
-    # --- Argument checking ---
-
-    # X and Y should be broadcastable to the same shape
-    Z = np.add(X, Y)
-    # scalar is True if both X and Y are scalars
-    # scalar = np.isscalar(Z)
-
-    if np.ndim(F) != 2:
-        raise ValueError("F must be 2D")
-    if mask is not None and mask.shape != F.shape:
-        msg = "Must have mask.shape == F.shape"
-        raise ValueError(msg)
-
     jmax, imax = F.shape
 
-    # Broadcast X and Y
-    X0: ParticleArray = X + np.zeros_like(Z)
-    Y0: ParticleArray = Y + np.zeros_like(Z)
     # Find integer I, J such that
     # 0 <= I <= X < I+1 <= imax-1, 0 <= J <= Y < J+1 <= jmax-1
     # and local increments P and Q
-    I = X0.astype("int")
-    J = Y0.astype("int")
-    P = X0 - I  # type: ignore
-    Q = Y0 - J  # type: ignore
-    outside = (X0 < 0) | (X0 >= imax - 1) | (Y0 < 0) | (Y0 >= jmax - 1)
+    I: np.ndarray[tuple[int], np.dtype[np.int64]] = np.asarray(X).astype("int")
+    J: np.ndarray[tuple[int], np.dtype[np.int64]] = np.asarray(Y).astype("int")
+    P = X - I
+    Q = Y - J
+    outside = (X < 0) | (X >= imax - 1) | (Y < 0) | (Y >= jmax - 1)
     if np.any(outside):
         if outside_value is None:
             raise ValueError("point outside grid")
         I = np.where(outside, 0, I)
         J = np.where(outside, 0, J)
-        # try:
-        #    J[outside] = 0
-        #    I[outside] = 0
-        # except TypeError:    # Zero-dimensional
-        #    I = np.array(0)
-        #    J = np.array(0)
 
     # Weights for bilinear interpolation
     W00 = (1 - P) * (1 - Q)
     W01 = (1 - P) * Q
     W10 = P * (1 - Q)
     W11 = P * Q
-    SW = 1.0  # Sum of weights
+    SW: float | ParticleArray = 1.0  # Sum of weights
 
     if mask is not None:
         W00 = mask[J, I] * W00
@@ -212,7 +184,7 @@ def sample2D(
         W11 = mask[J + 1, I + 1] * W11
         SW = W00 + W01 + W10 + W11
 
-    SW = np.where(SW == 0, -1.0, SW)  # type: ignore
+    SW = np.where(SW == 0, -1.0, SW)  # atype: ignore
     result: ParticleArray = np.where(
         SW <= 0,
         undef_value,
@@ -272,13 +244,13 @@ def bilin_inv(
     # f = f.ravel()
     # g = g.ravel()
 
-    # initial guess
-    x = np.zeros_like(f) + 0.5 * imax
-    y = np.zeros_like(f) + 0.5 * jmax
+    # initial guess = midpoint
+    x: ParticleArray = np.zeros_like(f) + 0.5 * imax
+    y: ParticleArray = np.zeros_like(f) + 0.5 * jmax
 
     for _t in range(maxiter):
-        i = x.astype("i")
-        j = y.astype("i")
+        i: np.ndarray[tuple[int], np.dtype[np.int64]] = x.astype(int)
+        j: np.ndarray[tuple[int], np.dtype[np.int64]] = y.astype(int)
         p, q = x - i, y - j
 
         # Bilinear estimate of F[x,y] and G[x,y]

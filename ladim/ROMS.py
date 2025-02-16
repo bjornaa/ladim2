@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numba  # type: ignore
 import numpy as np
-from netCDF4 import Dataset, num2date  # type: ignore
+from netCDF4 import Dataset, num2date
 
 from ladim.forcing import BaseForce, Field, ParticleArray
 from ladim.grid import BaseGrid

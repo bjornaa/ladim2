@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
 class BaseGrid(ABC):
