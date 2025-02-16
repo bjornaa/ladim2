@@ -69,15 +69,15 @@ class State(Sized):
     # append and compactify (rename the last to kill?)
 
     __slots__ = [
-        "modules",
-        "variables",
-        "instance_variables",
-        "particle_variables",
         "default_values",
-        "dtypes",
-        "npid",
         "dt",  # For old-style IBM
+        "dtypes",
+        "instance_variables",
+        "modules",
+        "npid",
+        "particle_variables",
         "timestamp",
+        "variables",
     ]
 
     def __init__(

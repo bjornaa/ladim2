@@ -7,7 +7,6 @@ import importlib.util
 import logging
 from functools import partial
 from pathlib import Path
-from types import ModuleType  # noqa: TCH003
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -15,6 +14,8 @@ import numpy as np
 from ladim.warm_start import warm_start
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ladim.forcing import BaseForce
     from ladim.grid import BaseGrid
     from ladim.ibm import IBM

@@ -217,7 +217,6 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             parse_dates=["release_time"],
             names=names,
             dtype=dtypes,
-            # delim_whitespace=True,
             sep=r"\s+",
             index_col="release_time",
         )
@@ -232,7 +231,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
             logger.debug("  Keyword arguments to read_csv:\n %s", str(kwargs))
             raise SystemExit(3) from err
         except FileNotFoundError as err:
-            logger.critical("Release file %s not found" % rls_file)
+            logger.critical("Release file %s not found" % rls_file)  # noqa:  UP031
             raise SystemExit(3) from err
         return df
 
