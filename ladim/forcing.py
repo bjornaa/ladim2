@@ -14,7 +14,10 @@ from typing import Any
 import numpy as np
 
 # Type aliases
-Field = np.ndarray  # 3D or 2D gridded field
+# 3D or 2D gridded field
+Field = np.ndarray[tuple[int, int] | tuple[int, int, int], np.dtype[np.float64]]
+
+# Particle values
 ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 Velocity = tuple[ParticleArray, ParticleArray]
 

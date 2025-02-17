@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 
 ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
+ParticleBoolArray = np.ndarray[tuple[int], np.dtype[np.bool]]
 
 
 class BaseGrid(ABC):
@@ -34,9 +35,9 @@ class BaseGrid(ABC):
         """Estimates grid spacing at particle positions"""
 
     @abstractmethod
-    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleBoolArray:
         """Tests if particles are inside the grid"""
 
     @abstractmethod
-    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleBoolArray:
         """Tests if particles are at sea"""

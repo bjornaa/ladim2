@@ -27,6 +27,9 @@ from ladim.sample import bilin_inv, sample2D
 if TYPE_CHECKING:
     from ladim.timekeeper import TimeKeeper
 
+ParticleIntArray = np.ndarray[tuple[int], np.dtype[np.int64]]
+ParticleBoolArray = np.ndarray[tuple[int], np.dtype[np.bool]]
+VerticalArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 
 DEBUG = False
 parallel = False
@@ -80,8 +83,9 @@ class Grid(BaseGrid):
         # Here, imax, jmax refers to whole grid
 
         # jmax0, imax0 = ncid.variables["h"].shape
-        shape: tuple[int, int] = ncid.variables["h"].shape
-        jmax0, imax0 = shape
+        jmax0, imax0 = ncid.variables["h"].shape
+        # shape: tuple[int, int] = ncid.variables["h"].shape
+        # jmax0, imax0 = shape
         limits = list(subgrid) if subgrid else [1, imax0 - 1, 1, jmax0 - 1]
         # Negative values are counting from right/upper end of model domain
         for i in [0, 1]:
@@ -154,7 +158,7 @@ class Grid(BaseGrid):
                 self.Vtransform = 1  # Default = old way
 
         # Read some variables
-        self.H: np.ndarray = ncid.variables["h"][self.J, self.I]
+        self.H: Field = ncid.variables["h"][self.J, self.I]
         self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
         self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
         self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
@@ -202,8 +206,8 @@ class Grid(BaseGrid):
 
     def depth(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
         """Return the depth of grid cells containing the particles"""
-        I: np.ndarray = X.round().astype(int) - self.i0
-        J: np.ndarray = Y.round().astype(int) - self.j0
+        I: ParticleIntArray = X.round().astype(int) - self.i0
+        J: ParticleIntArray = Y.round().astype(int) - self.j0
         R: ParticleArray = self.H[J, I]
         return R
 
@@ -218,15 +222,9 @@ class Grid(BaseGrid):
         J = Y.round().astype("int") - self.j0
         return self.lon[J, I], self.lat[J, I]
 
-    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def ingrid(self, X: ParticleArray, Y: ParticleArray) -> ParticleBoolArray:
         """Returns True for points inside the subgrid"""
-        # return (
-        #     (self.xmin + 0.5 < X)
-        #     & (X < self.xmax - 0.5)
-        #     & (self.ymin + 0.5 < Y)
-        #     & (Y < self.ymax - 0.5)
-        # )
-        cond: ParticleArray = (
+        cond: ParticleBoolArray = (
             (self.xmin + 0.5 < X)
             & (X < self.xmax - 0.5)
             & (self.ymin + 0.5 < Y)
@@ -234,20 +232,20 @@ class Grid(BaseGrid):
         )
         return cond
 
-    def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def onland(self, X: ParticleArray, Y: ParticleArray) -> ParticleBoolArray:
         """Returns True for points on land"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
-        cond: ParticleArray = self.M[J, I] < 1
+        cond: ParticleBoolArray = self.M[J, I] < 1
         return cond
 
     # Error if point outside
-    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
+    def atsea(self, X: ParticleArray, Y: ParticleArray) -> ParticleBoolArray:
         """Returns True for particles at sea"""
         I = X.round().astype(int) - self.i0
         J = Y.round().astype(int) - self.j0
         # return self.M[J, I] > 0
-        cond: ParticleArray = self.M[J, I] > 0
+        cond: ParticleBoolArray = self.M[J, I] > 0
         return cond
 
     def xy2ll(
@@ -274,7 +272,7 @@ class Grid(BaseGrid):
 
 def s_stretch(
     N: int, theta_s: float, theta_b: float, stagger: str = "rho", Vstretching: int = 1
-) -> np.ndarray:
+) -> VerticalArray:
     """Computes the ROMS s-level stretching array
 
     Args:
@@ -304,7 +302,7 @@ def s_stretch(
     if Vstretching == 1:
         cff1 = 1.0 / np.sinh(theta_s)
         cff2 = 0.5 / np.tanh(0.5 * theta_s)
-        C1: np.ndarray = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
+        C1: VerticalArray = (1.0 - theta_b) * cff1 * np.sinh(theta_s * S) + theta_b * (
             cff2 * np.tanh(theta_s * (S + 0.5)) - 0.5
         )
         return C1
@@ -314,12 +312,12 @@ def s_stretch(
         Csur = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
         Cbot = np.sinh(theta_b * (S + 1)) / np.sinh(theta_b) - 1
         mu = (S + 1) ** a * (1 + (a / b) * (1 - (S + 1) ** b))
-        C2: np.ndarray = mu * Csur + (1 - mu) * Cbot
+        C2: VerticalArray = mu * Csur + (1 - mu) * Cbot
         return C2
 
     if Vstretching == 4:
         C = (1 - np.cosh(theta_s * S)) / (np.cosh(theta_s) - 1)
-        C4: np.ndarray = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
+        C4: VerticalArray = (np.exp(theta_b * C) - 1) / (1 - np.exp(-theta_b))
         return C4
 
     # else:
@@ -328,7 +326,7 @@ def s_stretch(
 
 
 def sdepth(
-    H: Field, Hc: float, C: np.ndarray, stagger: str = "rho", Vtransform: int = 1
+    H: Field, Hc: float, C: VerticalArray, stagger: str = "rho", Vtransform: int = 1
 ) -> Field:
     """Return depth of grid cells
 
@@ -647,7 +645,6 @@ class Forcing(BaseForce):
 
         i0 = self.grid.i0
         j0 = self.grid.j0
-        # K, A = z2s(self.grid.z_r, X - i0, Y - j0, Z)
         for name in self.extra_forcing:
             self.variables[name] = sample3D(
                 self.fields[name], X - i0, Y - j0, self.K, self.A, method="nearest"
@@ -705,7 +702,7 @@ class Forcing(BaseForce):
     #     return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
     def field(
         self, X: ParticleArray, Y: ParticleArray, Z: ParticleArray, name: str
-    ) -> Field:
+    ) -> ParticleArray:
         """Dummy function for backwards compatibility of IBMs"""
         return self.variables[name]
 
@@ -717,7 +714,7 @@ class Forcing(BaseForce):
 
 def z2s(
     z_rho: Field, X: ParticleArray, Y: ParticleArray, Z: ParticleArray
-) -> tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleIntArray, ParticleArray]:
     """
     Find s-level and coefficients for vertical interpolation
 
@@ -754,19 +751,19 @@ def z2s(
     """
 
     # Find rho-based horizontal grid cell (rho-point)
-    I = np.around(X).astype("int")
-    J = np.around(Y).astype("int")
-    K: tuple[ParticleArray, ParticleArray] = z2s_kernel(I, J, Z, z_rho)
-    return K
+    I: ParticleIntArray = np.around(X).astype("int")
+    J: ParticleIntArray = np.around(Y).astype("int")
+    KA: tuple[ParticleIntArray, ParticleArray] = z2s_kernel(I, J, Z, z_rho)
+    return KA
 
 
 @numba.njit(parallel=parallel)  # type: ignore
 def z2s_kernel(
-    I: ParticleArray,
-    J: ParticleArray,
+    I: ParticleIntArray,
+    J: ParticleIntArray,
     Z: ParticleArray,
     z_rho: Field,
-) -> tuple[ParticleArray, ParticleArray]:
+) -> tuple[ParticleIntArray, ParticleArray]:
     """The kernel of the z2s function"""
     N = len(I)
     K = np.ones(N, dtype=np.int64)
@@ -788,7 +785,7 @@ def sample3D(
     F: Field,
     X: ParticleArray,
     Y: ParticleArray,
-    K: ParticleArray,
+    K: ParticleIntArray,
     A: ParticleArray,
     method: str = "bilinear",
 ) -> ParticleArray:
@@ -823,7 +820,7 @@ def sample3D(
 
 @numba.njit(parallel=parallel)  # type: ignore
 def trilinear(
-    F: Field, X: ParticleArray, Y: ParticleArray, K: ParticleArray, A: ParticleArray
+    F: Field, X: ParticleArray, Y: ParticleArray, K: ParticleIntArray, A: ParticleArray
 ) -> ParticleArray:
     """Performs 3D linear interpolation
 
@@ -841,7 +838,7 @@ def trilinear(
 
     """
     N = len(X)
-    R = np.empty(N, dtype=np.float64)
+    R: ParticleArray = np.empty(N, dtype=np.float64)
     for n in numba.prange(N):
         i, j = int(X[n]), int(Y[n])
         p, q = X[n] - i, Y[n] - j
@@ -864,7 +861,7 @@ def sample3DUV(
     V: Field,
     X: ParticleArray,
     Y: ParticleArray,
-    K: ParticleArray,
+    K: ParticleIntArray,
     A: ParticleArray,
     method: str = "bilinear",
 ) -> tuple[ParticleArray, ParticleArray]:
@@ -900,7 +897,9 @@ def find_files(
     return files
 
 
-def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
+def scan_file_times(
+    files: list[Path],
+) -> tuple[np.ndarray[tuple[int], np.dtype[np.datetime64]], dict[Path, int]]:
     """Check netcdf files and scan the times
 
     Returns:
@@ -909,7 +908,7 @@ def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
 
     """
     # print("scan starting")
-    frames = []  # Expanding list of all time frames
+    frames: list[np.datetime64] = []  # Expanding list of time frames
     num_frames = {}  # Number of time frames in each file
     for fname in files:
         with Dataset(fname) as nc:
@@ -917,8 +916,11 @@ def scan_file_times(files: list[Path]) -> tuple[np.ndarray, dict[Path, int]]:
             num_frames[fname] = len(new_times)
             units = nc.variables["ocean_time"].units
             new_frames = num2date(new_times, units)
-            frames.extend(new_frames)
-    all_frames = np.array([np.datetime64(tf) for tf in frames])
+            if isinstance(new_frames, np.ndarray):  # Multiple time frames
+                frames.extend([np.datetime64(tf) for tf in new_frames])
+            else:  # Single time frame
+                frames.append(np.datetime64(new_frames))
+    all_frames = np.array(frames)
 
     # Check that time frames are strictly sorted
     I = all_frames[1:] <= all_frames[:-1]

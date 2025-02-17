@@ -212,7 +212,7 @@ def bilin_inv(
 ) -> tuple[ParticleArray, ParticleArray]:
     """Inverse bilinear interpolation
 
-    f, g : Arrays of same shape
+    f, g : scalars or 1D arrays of same length
     F, G : 2D arrays of the same shape
 
     returns x, y : shaped like f and g
@@ -225,24 +225,11 @@ def bilin_inv(
         msg = "Shape mismatch in 2D arrays"
         raise ValueError(msg)
 
-    # scalar = np.isscalar(f)
-
-    # if scalar:
-    #     if not np.isscalar(g):
-    #         raise ValueError("Target values must both be scalars or both arrays")
-    #     # initial guess = mid point
-    #     x = 0.5 * imax
-    #     y = 0.5 * jmax
-
-    # else:  # vector target
     f = np.asarray(f)
     g = np.asarray(g)
     fshape = f.shape
     if g.shape != fshape:
-        raise ValueError("Target arrays must have the same shape")
-    # Make 1D
-    # f = f.ravel()
-    # g = g.ravel()
+        raise ValueError("Targets must have the same length")
 
     # initial guess = midpoint
     x: ParticleArray = np.zeros_like(f) + 0.5 * imax
@@ -268,7 +255,6 @@ def bilin_inv(
         )
 
         H = (Fs - f) ** 2 + (Gs - g) ** 2
-        # print t, H
         if np.all(H < tol):
             break
 
