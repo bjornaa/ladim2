@@ -142,14 +142,9 @@ def init_module(
         ibm="IBM",
     )
     main_class_name = main_class_names[module_name]
-
-    module_name = conf_dict.get("module", default_module_name)
+    module_name = conf_dict.pop("module", default_module_name)
     module_object = load_module(module_name)
     MainClass = getattr(module_object, main_class_name)
-
-    if "module" in conf_dict:
-        del conf_dict["module"]
-
     return MainClass(modules=all_modules_dict, **conf_dict)
 
 
