@@ -1,9 +1,8 @@
-"""Output module for NetCDF contiguous ragged array"""
+"""Output module for NetCDF dense array"""
 
 from __future__ import annotations
 
 import logging
-import re
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -11,16 +10,13 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from netCDF4 import Dataset
 
+from ladim.out_netcdf_sparse import filename_generator
 from ladim.output import BaseOutput
 from ladim.timekeeper import TimeDelta, normalize_period
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from ladim.state import State
 
-
-# TODO: split in out_netcdf_dense and out_netcdf_sparse?
 
 Variable = dict[str, Any]
 
@@ -54,8 +50,11 @@ class Output(BaseOutput):
         self.timer = timer
         # self.num_particles = modules['release'].total_particle_count
         self.instance_variables = instance_variables
+        # No need to save pid in orthogonal layout
+        self.instance_variables.pop("pid", None)
         self.particle_variables = particle_variables if particle_variables else dict()
         logger.info("  Filename: %s", filename)
+        logger.info("  Dense format")
         logger.info("  Instance variables: %s", list(instance_variables))
         logger.info("  Particle variables: %s", list(self.particle_variables))
 
@@ -73,10 +72,7 @@ class Output(BaseOutput):
             self.global_attributes = global_attributes
         else:
             self.global_attributes = dict()
-
-            self.global_attributes["type"] = (
-                "LADiM output, sparse = netcdf contiguous ragged array"
-            )
+        self.global_attributes["type"] = "LADiM output, dense = netcdf orthogonal array"
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
@@ -153,18 +149,13 @@ class Output(BaseOutput):
         # nc.createDimension("particle", self.num_particles)ma
         nc.createDimension("time", None)
         nc.createDimension("particle", None)
-        nc.createDimension("particle_instance", None)  # Unlimited
-        instance_dim = ("particle_instance",)
+        instance_dim: tuple[str, ...] = ("time", "particle")
 
         # Variables
         v = nc.createVariable("time", "f8", ("time",))
         v.long_name = "time"
         v.standard_name = "time"
         v.units = f"seconds since {self.timer.reference_time}"
-
-        v = nc.createVariable("particle_count", "i", ("time",))
-        v.long_name = "Number of particles"
-        v.ragged_row_count = "particle count at nth timestep"
 
         if self.instance_variables is not None:
             for var, conf in self.instance_variables.items():
@@ -217,20 +208,23 @@ class Output(BaseOutput):
             self.skip_initial = False
             return
 
-        state.compactify()
-
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
-        count = len(state)  # Present number of particles
-        start = self.local_instance_count
-        end = start + count
-        self.nc.variables["particle_count"][self.local_record_count] = count
+        # Fill out state.alive, False for unborn particles
+        has_value = np.full(len(state), False)
+        has_value[: len(state)] = state.alive
+        start = self.local_record_count
+        end = NotImplementedError
         for var in self.instance_variables:
-            self.nc.variables[var][start:end] = getattr(state, var)
-
+            # values = getattr(state, var)
+            self.nc.variables[var][start, has_value] = getattr(state, var)[state.alive]
         # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
+            # if self.layout == "dense":
+            #     self.nc.variables["lon"][self.local_record_count, :] = lon
+            #     self.nc.variables["lat"][self.local_record_count, :] = lat
+            # elif self.layout == "sparse":
             self.nc.variables["lon"][start:end] = lon
             self.nc.variables["lat"][start:end] = lat
 
@@ -238,8 +232,6 @@ class Output(BaseOutput):
         self.nc.sync()
 
         # Prepare for next time
-        self.instance_count += count
-        self.local_instance_count += count
         self.record_count += 1
         self.local_record_count += 1
         self.nctime += float(self.output_period / np.timedelta64(1, self.time_unit))
@@ -275,34 +267,34 @@ class Output(BaseOutput):
             self.nc.close()
 
 
-def filename_generator(filename: Path) -> Generator[Path, None, None]:
-    """Generate file names based on prototype
+# def filename_generator(filename: Path) -> Generator[Path, None, None]:
+#     """Generate file names based on prototype
 
-    Args:
-        filename: File name root
-    Yields:
-        Sequence of numbered file names
+#     Args:
+#         filename: File name root
+#     Yields:
+#         Sequence of numbered file names
 
-    Examples:
-    output/cake.nc -> output/cake_000.nc, output/cake_001.nc, ...
-    cake_04.nc -> cake_04.nc, cake_05.nc, ....
-    """
+#     Examples:
+#     output/cake.nc -> output/cake_000.nc, output/cake_001.nc, ...
+#     cake_04.nc -> cake_04.nc, cake_05.nc, ....
+#     """
 
-    stem = filename.stem  # filename without parent and extension
-    pattern = r"_(\d+)$"  # _digits at end of string
-    m = re.search(pattern, stem)
+#     stem = filename.stem  # filename without parent and extension
+#     pattern = r"_(\d+)$"  # _digits at end of string
+#     m = re.search(pattern, stem)
 
-    if m:  # Start from a number (or trailing underscore)
-        ddd = m.group(1)
-        filenumber = int(ddd)
-        number_width = len(ddd)
-        xxxx = stem[: -number_width - 1]  # remove _ddd
-    else:  # Start from zero
-        filenumber = 0
-        number_width = 3
-        xxxx = stem
-    filename_template = f"{xxxx}_{{:0{number_width}d}}{filename.suffix}"
+#     if m:  # Start from a number (or trailing underscore)
+#         ddd = m.group(1)
+#         filenumber = int(ddd)
+#         number_width = len(ddd)
+#         xxxx = stem[: -number_width - 1]  # remove _ddd
+#     else:  # Start from zero
+#         filenumber = 0
+#         number_width = 3
+#         xxxx = stem
+#     filename_template = f"{xxxx}_{{:0{number_width}d}}{filename.suffix}"
 
-    while True:
-        yield filename.parent / filename_template.format(filenumber)
-        filenumber += 1
+#     while True:
+#         yield filename.parent / filename_template.format(filenumber)
+#         filenumber += 1
