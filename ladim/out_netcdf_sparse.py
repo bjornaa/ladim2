@@ -45,7 +45,6 @@ class Output(BaseOutput):
         skip_initial: bool | None = False,
         global_attributes: dict[str, Any] | None = None,
     ) -> None:
-
         logger.info("Initializing output")
         super().__init__(modules)
         timer = modules["time"]
@@ -74,10 +73,10 @@ class Output(BaseOutput):
         else:
             self.global_attributes = dict()
 
-            self.global_attributes["type"] = (
-                "LADiM output, sparse = netcdf contiguous ragged array"
-            )
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
+        self.global_attributes["type"] = (
+            "LADiM output, sparse = netcdf contiguous ragged array"
+        )
 
         self.output_period = normalize_period(output_period)
         self.output_period_step = self.output_period // timer.dt

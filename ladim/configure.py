@@ -73,7 +73,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     else:  # Default filetype = yaml
         try:
             with confile.open(encoding="utf-8") as fid:
-                config: dict[str, Any] = yaml.safe_load(fid)
+                config: dict[str, Any] = yaml.safe_load(fid) or dict()
         except yaml.YAMLError as err:
             if debug:
                 traceback.print_exc()
@@ -129,11 +129,13 @@ def configure_v2(config: dict[str, Any]) -> None:
         config["tracker"] = dict()
 
     # time is mandatory
-    if config["time"] is None:
-        pass
+    # if config["time"] is None:
+    if "time" not in config:
+        config["time"] = dict()
 
     # release with release_file is mandatory
-    if config["release"] is None:
+    # if config["release"] is None:
+    if "release" not in config:
         config["release"] = dict(release_file="")
 
     # output is mandatory
@@ -165,8 +167,7 @@ def configure_v2(config: dict[str, Any]) -> None:
             raise SystemExit(1) from err
         tvar = nc.variables["time"]
         # Use last record in restart file
-        warm_start_time = np.datetime64(num2date(tvar[-1], tvar.units))
-        warm_start_time = warm_start_time.astype("M8[s]")
+        warm_start_time = np.datetime64(str(num2date(tvar[-1], tvar.units)))
         config["time"]["start"] = warm_start_time
         logging.info("    Warm start at %s", warm_start_time)
 

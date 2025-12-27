@@ -18,13 +18,14 @@ version = "2.0"
     filename =  "../data/ocean_avg_0014.nc"
 
 [tracker]
-    advection: "EF"
+    advection = "EF"  # Euler-Forward
 
 [release]
     release_file = "line.rls"
 
 [output]
-    module = "ladim.out_netcdf"
+    # module = "ladim.out_netcdf"
+    module = "ladim.out_netcdf_sparse"
     filename = "out.nc"
     output_period = [3, "h"]
     ncargs.data_model = "NETCDF3_CLASSIC"
@@ -56,3 +57,4 @@ version = "2.0"
     [output.global_attributes]
         title = "LADiM line example"
         institution = "Institute of Marine Research"
+        

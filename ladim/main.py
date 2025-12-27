@@ -15,7 +15,7 @@ from typing import Union
 import rich.highlighter
 import rich.logging
 
-from ladim import __file__, __version__
+from ladim import __version__
 from ladim.configure import configure
 from ladim.model import Model
 

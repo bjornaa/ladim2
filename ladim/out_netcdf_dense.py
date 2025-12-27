@@ -37,21 +37,20 @@ class Output(BaseOutput):
         instance_variables: dict[str, Variable],
         particle_variables: dict[str, Variable] | None = None,
         ncargs: dict[str, Any] | None = None,
-        numrec: int = 0,  # Number of records per file, no multfile if zero
+        numrec: int = 0,  # Number of records per file, no multifile if zero
         skip_initial: bool | None = False,
         global_attributes: dict[str, Any] | None = None,
     ) -> None:
-
         logger.info("Initializing output")
         super().__init__(modules)
         timer = modules["time"]
         grid = modules["grid"]
         self.filename = filename
         self.timer = timer
-        # self.num_particles = modules['release'].total_particle_count
+        self.num_particles = modules["release"].total_particle_count
         self.instance_variables = instance_variables
         # No need to save pid in orthogonal layout
-        self.instance_variables.pop("pid", None)
+        self.pid = self.instance_variables.pop("pid", None)
         self.particle_variables = particle_variables if particle_variables else dict()
         logger.info("  Filename: %s", filename)
         logger.info("  Dense format")
@@ -99,10 +98,10 @@ class Output(BaseOutput):
             self.numrec = 999999
 
         self.record_count = 0
-        self.instance_count = 0
+        # self.instance_count = 0
 
         self.nc = self.create_netcdf()
-        self.local_instance_count = 0
+        # self.local_instance_count = 0
         self.local_record_count = 0
 
         self.step2nctime = timer.step2nctime
@@ -146,9 +145,8 @@ class Output(BaseOutput):
 
         # Dimensions
         # nc.createDimension("time", self.local_num_records)
-        # nc.createDimension("particle", self.num_particles)ma
         nc.createDimension("time", None)
-        nc.createDimension("particle", None)
+        nc.createDimension("particle", self.num_particles)
         instance_dim: tuple[str, ...] = ("time", "particle")
 
         # Variables
@@ -195,7 +193,7 @@ class Output(BaseOutput):
         return nc
 
     def write(self, state: State) -> None:
-        """Write output instance variables to a (multi-)file
+        """Write output instance variables at specific time to a (multi-)file
 
         Arguments:
           state: Model state
@@ -210,14 +208,17 @@ class Output(BaseOutput):
 
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
-        # Fill out state.alive, False for unborn particles
-        has_value = np.full(len(state), False)
-        has_value[: len(state)] = state.alive
-        start = self.local_record_count
-        end = NotImplementedError
+        ### Holder på her
+        # Fill out state.alive to total number of particles
+        alive = np.full(self.num_particles, False)
+        if len(alive) > 0:
+            alive[state.pid] = state.alive
+
         for var in self.instance_variables:
             # values = getattr(state, var)
-            self.nc.variables[var][start, has_value] = getattr(state, var)[state.alive]
+            full_data = np.full(self.num_particles, np.nan)
+            full_data[alive] = getattr(state, var)[state.alive]
+            self.nc.variables[var][self.local_record_count, :] = full_data
         # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
@@ -225,8 +226,11 @@ class Output(BaseOutput):
             #     self.nc.variables["lon"][self.local_record_count, :] = lon
             #     self.nc.variables["lat"][self.local_record_count, :] = lat
             # elif self.layout == "sparse":
-            self.nc.variables["lon"][start:end] = lon
-            self.nc.variables["lat"][start:end] = lat
+            full_data = np.full(self.num_particles, np.nan)
+            self.nc.variables[lon][self.local_record_count, alive] = lon
+            full_data = np.full(self.num_particles, np.nan)
+            self.nc.variables[lon][self.local_record_count, alive] = lat
+            # Coself.nc.variables["lon"][start:end] = lon
 
         # Flush to file
         self.nc.sync()
@@ -244,7 +248,7 @@ class Output(BaseOutput):
             if self.record_count < self.num_records:
                 self.filename = next(self.filenames)
                 self.nc = self.create_netcdf()
-                self.local_instance_count = 0
+                # self.local_instance_count = 0
                 self.local_record_count = 0
 
     def write_particle_variables(self, state: State) -> None:

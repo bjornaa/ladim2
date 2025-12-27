@@ -8,7 +8,6 @@ The higher level postladim package is not used.
 
 """
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import netCDF4 as nc
 import numpy as np
@@ -68,7 +67,7 @@ fig = plt.figure(figsize=(8, 7))
 ax = plt.axes(xlim=(I0, I1 - 1), ylim=(J0, J1 - 1), aspect="equal")
 
 # Background bathymetry
-cmap = mpl.colormaps["Blues"]
+cmap = plt.get_cmap("Blues")
 ax.contourf(Xcell, Ycell, H, cmap=cmap, alpha=0.8)
 
 # Lon/lat lines

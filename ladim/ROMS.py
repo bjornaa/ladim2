@@ -61,8 +61,8 @@ class Grid(BaseGrid):
     def __init__(
         self,
         filename: Union[Path, str],
-        subgrid: Optional[tuple[int, int, int, int]] = None,
-        Vinfo: Optional[dict[str, Any]] = None,
+        subgrid: tuple[int, int, int, int] | None = None,
+        Vinfo: dict[str, Any] | None = None,
         **args: dict[str, Any],
     ) -> None:
         logger.info("Initiating grid")
@@ -412,7 +412,7 @@ class Forcing(BaseForce):
         self,
         modules: dict[str, Any],
         filename: Union[Path, str],
-        extra_forcing: Optional[list[str]] = None,
+        extra_forcing: list[str] | None = None,
     ) -> None:
         logger.info("Initiating forcing")
         super().__init__(modules)

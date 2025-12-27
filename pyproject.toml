@@ -39,3 +39,6 @@ examples = ["matplotlib", "postladim"]
 
 [project.scripts]
 ladim = "ladim.main:script"
+
+[tool.setuptools.package-data]
+ladim = ["py.typed"]

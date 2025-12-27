@@ -37,9 +37,8 @@ release:
     release_frequency: [1, h]
 
 output:
-    module: ladim.out_netcdf
-    filename: out_dense.nc
-    layout: dense
+    module: ladim.out_netcdf_dense
+    filename: out_netcdf_dense.nc
     ncargs: {data_model: NETCDF4_CLASSIC}
     output_period: [3, h]
     instance_variables:

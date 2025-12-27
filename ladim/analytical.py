@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Union
 
 import numpy as np
 
@@ -19,7 +19,7 @@ Velocity = namedtuple("Velocity", ["U", "V"])
 def get_velocity1(
     state: State,
     sample_func: Callable[[ParticleArray, ParticleArray], Velocity],
-    dt: Optional[int] = None,
+    dt: int | None = None,
 ) -> Velocity:
     """Euler Forward velocity sampling
 

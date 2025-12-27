@@ -192,6 +192,7 @@ def verify_output(yaml_file):
         # The dense file format is recognized by a global attribute "type"
         # containing the substring "dense"
         type_attribute = getattr(nc, "type", "")
+        print(type_attribute)
         if "dense" in type_attribute:
             assert "particle" in nc.dimensions
         else:  # Default sparse format

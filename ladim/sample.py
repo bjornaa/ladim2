@@ -49,8 +49,8 @@ def sample2D2(F: Field, X: ParticleArray, Y: ParticleArray) -> ParticleArray:
 
     I: np.ndarray[tuple[int], np.dtype[np.int64]] = X.astype("int")
     J: np.ndarray[tuple[int], np.dtype[np.int64]] = Y.astype("int")
-    P = X - I
-    Q = Y - J
+    P: ParticleArray = X - I
+    Q: ParticleArray = Y - J
 
     W00 = (1 - P) * (1 - Q)
     W01 = (1 - P) * Q
@@ -94,8 +94,8 @@ def sample2D_masked(
     masked = True
     I: np.ndarray[tuple[int], np.dtype[np.int64]] = X.astype("int")
     J: np.ndarray[tuple[int], np.dtype[np.int64]] = Y.astype("int")
-    P = X - I
-    Q = Y - J
+    P: ParticleArray = X - I
+    Q: ParticleArray = Y - J
 
     W00 = M[J, I] * (1 - P) * (1 - Q)
     W01 = M[J + 1, I] * (1 - P) * Q

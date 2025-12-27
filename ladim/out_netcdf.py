@@ -45,7 +45,6 @@ class Output(BaseOutput):
         skip_initial: bool | None = False,
         global_attributes: dict[str, Any] | None = None,
     ) -> None:
-
         logger.info("Initializing output")
         super().__init__(modules)
         timer = modules["time"]

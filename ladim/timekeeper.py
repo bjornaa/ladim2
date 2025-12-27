@@ -16,10 +16,8 @@ from typing import Any
 
 import numpy as np
 
-# Time = Union[str, np.datetime64, datetime.datetime]
 Time = str | np.datetime64 | datetime.datetime
-TimeDelta = int | np.timedelta64 | datetime.timedelta | tuple[int, str]
-
+TimeDelta = np.timedelta64 | datetime.timedelta | tuple[int, str] | int | str
 
 DEBUG = False
 
@@ -55,7 +53,7 @@ class TimeKeeper:
         self,
         start: Time = "",
         stop: Time = "",
-        dt: TimeDelta = 0,
+        dt: TimeDelta = datetime.timedelta(seconds=0),
         reference: Time | None = None,
         time_reversal: bool = False,
         modules: dict[str, Any] | None = None,
@@ -82,8 +80,8 @@ class TimeKeeper:
         if not dt:
             logger.critical("Missing time step, dt")
             raise SystemExit(3)
-        self.start_time: np.datetime64 = np.datetime64(start, "s")
-        self.stop_time: np.datetime64 = np.datetime64(stop, "s")
+        self.start_time: np.datetime64 = np.datetime64(str(start), "s")
+        self.stop_time: np.datetime64 = np.datetime64(str(stop), "s")
         logger.info("  Model start time: %s", self.start_time)
         logger.info("  Model stop time: %s", self.stop_time)
 
@@ -103,11 +101,11 @@ class TimeKeeper:
                 logger.critical("ERROR: Stop before start")
                 raise SystemExit(3)
 
-        self.min_time = min(self.start_time, self.stop_time)  # type: ignore
-        self.max_time = max(self.start_time, self.stop_time)  # type: ignore
+        self.min_time = min(self.start_time, self.stop_time)
+        self.max_time = max(self.start_time, self.stop_time)
 
         if reference:
-            self.reference_time = np.datetime64(reference, "s")
+            self.reference_time = np.datetime64(str(reference), "s")
         else:
             self.reference_time = self.min_time
         logger.info("  Reference time: %s", self.reference_time)

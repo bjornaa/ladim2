@@ -102,7 +102,7 @@ class State(Sized):
         logger.info("Initiating the model state")
         self.modules = modules
         # Make dtypes dictionary
-        mandatory_variables = dict(
+        mandatory_variables: dict[str, type] = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
         )
         ivar = instance_variables if instance_variables else dict()
@@ -129,7 +129,7 @@ class State(Sized):
         }
 
         # Default values
-        predef_default_values = dict(
+        predef_default_values: dict[str, Any] = dict(
             # alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
             alive=True,
             active=True,
