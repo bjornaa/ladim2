@@ -208,29 +208,29 @@ class Output(BaseOutput):
 
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
-        ### Holder på her
         # Fill out state.alive to total number of particles
         alive = np.full(self.num_particles, False)
         if len(alive) > 0:
             alive[state.pid] = state.alive
 
         for var in self.instance_variables:
-            # values = getattr(state, var)
-            full_data = np.full(self.num_particles, np.nan)
+            full_data = np.zeros(self.num_particles, dtype=getattr(state, var).dtype)
             full_data[alive] = getattr(state, var)[state.alive]
+            full_data = np.ma.array(full_data, mask=~alive)
             self.nc.variables[var][self.local_record_count, :] = full_data
         # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
-            # if self.layout == "dense":
-            #     self.nc.variables["lon"][self.local_record_count, :] = lon
-            #     self.nc.variables["lat"][self.local_record_count, :] = lat
-            # elif self.layout == "sparse":
-            full_data = np.full(self.num_particles, np.nan)
-            self.nc.variables[lon][self.local_record_count, alive] = lon
-            full_data = np.full(self.num_particles, np.nan)
-            self.nc.variables[lon][self.local_record_count, alive] = lat
-            # Coself.nc.variables["lon"][start:end] = lon
+
+            full_data = np.zeros(self.num_particles, dtype=lon.dtype)
+            full_data[alive] = lon[state.alive]
+            full_data = np.ma.array(full_data, mask=~alive)
+            self.nc.variables["lon"][self.local_record_count, :] = full_data
+
+            full_data = np.zeros(self.num_particles, dtype=lat.dtype)
+            full_data[alive] = lat[state.alive]
+            full_data = np.ma.array(full_data, mask=~alive)
+            self.nc.variables["lat"][self.local_record_count, :] = full_data
 
         # Flush to file
         self.nc.sync()
@@ -270,34 +270,6 @@ class Output(BaseOutput):
         if self.nc.isopen():
             self.nc.close()
 
-
-# def filename_generator(filename: Path) -> Generator[Path, None, None]:
-#     """Generate file names based on prototype
-
-#     Args:
-#         filename: File name root
-#     Yields:
-#         Sequence of numbered file names
-
-#     Examples:
-#     output/cake.nc -> output/cake_000.nc, output/cake_001.nc, ...
-#     cake_04.nc -> cake_04.nc, cake_05.nc, ....
-#     """
-
-#     stem = filename.stem  # filename without parent and extension
-#     pattern = r"_(\d+)$"  # _digits at end of string
-#     m = re.search(pattern, stem)
-
-#     if m:  # Start from a number (or trailing underscore)
-#         ddd = m.group(1)
-#         filenumber = int(ddd)
-#         number_width = len(ddd)
-#         xxxx = stem[: -number_width - 1]  # remove _ddd
-#     else:  # Start from zero
-#         filenumber = 0
-#         number_width = 3
-#         xxxx = stem
-#     filename_template = f"{xxxx}_{{:0{number_width}d}}{filename.suffix}"
 
 #     while True:
 #         yield filename.parent / filename_template.format(filenumber)
