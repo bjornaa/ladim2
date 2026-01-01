@@ -73,9 +73,9 @@ class Output(BaseOutput):
         else:
             self.global_attributes = dict()
 
-            self.global_attributes["type"] = (
-                "LADiM output, sparse = netcdf contiguous ragged array"
-            )
+        self.global_attributes["type"] = (
+            "LADiM output, sparse = netcdf contiguous ragged array"
+        )
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)

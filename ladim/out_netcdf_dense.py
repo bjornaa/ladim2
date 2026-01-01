@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from netCDF4 import Dataset
 
-from ladim.out_netcdf_sparse import filename_generator
+from ladim.out_netcdf import filename_generator
 from ladim.output import BaseOutput
 from ladim.timekeeper import TimeDelta, normalize_period
 

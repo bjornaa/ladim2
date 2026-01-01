@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from ladim.out_netcdf_sparse import Output, filename_generator
+from ladim.out_netcdf import Output, filename_generator
 from ladim.state import State
 from ladim.timekeeper import TimeKeeper
 from netCDF4 import Dataset

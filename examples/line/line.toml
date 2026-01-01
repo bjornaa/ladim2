@@ -24,8 +24,7 @@ version = "2.0"
     release_file = "line.rls"
 
 [output]
-    # module = "ladim.out_netcdf"
-    module = "ladim.out_netcdf_sparse"
+    module = "ladim.out_netcdf"
     filename = "out.nc"
     output_period = [3, "h"]
     ncargs.data_model = "NETCDF3_CLASSIC"
