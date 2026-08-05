@@ -1,6 +1,6 @@
 # A more foregiving version for the examples
 
-target-version = "py39"
+target-version = "py310"
 lint.select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
