@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numba  # type: ignore
 import numpy as np
@@ -848,10 +848,7 @@ def trilinear(
         f10 = a * F[k - 1, j, i + 1] + (1 - a) * F[k, j, i + 1]
         f11 = a * F[k - 1, j + 1, i + 1] + (1 - a) * F[k, j + 1, i + 1]
         R[n] = (
-            (1 - p) * (1 - q) * f00
-            + p * (1 - q) * f10
-            + (1 - p) * q * f01
-            + p * q * f11
+            (1 - p) * (1 - q) * f00 + p * (1 - q) * f10 + (1 - p) * q * f01 + p * q * f11
         )
     return R
 

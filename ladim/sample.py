@@ -21,8 +21,6 @@ Horizontal sampling
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 
 # Type aliases
@@ -125,9 +123,9 @@ def sample2D(
     F: Field,
     X: ParticleArray,
     Y: ParticleArray,
-    mask: Optional[Field] = None,
+    mask: Field | None = None,
     undef_value: float = 0.0,
-    outside_value: Optional[float] = None,
+    outside_value: float | None = None,
 ) -> ParticleArray:
     """Bilinear sample of a 2D field
 
@@ -193,7 +191,7 @@ def sample2D(
     )
 
     # Set in outside_values
-    if outside_value:
+    if outside_value is not None:
         result = np.where(outside, outside_value, result)
 
     return result
