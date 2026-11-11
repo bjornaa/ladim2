@@ -37,6 +37,8 @@ def test_read_release():
     datatypes = dict(datatypes0, super=int)
 
     A = ParticleReleaser.read_release_file(f, datatypes)
+    print(A)
+    print(A.index.dtype)
     assert len(A) == 3
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
     assert all(A.X == [100.0, 111.0, 200.0])

@@ -176,7 +176,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         V0 = V0.repeat(V.mult)
         V = pd.DataFrame(V0)
         # Do not need the mult column any more
-        V.drop("mult", axis=1, inplace=True)
+        V = V.drop("mult", axis=1)
         # Buffer the new values
 
         # Update the counters
@@ -214,7 +214,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         )
 
         kwargs = dict(
-            parse_dates=["release_time"],
+            # parse_dates=["release_time"],
             names=names,
             dtype=dtypes,
             sep=r"\s+",
@@ -225,7 +225,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         if pd.__version__[0] == "2":
             kwargs["date_format"] = "ISO8601"
         try:
-            df = pd.read_csv(rls_file, **kwargs)  # type: ignore
+            df = pd.read_csv(rls_file, parse_dates=True, **kwargs)  # type: ignore
         except ValueError as err:
             logger.critical("Could not read release file")
             logger.debug("  Keyword arguments to read_csv:\n %s", str(kwargs))
@@ -233,6 +233,8 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         except FileNotFoundError as err:
             logger.critical("Release file %s not found" % rls_file)  # noqa:  UP031
             raise SystemExit(3) from err
+        df.index = pd.to_datetime(df.index, format="ISO8601").astype("datetime64[ns]")
+
         return df
 
     def clean_position(self, grid: BaseGrid | None = None) -> None:
@@ -256,7 +258,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
 
             df["lon"] = X
             df["lat"] = Y
-            df.rename(columns={"lon": "X", "lat": "Y"}, inplace=True)
+            df = df.rename(columns={"lon": "X", "lat": "Y"})
 
         self._df = df
 
