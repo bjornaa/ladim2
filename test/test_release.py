@@ -37,6 +37,8 @@ def test_read_release():
     datatypes = dict(datatypes0, super=int)
 
     A = ParticleReleaser.read_release_file(f, datatypes)
+    print(A)
+    print(A.index.dtype)
     assert len(A) == 3
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
     assert all(A.X == [100.0, 111.0, 200.0])
@@ -190,7 +192,8 @@ def test_remove_late_release():
     assert len(pr.steps) == 1
     assert pr.steps[0] == 12 * 4  # 12 hours, 4 steps per hour
     assert all(df.index == np.datetime64("2015-04-01"))
-    assert df.X[0] == 4
+    # assert df.X[0] == 4
+    assert df.X.iloc[0] == 4
 
 
 def test_remove_early_release():
@@ -376,8 +379,8 @@ def test_release_time_column():
     pr = ParticleReleaser(modules=modules, release_file=f, timer=timer)
     A = pr._df
     assert A.index[1] == np.datetime64("2015-04-01 00:00:00")
-    assert A["release_time"][1] == np.datetime64("2015-04-01", "s")
-    assert A["release_time"][2] == np.datetime64("2015-04-03 12:00:00")
+    assert A["release_time"].iloc[1] == np.datetime64("2015-04-01", "s")
+    assert A["release_time"].iloc[2] == np.datetime64("2015-04-03 12:00:00")
     assert A["release_time"].dtype == np.dtype("M8[ns]")
 
 

@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 import pandas as pd  # type: ignore
-from netCDF4 import Dataset  # type: ignore
+from netCDF4 import Dataset
 
 from ladim.timekeeper import normalize_period
 
@@ -38,10 +38,10 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         modules: dict[str, Any],
         release_file: Union[Path, str],
         *,
-        names: Optional[list[str]] = None,
+        names: list[str] | None = None,
         continuous: bool = False,
         release_frequency: int = 0,  # frequency in seconds
-        warm_start_file: Optional[str] = None,
+        warm_start_file: str | None = None,
         **args: dict[str, Any],
     ) -> None:
         timer = modules["time"]
@@ -176,7 +176,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         V0 = V0.repeat(V.mult)
         V = pd.DataFrame(V0)
         # Do not need the mult column any more
-        V.drop("mult", axis=1, inplace=True)
+        V = V.drop("mult", axis=1)
         # Buffer the new values
 
         # Update the counters
@@ -191,7 +191,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
     def read_release_file(
         rls_file: Union[Path, str],
         datatypes: dict[str, Any],
-        names: Optional[list[str]] = None,
+        names: list[str] | None = None,
     ) -> pd.DataFrame:
         """Read the release file into a pandas DataFrame"""
 
@@ -214,10 +214,10 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         )
 
         kwargs = dict(
-            parse_dates=["release_time"],
+            # parse_dates=["release_time"],
             names=names,
             dtype=dtypes,
-            sep="\s+",
+            sep=r"\s+",
             index_col="release_time",
         )
 
@@ -225,17 +225,19 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         if pd.__version__[0] == "2":
             kwargs["date_format"] = "ISO8601"
         try:
-            df = pd.read_csv(rls_file, **kwargs)
+            df = pd.read_csv(rls_file, parse_dates=True, **kwargs)  # type: ignore
         except ValueError as err:
             logger.critical("Could not read release file")
             logger.debug("  Keyword arguments to read_csv:\n %s", str(kwargs))
             raise SystemExit(3) from err
         except FileNotFoundError as err:
-            logger.critical("Release file %s not found" % rls_file)
+            logger.critical("Release file %s not found" % rls_file)  # noqa:  UP031
             raise SystemExit(3) from err
+        df.index = pd.to_datetime(df.index, format="ISO8601").astype("datetime64[ns]")
+
         return df
 
-    def clean_position(self, grid: Optional[BaseGrid] = None) -> None:
+    def clean_position(self, grid: BaseGrid | None = None) -> None:
         """Make sure the release data have mult, X, and Y columns
 
         X and Y may be inferred from lon and lat using grid.ll2xy
@@ -256,7 +258,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
 
             df["lon"] = X
             df["lat"] = Y
-            df.rename(columns={"lon": "X", "lat": "Y"}, inplace=True)
+            df = df.rename(columns={"lon": "X", "lat": "Y"})
 
         self._df = df
 
@@ -302,7 +304,7 @@ class ParticleReleaser(Iterator[pd.DataFrame]):
         B = df.groupby(df.index).agg(lambda x: x.tolist())
 
         # Insert full time axis and forward fill and explode
-        S = T.join(B, on="times").fillna(method="ffill").set_index("times")
+        S = T.join(B, on="times").ffill().set_index("times")
         S = S.explode(column=S.columns.tolist())
 
         # Reset dtypes
