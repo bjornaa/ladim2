@@ -20,7 +20,7 @@ import numpy as np
 if TYPE_CHECKING:
     from ladim.forcing import BaseForce
 
-ParticleArray = np.ndarray  # 1D array, one element per particle
+ParticleArray = np.ndarray[tuple[int], np.dtype[np.float64]]
 Velocity = tuple[ParticleArray, ParticleArray]
 
 PARALLEL = False
@@ -300,4 +300,5 @@ def RK4avg(
     U1: ParticleArray, U2: ParticleArray, U3: ParticleArray, U4: ParticleArray
 ) -> ParticleArray:
     """Average velocity component for Runge-Kutta 4-th order"""
-    return (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
+    U: ParticleArray = (U1 + 2 * U2 + 2 * U3 + U4) / 6.0
+    return U

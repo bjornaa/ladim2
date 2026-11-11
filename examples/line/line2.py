@@ -20,8 +20,8 @@ model = Model(config)
 # Time loop
 # --------------
 
-for step in range(model.timer.Nsteps + 1):
-    model.update(step)
+for step in range(model.timer.Nsteps):
+    model.update()
 
 # --------------
 # Finalisation

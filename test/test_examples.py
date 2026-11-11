@@ -142,6 +142,18 @@ def test_line():
         verify_output(yaml_file2)
 
 
+def test_logo() -> None:
+    name = "logo"
+    example_dir = EXAMPLE_DIR / name
+    yaml_file = "ladim.yaml"
+    with create_tempdir(name) as temp_dir:
+        shutil.copy(example_dir / "make_release.py", temp_dir)
+        shutil.copy(example_dir / yaml_file, temp_dir)
+        runpy.run_path("make_release.py")
+        run_ladim(yaml_file)
+        verify_output(yaml_file)
+
+
 # ----------------------------------------------------
 
 
@@ -180,6 +192,7 @@ def verify_output(yaml_file):
         # The dense file format is recognized by a global attribute "type"
         # containing the substring "dense"
         type_attribute = getattr(nc, "type", "")
+        print(type_attribute)
         if "dense" in type_attribute:
             assert "particle" in nc.dimensions
         else:  # Default sparse format

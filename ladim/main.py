@@ -15,7 +15,7 @@ from typing import Union
 import rich.highlighter
 import rich.logging
 
-from ladim import __file__, __version__
+from ladim import __version__
 from ladim.configure import configure
 from ladim.model import Model
 
@@ -179,7 +179,7 @@ class LadimLogFormatter(logging.Formatter):
         logging.CRITICAL: "[bold white on red]" + logformat,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_fmt = self.formats[record.levelno]
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)

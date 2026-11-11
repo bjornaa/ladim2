@@ -1,6 +1,7 @@
-"""Module containing the LADiM Model class definition"""
+"""Main program for a simulation using ladim as a library.
+The simulation should be identical to running ladim configurd with line.toml
+"""
 
-import ladim
 import ladim.out_netcdf
 import ladim.ROMS
 import ladim.state
@@ -17,6 +18,7 @@ stop_time = "1989-06-20"
 reference_time = "1970-01-01"
 
 data_file = "../data/ocean_avg_0014.nc"
+output_file = "out.nc"
 
 num_particles = 1000
 

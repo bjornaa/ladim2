@@ -69,13 +69,15 @@ class State(Sized):
     # append and compactify (rename the last to kill?)
 
     __slots__ = [
-        "modules",
-        "variables",
-        "instance_variables",
-        "particle_variables",
         "default_values",
+        "dt",  # For old-style IBM
         "dtypes",
+        "instance_variables",
+        "modules",
         "npid",
+        "particle_variables",
+        "timestamp",
+        "variables",
     ]
 
     def __init__(
@@ -100,7 +102,7 @@ class State(Sized):
         logger.info("Initiating the model state")
         self.modules = modules
         # Make dtypes dictionary
-        mandatory_variables = dict(
+        mandatory_variables: dict[str, type] = dict(
             pid=int, X=float, Y=float, Z=float, active=bool, alive=bool
         )
         ivar = instance_variables if instance_variables else dict()
@@ -127,7 +129,7 @@ class State(Sized):
         }
 
         # Default values
-        predef_default_values = dict(
+        predef_default_values: dict[str, Any] = dict(
             # alive=np.array(True, dtype=bool), active=np.array(True, dtype=bool)
             alive=True,
             active=True,
@@ -212,11 +214,11 @@ class State(Sized):
 
     # Allow item notation, state[var]
     def __getitem__(self, var: str) -> ParticleArray:
-        """Allow item style write access to variables"""
+        """Allow item style read access to variables"""
         return self.variables[var]
 
     def __setitem__(self, var: str, item: npt.ArrayLike) -> None:
-        """Allow item style read access to variables"""
+        """Allow item style write access to variables"""
         value = np.array(item, dtype=self.dtypes[var])
         # The size of item should be unchanged
         # if np.size(value) != len(self.variables[var]):
@@ -228,12 +230,7 @@ class State(Sized):
         return self.variables[var]
 
     def __setattr__(self, var: str, value: Any) -> None:
-        """Follow pandas and xarray and disallow attribute assignment"""
-        # Method taken from xarray
-        try:  # allow assigning attributes in __slots__
+        try:
             object.__setattr__(self, var, value)
-        except AttributeError as e:
-            raise AttributeError(
-                f"Cannot assign attribute {var} on a State instance.\n"
-                f'Use state["{var}"] = ...  instead.'
-            ) from e
+        except AttributeError:
+            self.variables[var] = value

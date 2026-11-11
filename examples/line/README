@@ -1,10 +1,15 @@
-import yaml
-
-
 Line source example
 ===================
 
-A line of particles is released instantaneously across the North Sea.
+This is the most elaborate example used as primary test when developing LADiM.
+
+A line of particles is released instantaneously across the North Sea and the 
+particles are followd for 27 days, with output every 3 hours.
+The example needs the forcing file ocean_average.nc in the ../data directory.
+
+
+Running LADiM
+-------------
 
 This can be run in several ways, with varying degrees of control.
 
@@ -42,3 +47,24 @@ Makes a dense output file. out_dense.nc
 
 Uses ROMS2.py as gridforce module. This uses an adaptive subgrid following the
 particle distribution.
+
+Plotting
+--------
+
+Except for plot_distribution (and animate_dense) all scripts and notebooks use the 
+postladim package for reading output from the LADiM runs.
+
+1) plot_distribution.py
+
+Uses matplotlib to plot a snapshot of the particle distribution. Reads the result file 
+directly without using the postladim package.
+
+2) animate.py, animate_dense.py
+
+Makes a matplotlib animation of the time development of the distribution.
+The animate_dense script works with the dense NetCDF layout in out_dense.nc.
+
+3) Jupyter notebooks
+
+The plot_bokeh, plot_cartopy, plot_holoviews, plot_matplotlib notebooks gives
+examples on how to read and plot the particle distributions with the respective packages.

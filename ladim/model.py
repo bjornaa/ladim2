@@ -5,13 +5,17 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import logging
+from functools import partial
 from pathlib import Path
-from types import ModuleType  # noqa: TCH003
 from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 from ladim.warm_start import warm_start
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ladim.forcing import BaseForce
     from ladim.grid import BaseGrid
     from ladim.ibm import IBM
@@ -44,7 +48,19 @@ class Model:
             "output",
         ]
         for name in module_names:
-            self.modules[name] = init_module(name, config[name], self.modules)
+            if name != "ibm":
+                self.modules[name] = init_module(name, config[name], self.modules)
+
+        # Handle IBM separately for compability with old IBM style
+        if config["ibm"]:
+            ibm_module = config["ibm"][
+                "module"
+            ]  # Module name will be killed by init_module
+        try:  # New IBM style
+            self.modules["ibm"] = init_module("ibm", config["ibm"], self.modules)
+        except TypeError:  # Old IBM style
+            logger.warning(" old style IBM module: %s", ibm_module)
+            self.modules["ibm"] = init_old_ibm(ibm_module, config, self.modules)
 
         # Define shorthand for individual modules
         self.state: State = self.modules["state"]
@@ -126,14 +142,9 @@ def init_module(
         ibm="IBM",
     )
     main_class_name = main_class_names[module_name]
-
-    module_name = conf_dict.get("module", default_module_name)
+    module_name = conf_dict.pop("module", default_module_name)
     module_object = load_module(module_name)
     MainClass = getattr(module_object, main_class_name)
-
-    if "module" in conf_dict:
-        del conf_dict["module"]
-
     return MainClass(modules=all_modules_dict, **conf_dict)
 
 
@@ -153,7 +164,7 @@ def load_module(module_name: str) -> ModuleType:
     if file_name.exists():
         basename = file_name.stem
         internal_name = "ladim_custom_" + basename  # To avoid naming collisions
-        spec = importlib.util.spec_from_file_location(internal_name, file_name)  # type: ignore
+        spec = importlib.util.spec_from_file_location(internal_name, file_name)
         module_object = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module_object)  # type: ignore
         return module_object
@@ -166,3 +177,25 @@ def load_module(module_name: str) -> ModuleType:
     except ModuleNotFoundError as err:
         logging.critical("Can not find module %s", module_name)
         raise SystemExit from err
+
+
+def init_old_ibm(
+    module_name: str, conf_dict: dict[str, Any], all_modules_dict: dict[str, Any]
+) -> Any:
+    ibm_module = load_module(module_name)
+    # Initiate the IBM object
+    dt = conf_dict["time"]["dt"]
+    # Convert from [value, unit] to seconds
+    dt = np.timedelta64(np.timedelta64(dt[0], dt[1]), "s").astype(int)
+    conf_dict["dt"] = dt
+    all_modules_dict["state"].dt = dt
+    all_modules_dict["state"].timestamp = all_modules_dict["time"].time
+    ibm_mod = ibm_module.IBM(conf_dict)
+    ibm_mod.update = partial(
+        ibm_mod.update_ibm,
+        all_modules_dict["grid"],
+        all_modules_dict["state"],
+        all_modules_dict["forcing"],
+    )
+
+    return ibm_mod

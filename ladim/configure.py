@@ -1,4 +1,4 @@
-""""
+""" "
 
 Configuration reader for LADiM version 2
 with compability wrapper for LADiM version 1 configuration
@@ -11,20 +11,20 @@ with compability wrapper for LADiM version 1 configuration
 # December 2020
 # -----------------------------------
 
-
 from __future__ import annotations
 
 import logging
-import sys
+import traceback
 from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
 import tomli
 import yaml  # type: ignore
-from netCDF4 import Dataset, num2date  # type: ignore
+from netCDF4 import Dataset, num2date
 
 DEBUG = False
+
 logger = logging.getLogger(__name__)
 if DEBUG:
     logger.setLevel(logging.DEBUG)
@@ -46,9 +46,11 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
 
     """
 
+    # Harmonize logging and debug settings
+    debug = logger.getEffectiveLevel() <= logging.DEBUG
+
     logger.info("Configuration")
     logger.info("  Configuration file %s", config_file)
-
     confile = Path(config_file)
 
     if not confile.exists():
@@ -62,14 +64,19 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
             with confile.open(mode="rb") as fid:
                 config = tomli.load(fid)
         except tomli.TOMLDecodeError as err:
+            if debug:
+                # Print the traceback in debug mode
+                traceback.print_exc()
             logger.critical("Not a valid TOML file: %s", confile)
             raise SystemExit(3) from err
+
     else:  # Default filetype = yaml
         try:
-            # with open(config_file, encoding="utf-8") as fid:
             with confile.open(encoding="utf-8") as fid:
-                config: dict[str, Any] = yaml.safe_load(fid)
+                config: dict[str, Any] = yaml.safe_load(fid) or dict()
         except yaml.YAMLError as err:
+            if debug:
+                traceback.print_exc()
             logger.critical("Not a valid YAML file: %s", confile)
             raise SystemExit(3) from err
 
@@ -79,7 +86,7 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
     if version == "0":
         # infer version
         version = "1" if "time_control" in config else "2"
-    logger.info("  Configuration file version: %s", version)
+    # logger.info("  Configuration file version: %s", version)
 
     if version[0] == "2":
         try:
@@ -89,14 +96,14 @@ def configure(config_file: Union[Path, str]) -> dict[str, Any]:
             raise SystemExit(3) from err
 
     elif version[0] == "1":
+        logger.warning("Using old (version 1) configuration file")
         config = configure_v1(config)
     else:
         logger.critical("Version %s in not a valid configuration version", version)
         raise SystemExit(3)
 
-    # Possible improvement: write a yaml-file
-    if DEBUG:
-        yaml.dump(config, stream=sys.stdout)
+    # If debug mode, write a yaml dump of the config
+    logger.debug(yaml.dump(config))
 
     return config
 
@@ -122,11 +129,13 @@ def configure_v2(config: dict[str, Any]) -> None:
         config["tracker"] = dict()
 
     # time is mandatory
-    if config["time"] is None:
-        pass
+    # if config["time"] is None:
+    if "time" not in config:
+        config["time"] = dict()
 
     # release with release_file is mandatory
-    if config["release"] is None:
+    # if config["release"] is None:
+    if "release" not in config:
         config["release"] = dict(release_file="")
 
     # output is mandatory
@@ -158,8 +167,7 @@ def configure_v2(config: dict[str, Any]) -> None:
             raise SystemExit(1) from err
         tvar = nc.variables["time"]
         # Use last record in restart file
-        warm_start_time = np.datetime64(num2date(tvar[-1], tvar.units))
-        warm_start_time = warm_start_time.astype("M8[s]")
+        warm_start_time = np.datetime64(str(num2date(tvar[-1], tvar.units)))
         config["time"]["start"] = warm_start_time
         logging.info("    Warm start at %s", warm_start_time)
 
@@ -277,9 +285,21 @@ def configure_v1(config: dict[str, Any]) -> dict[str, Any]:
         for var in config["ibm"]:
             if var == "ibm_module":
                 conf2["ibm"]["module"] = config["ibm"][var]
-                continue
-            if var != "variables":
+            #     continue
+            # elif var == "variables":
+            #     pass
+            #     #conf2["state"]["instance_variables"].extend(config["ibm"][var])
+            else:
                 conf2["ibm"][var] = config["ibm"][var]
+
+        if config["ibm"]["variables"]:
+            V = config["ibm"]["variables"]
+            conf2["forcing"]["extra_forcing"] = []
+            if "temp" in V:
+                conf2["forcing"]["extra_forcing"].append("temp")
+            if "salt" in V:
+                conf2["forcing"]["extra_forcing"].append("salt")
+
     else:
         conf2["ibm"] = dict()
 

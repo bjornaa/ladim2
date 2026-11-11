@@ -1,15 +1,14 @@
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from ladim.out_netcdf import Output, filename_generator
-
-# import pytest
 from ladim.state import State
 from ladim.timekeeper import TimeKeeper
 from netCDF4 import Dataset
 
-NCFILE = Path("output_test.nc")
+NCFILE = Path("output_test_sparse.nc")
 
 
 class Dummy:
@@ -18,7 +17,7 @@ class Dummy:
             setattr(self, k, v)
 
 
-config0 = dict(
+config0: dict[str, Any] = dict(
     modules=dict(
         time=TimeKeeper(start="2020-01-01 12", stop="2020-01-03 12", dt=1800),
         release=Dummy(total_particle_count=3),

@@ -6,10 +6,10 @@ import logging
 import re
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any
 
-import numpy as np  # type: ignore
-from netCDF4 import Dataset  # type: ignore
+import numpy as np
+from netCDF4 import Dataset
 
 from ladim.output import BaseOutput
 from ladim.timekeeper import TimeDelta, normalize_period
@@ -17,8 +17,10 @@ from ladim.timekeeper import TimeDelta, normalize_period
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from ladim.state import State  # For typing
+    from ladim.state import State
 
+
+# TODO: split in out_netcdf_dense and out_netcdf_sparse?
 
 Variable = dict[str, Any]
 
@@ -34,33 +36,25 @@ class Output(BaseOutput):
     def __init__(
         self,
         modules: dict[str, Any],
-        filename: Union[Path, str],
+        filename: Path | str,
         output_period: TimeDelta,
         instance_variables: dict[str, Variable],
-        particle_variables: Optional[dict[str, Variable]] = None,
-        layout: Literal["sparse", "dense"] = "sparse",
-        ncargs: Optional[dict[str, Any]] = None,
+        particle_variables: dict[str, Variable] | None = None,
+        ncargs: dict[str, Any] | None = None,
         numrec: int = 0,  # Number of records per file, no multfile if zero
-        skip_initial: Optional[bool] = False,
-        global_attributes: Optional[dict[str, Any]] = None,
+        skip_initial: bool | None = False,
+        global_attributes: dict[str, Any] | None = None,
     ) -> None:
         logger.info("Initializing output")
         super().__init__(modules)
         timer = modules["time"]
         grid = modules["grid"]
         self.filename = filename
-        self.layout = layout
         self.timer = timer
         # self.num_particles = modules['release'].total_particle_count
         self.instance_variables = instance_variables
-        if self.layout == "dense":  # No need to save pid in orthogonal layout
-            self.instance_variables.pop("pid", None)
         self.particle_variables = particle_variables if particle_variables else dict()
         logger.info("  Filename: %s", filename)
-        if self.layout == "dense":
-            logger.info("  Layout: %s", "netcdf dense = orthogonal array")
-        else:
-            logger.info("  Layout: %s", "netcdf sparse = contiguous ragged array")
         logger.info("  Instance variables: %s", list(instance_variables))
         logger.info("  Particle variables: %s", list(self.particle_variables))
 
@@ -78,14 +72,10 @@ class Output(BaseOutput):
             self.global_attributes = global_attributes
         else:
             self.global_attributes = dict()
-        if self.layout == "dense":
-            self.global_attributes["type"] = (
-                "LADiM output, dense = netcdf orthogonal array"
-            )
-        else:
-            self.global_attributes["type"] = (
-                "LADiM output, sparse = netcdf contiguous ragged array"
-            )
+
+        self.global_attributes["type"] = (
+            "LADiM output, sparse = netcdf contiguous ragged array"
+        )
         self.global_attributes["history"] = f"Created by LADiM, {date.today()}"
 
         self.output_period = normalize_period(output_period)
@@ -162,21 +152,18 @@ class Output(BaseOutput):
         # nc.createDimension("particle", self.num_particles)ma
         nc.createDimension("time", None)
         nc.createDimension("particle", None)
-        if self.layout == "dense":
-            instance_dim: tuple[str, ...] = ("time", "particle")
-        else:
-            nc.createDimension("particle_instance", None)  # Unlimited
-            instance_dim = ("particle_instance",)
+        nc.createDimension("particle_instance", None)  # Unlimited
+        instance_dim = ("particle_instance",)
 
         # Variables
         v = nc.createVariable("time", "f8", ("time",))
         v.long_name = "time"
         v.standard_name = "time"
         v.units = f"seconds since {self.timer.reference_time}"
-        if self.layout == "sparse":
-            v = nc.createVariable("particle_count", "i", ("time",))
-            v.long_name = "Number of particles"
-            v.ragged_row_count = "particle count at nth timestep"
+
+        v = nc.createVariable("particle_count", "i", ("time",))
+        v.long_name = "Number of particles"
+        v.ragged_row_count = "particle count at nth timestep"
 
         if self.instance_variables is not None:
             for var, conf in self.instance_variables.items():
@@ -229,45 +216,29 @@ class Output(BaseOutput):
             self.skip_initial = False
             return
 
-        if self.layout == "sparse":
-            state.compactify()
+        state.compactify()
 
         self.nc.variables["time"][self.local_record_count] = self.timer.nctime()
 
-        if self.layout == "dense":
-            # Fill out state.alive, False for unborn particles
-            has_value = np.full(len(state), False)
-            has_value[: len(state)] = state.alive
-            for var in self.instance_variables:
-                # values = getattr(state, var)
-                self.nc.variables[var][self.local_record_count, has_value] = getattr(
-                    state, var
-                )[state.alive]
-        elif self.layout == "sparse":
-            count = len(state)  # Present number of particles
-            start = self.local_instance_count
-            end = start + count
-            self.nc.variables["particle_count"][self.local_record_count] = count
-            for var in self.instance_variables:
-                self.nc.variables[var][start:end] = getattr(state, var)
+        count = len(state)  # Present number of particles
+        start = self.local_instance_count
+        end = start + count
+        self.nc.variables["particle_count"][self.local_record_count] = count
+        for var in self.instance_variables:
+            self.nc.variables[var][start:end] = getattr(state, var)
 
         # Compute and save lon, lat if requested
         if self.lonlat:
             lon, lat = self.xy2ll(state.X, state.Y)
-            if self.layout == "dense":
-                self.nc.variables["lon"][self.local_record_count, :] = lon
-                self.nc.variables["lat"][self.local_record_count, :] = lat
-            elif self.layout == "sparse":
-                self.nc.variables["lon"][start:end] = lon
-                self.nc.variables["lat"][start:end] = lat
+            self.nc.variables["lon"][start:end] = lon
+            self.nc.variables["lat"][start:end] = lat
 
         # Flush to file
         self.nc.sync()
 
         # Prepare for next time
-        if self.layout == "sparse":
-            self.instance_count += count
-            self.local_instance_count += count
+        self.instance_count += count
+        self.local_instance_count += count
         self.record_count += 1
         self.local_record_count += 1
         self.nctime += float(self.output_period / np.timedelta64(1, self.time_unit))
