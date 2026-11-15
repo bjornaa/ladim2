@@ -5,18 +5,17 @@
 # Institute of Marine Research
 # November 2020
 # ----------------------------------
-from __future__ import annotations
-
+#
+# from __future__ import annotat
 import importlib
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from ladim.state import State
+from ladim.state import State
 
 
 class BaseOutput(ABC):
@@ -66,4 +65,4 @@ def init_output(module: str, **args: dict[str, Any]) -> BaseOutput:
 
     # Import correct module
     output_module = importlib.import_module(module)
-    return output_module.Output(**args)  # type: ignore
+    return output_module.Output(**args)

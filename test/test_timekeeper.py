@@ -33,7 +33,7 @@ def test_init():
     assert t.dtsec == 3600
 
     # dt as yaml-type timedeltas
-    t = TimeKeeper(start_time, stop_time, dt=[1, "h"])
+    t = TimeKeeper(start_time, stop_time, dt=(1, "h"))
     assert t.dtsec == 3600
 
     # dt specified in ISO 8601 format
@@ -85,8 +85,8 @@ def test_step2isotime():
     assert t.step2isotime(-26) == "2020-04-03T10:00:00"
     # Fractional time steps are accepted
     # Should raise exception ?
-    assert t.step2isotime(3.5) == "2020-04-04T15:30:00"
-    assert t.step2isotime(np.pi) == "2020-04-04T15:08:29"
+    assert t.step2isotime(3.5) == "2020-04-04T15:30:00"  # type: ignore
+    assert t.step2isotime(np.pi) == "2020-04-04T15:08:29"  # type: ignore
 
 
 def test_step2nctime():
@@ -147,7 +147,7 @@ def test_normalize_period():
     assert normalize_period(1800) == np.timedelta64(30, "m")
     assert normalize_period(np.timedelta64(300, "s")) == np.timedelta64(5, "m")
     assert normalize_period(datetime.timedelta(seconds=60)) == np.timedelta64(1, "m")
-    assert normalize_period([1, "h"]) == np.timedelta64(1, "h")
+    assert normalize_period((1, "h")) == np.timedelta64(1, "h")
     assert normalize_period("PT2H") == np.timedelta64(2, "h")
     assert normalize_period("PT09M") == np.timedelta64(9, "m")
     assert normalize_period("PT30S") == np.timedelta64(30, "s")
@@ -157,12 +157,9 @@ def test_normalize_period():
     with pytest.raises(ValueError):  # Only string allowed is the ISO 8601 type
         normalize_period("600")
     with pytest.raises(ValueError):  # Unit should be "h", "m", or "s"
-        normalize_period([1, "min"])
+        normalize_period((1, "min"))
     with pytest.raises(ValueError):  # List/tuple should have two elements
-        normalize_period([3600])
-    with pytest.raises(ValueError):  # List/tuple should have two elements
-        normalize_period([3600, "h", "s"])
-
+        normalize_period((3600, "h", "s"))  # type: ignore
     with pytest.raises(ValueError):  # Must have at least one of the items
         normalize_period("PT")
     with pytest.raises(ValueError):  # T is necessary

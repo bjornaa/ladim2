@@ -109,9 +109,10 @@ class Output(BaseOutput):
         self.local_record_count = 0
 
         self.step2nctime = timer.step2nctime
-        self.time_unit = "s"
+        # self.time_unit = "s"
         self.nctime = timer.step2nctime(0, "s")
-        self.cf_units = timer.cf_units(self.time_unit)
+        # self.cf_units = timer.cf_units(self.time_unit)
+        self.cf_units = timer.cf_units("s")
 
         if "lon" in self.instance_variables or "lat" in self.instance_variables:
             self.lonlat = True
@@ -241,7 +242,7 @@ class Output(BaseOutput):
         self.local_instance_count += count
         self.record_count += 1
         self.local_record_count += 1
-        self.nctime += float(self.output_period / np.timedelta64(1, self.time_unit))
+        self.nctime += float(self.output_period / np.timedelta64(1, "s"))
 
         # File finished?
         if self.local_record_count == self.local_num_records:
@@ -263,9 +264,9 @@ class Output(BaseOutput):
         npart = int(state.pid.max()) + 1  # Total number of particles so far
         for var in self.particle_variables:
             if state.dtypes[var] == np.dtype("datetime64[s]"):
-                unit = self.time_unit
+                # unit = self.time_unit
                 delta = state[var].astype("M8[s]") - self.timer.reference_time
-                self.nc.variables[var][:npart] = delta[:npart] / np.timedelta64(1, unit)
+                self.nc.variables[var][:npart] = delta[:npart] / np.timedelta64(1, "s")
             else:
                 self.nc.variables[var][:npart] = state[var][:npart]
 

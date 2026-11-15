@@ -6,7 +6,7 @@
 # 2020-10-29
 # ================================
 
-from __future__ import annotations
+from __future__ import annotations  # for python 3.x, x < 14
 
 import datetime
 import logging
@@ -17,7 +17,7 @@ from typing import Any
 import numpy as np
 
 Time = str | np.datetime64 | datetime.datetime
-TimeDelta = np.timedelta64 | datetime.timedelta | tuple[int, str] | int | str
+TimeDelta = np.timedelta64 | datetime.timedelta | tuple[int, str] | str | int
 
 DEBUG = False
 
@@ -42,7 +42,7 @@ class TimeKeeper:
     methods:
         time2step: time -> time step number
         step2isotime: time step number -> yyyy-mm-ddThh:mm:ss
-        step2nctime: time -> seconds since reference time (or hours/days)
+        step2nctime: time -> time since reference time (in seconds, minutes or hours)qqqq
         cfunits: reference time -> "seconds since reference time" (or hours/days)
 
     """
@@ -132,10 +132,11 @@ class TimeKeeper:
         """Reset the clock"""
         self.time = self.start_time
 
-    def nctime(self, unit: str = "s") -> float:
+    # def nctime(self, unit: str = "s") -> float:
+    def nctime(self) -> float:
         """Get float value of model time"""
         delta = self.time - self.reference_time
-        return float(delta / np.timedelta64(1, unit))
+        return float(delta / np.timedelta64(1, "s"))
 
     def step2time(self, step: int) -> np.datetime64:
         return self.start_time + step * self.dt
@@ -165,7 +166,12 @@ class TimeKeeper:
             delta = self.start_time - stepnr * self.dt - self.reference_time
         else:
             delta = self.start_time + stepnr * self.dt - self.reference_time
-        return float(delta / np.timedelta64(1, unit))
+        tvalue = float(delta / np.timedelta64(1, "s"))
+        if unit == "m":
+            tvalue /= 60
+        elif unit == "h":
+            tvalue /= 3600
+        return tvalue
 
     def cf_units(self, unit: str = "s") -> str:
         """Return string with units for time following the CF standard"""
@@ -208,14 +214,18 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
 
     if isinstance(per, (int, np.timedelta64, datetime.timedelta)):
         return np.timedelta64(per, "s")
-    # if isinstance(per, np.timedelta64):
-    #    return per.astype("m8[s]")
 
-    if isinstance(per, list):  # [value, unit] from yaml
+    if isinstance(per, tuple | list):  # (value, unit) from yaml
         try:
             value, unit = per
             if isinstance(value, int) and isinstance(unit, str):
-                return np.timedelta64(np.timedelta64(value, unit), "s")
+                if unit == "h":
+                    value = value * 3600
+                elif unit == "m":
+                    value = value * 60
+                elif unit != "s":
+                    raise ValueError(f"{unit} is not a valid time unit")
+                return np.timedelta64(value, "s")
         except (TypeError, ValueError) as exc:
             raise ValueError(f"{per} is not a valid time period") from exc
 
@@ -224,14 +234,19 @@ def normalize_period(per: TimeDelta) -> np.timedelta64:
         m = re.match(pattern, per)
         if m is None:
             raise ValueError(f"{per} is not a valid time period")
-        td = np.timedelta64(0, "s")
         if not any(m.groups()):
             raise ValueError(f"{per} is not a valid time period")
+        # Add up the different duration components.
+        td = np.timedelta64(0, "s")
         for item in m.groups():
             if item:
                 value = int(item[:-1])
                 unit = item[-1].lower()
-                td = td + np.timedelta64(value, unit)
+                if unit == "h":
+                    value = value * 3600
+                elif unit == "m":
+                    value = value * 60
+                td += np.timedelta64(value, "s")
         return td
 
     # None of the above

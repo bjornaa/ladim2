@@ -20,7 +20,7 @@ from typing import Any, Union
 
 import numpy as np
 import tomli
-import yaml  # type: ignore
+import yaml
 from netCDF4 import Dataset, num2date
 
 DEBUG = False

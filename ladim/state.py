@@ -10,10 +10,10 @@ Class for the state of the model
 from __future__ import annotations
 
 import logging
-from collections.abc import Sized
+from collections.abc import Mapping, Sized
 
 # from typing import Union, Sequence, Optional, Any
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -36,6 +36,7 @@ if DEBUG:
 
 # Define some types aliases
 ParticleArray = npt.NDArray[Any]
+DType = npt.DTypeLike | Literal["time"]
 
 # State has no internal difference between particle and instance variable.
 # With append also particle variables needs a value
@@ -82,10 +83,10 @@ class State(Sized):
 
     def __init__(
         self,
-        instance_variables: dict[str, type] | None = None,
-        particle_variables: dict[str, type] | None = None,
-        default_values: dict[str, Number] | None = None,
-        modules: dict[str, Any] | None = None,
+        instance_variables: Mapping[str, DType] | None = None,
+        particle_variables: Mapping[str, DType] | None = None,
+        default_values: Mapping[str, Number] | None = None,
+        modules: Mapping[str, Any] | None = None,
     ) -> None:
         """
         Initialize the state
@@ -124,9 +125,7 @@ class State(Sized):
                 self.dtypes[var] = np.dtype("M8[s]")  # datetime64("s")
 
         # Data storage (initally empty)
-        self.variables = {
-            var: np.array([], dtype) for var, dtype in self.dtypes.items()
-        }
+        self.variables = {var: np.array([], dtype) for var, dtype in self.dtypes.items()}
 
         # Default values
         predef_default_values: dict[str, Any] = dict(

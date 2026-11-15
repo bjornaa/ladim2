@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
-import numba  # type: ignore
+import numba  # type: iignore
 import numpy as np
 from netCDF4 import Dataset, num2date
 
@@ -326,8 +326,8 @@ def s_stretch(
 
 
 def sdepth(
-    H: Field, Hc: float, C: VerticalArray, stagger: str = "rho", Vtransform: int = 1
-) -> Field:
+    H: np.ndarray, Hc: float, C: VerticalArray, stagger: str = "rho", Vtransform: int = 1
+) -> np.ndarray:
     """Return depth of grid cells
 
     Args:
@@ -371,13 +371,13 @@ def sdepth(
     if Vtransform == 1:  # Default transform by Song and Haidvogel
         A = Hc * (S - C)[:, None]
         B = np.outer(C, H)
-        R1: Field = (A + B).reshape(outshape)
+        R1 = (A + B).reshape(outshape)
         return R1
 
     if Vtransform == 2:  # New transform by Shchepetkin
         A = Hc * S[:, None] + np.outer(C, H)
         B = 1.0 + Hc / H
-        R2: Field = (A / B).reshape(outshape)
+        R2 = (A / B).reshape(outshape)
         return R2
 
     # else:
@@ -757,7 +757,7 @@ def z2s(
     return KA
 
 
-@numba.njit(parallel=parallel)  # type: ignore
+@numba.njit(parallel=parallel)  # # type: iiignore
 def z2s_kernel(
     I: ParticleIntArray,
     J: ParticleIntArray,
@@ -818,7 +818,7 @@ def sample3D(
     return result
 
 
-@numba.njit(parallel=parallel)  # type: ignore
+@numba.njit(parallel=parallel)  # # type: iignore
 def trilinear(
     F: Field, X: ParticleArray, Y: ParticleArray, K: ParticleIntArray, A: ParticleArray
 ) -> ParticleArray:

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import numba
 import numpy as np  # type: ignore
@@ -353,7 +353,7 @@ class Forcing(BaseForce):
         # timer: TimeKeeper,
         filename: Union[Path, str],
         pad: int = 30,
-        extra_forcing: Optional[list[str]] = None,
+        extra_forcing: list[str] | None = None,
     ) -> None:
         logger.info("Initiating forcing")
         super().__init__(modules)
@@ -522,9 +522,7 @@ class Forcing(BaseForce):
                 i1_new = min(self.grid.imax - 1, int(X.max()) + 1 + self.pad)
                 j0_new = max(1, int(Y.min()) - self.pad)
                 j1_new = min(self.grid.jmax - 1, int(Y.max()) + 1 + self.pad)
-                logging.debug(
-                    f"new grid limits: {i0_new}, {i1_new}, {j0_new}, {j1_new}"
-                )
+                logging.debug(f"new grid limits: {i0_new}, {i1_new}, {j0_new}, {j1_new}")
                 # Save the new grid limits
                 self.i0_new = i0_new
                 self.i1_new = i1_new
@@ -873,10 +871,7 @@ def trilinear(F, X, Y, K, A):
         f10 = a * F[k - 1, j, i + 1] + (1 - a) * F[k, j, i + 1]
         f11 = a * F[k - 1, j + 1, i + 1] + (1 - a) * F[k, j + 1, i + 1]
         R[n] = (
-            (1 - p) * (1 - q) * f00
-            + p * (1 - q) * f10
-            + (1 - p) * q * f01
-            + p * q * f11
+            (1 - p) * (1 - q) * f00 + p * (1 - q) * f10 + (1 - p) * q * f01 + p * q * f11
         )
     return R
 

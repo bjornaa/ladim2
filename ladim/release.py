@@ -13,7 +13,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
-import pandas as pd  # type: ignore
+import pandas as pd
 from netCDF4 import Dataset
 
 from ladim.timekeeper import normalize_period
